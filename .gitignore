@@ -1,0 +1,43 @@
+# Frontend
+
+/app/extension-frontend/node_modules
+/app/extension-frontend/dist
+
+# TypeScript build info
+/app/extension-frontend/tsconfig.tsbuildinfo
+
+# Logs
+/app/extension-frontend/logs
+/app/extension-frontend/*.log
+/app/extension-frontend/npm-debug.log*
+/app/extension-frontend/yarn-debug.log*
+/app/extension-frontend/yarn-error.log*
+/app/extension-frontend/pnpm-debug.log*
+/app/extension-frontend/lerna-debug.log*
+
+/app/extension-frontend/node_modules
+/app/extension-frontend/dist
+/app/extension-frontend/dist-ssr
+/app/extension-frontend/*.local
+
+# Editor directories and files
+/app/extension-frontend/.vscode/*
+/app/extension-frontend/!.vscode/extensions.json
+/app/extension-frontend/.idea
+/app/extension-frontend/.DS_Store
+/app/extension-frontend/*.suo
+/app/extension-frontend/*.ntvs*
+/app/extension-frontend/*.njsproj
+/app/extension-frontend/*.sln
+/app/extension-frontend/*.sw?
+
+
+
+# Backend
+/app/server-backend/.venv
+/app/server-backend/.env
+
+# Python cache files (recursive)
+/app/server-backend/**/__pycache__
+
+/app/server-backend/gcp-credentials.json
