@@ -1,0 +1,25 @@
+{
+    "manifest_version": 3,
+    "name": "Resume Analyzer",
+    "version": "0.1.0",
+    "description": "Analyzes your resume against job descriptions using AI.",
+    "permissions": ["scripting", "activeTab"],
+    "host_permissions": ["http://127.0.0.1:8000/*"],
+    "action": {
+        "default_popup": "index.html",
+        "default_icon": {
+            "16": "icon16.png",
+            "48": "icon48.png",
+            "80": "icon80.png"
+        }
+    },
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "80": "icon80.png"
+    },
+    "background": {
+        "service_worker": "src/background.js",
+        "type": "module"
+    }
+}
