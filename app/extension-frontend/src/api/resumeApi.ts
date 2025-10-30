@@ -1,8 +1,11 @@
+import { Resume } from "../types";
+
 const API_BASE_URL = "http://127.0.0.1:8000/api";
 
-export const uploadResume = async (file: File): Promise<{ file_url: string }> => {
+export const uploadResume = async (file: File, company: string): Promise<{ file_url: string }> => {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("company", company);
 
   const response = await fetch(`${API_BASE_URL}/resumes/upload`, {
     method: "POST",
@@ -15,4 +18,32 @@ export const uploadResume = async (file: File): Promise<{ file_url: string }> =>
   }
 
   return response.json();
+};
+
+
+export const listResumes = async (): Promise<Resume[]> => {
+  const response = await fetch(`${API_BASE_URL}/resumes/`, {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch resumes");
+  }
+
+  // The backend returns the list directly, so we can just return the JSON
+  return response.json();
+};
+
+
+export const getResumeContent = async (resumeId: number): Promise<string> => {
+  const response = await fetch(`${API_BASE_URL}/resumes/${resumeId}/content`, {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch resume content");
+  }
+
+  // The backend returns the raw text, so we use .text()
+  return response.text();
 };

@@ -42,3 +42,9 @@ export type ChromeMessage =
 export interface ScrapeTextResponse {
   text: string;
 }
+
+export interface Resume {
+  id: number;
+  filename: string;
+  company: string;
+}
