@@ -26,13 +26,13 @@ async def upload_resume(
         # Create GCS Path and upload the file
         destination_path = f"public/{company}/{file.filename}"
         await file.seek(0)
-        gcs_service.upload_file_to_gcs(file, destination_path)
+        gcs_url = await gcs_service.upload_file_to_gcs(file, destination_path)
 
         # Create a new resume record in the database
         resume_service.create_resume_entry(
             db=db,
             filename=file.filename,
-            storage_path=destination_path,
+            storage_path=gcs_url,
             content=extracted_text,
             company=company
         )
