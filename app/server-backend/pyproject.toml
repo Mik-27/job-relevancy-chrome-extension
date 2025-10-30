@@ -6,5 +6,14 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.120.0",
+    "google-cloud-storage>=3.4.1",
+    "langchain>=1.0.3",
+    "langchain-core>=1.0.2",
+    "langchain-google-genai>=3.0.0",
+    "psycopg2-binary>=2.9.11",
     "pydantic-settings>=2.11.0",
+    "pypdf2>=3.0.1",
+    "python-dotenv>=1.1.1",
+    "sqlalchemy>=2.0.44",
+    "uvicorn>=0.38.0",
 ]

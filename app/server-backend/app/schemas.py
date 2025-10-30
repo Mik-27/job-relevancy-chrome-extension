@@ -12,3 +12,17 @@ class AnalysisResultSchema(BaseModel):
 class AnalyzeResponse(BaseModel):
     relevancyScore: int
     suggestions: List[str]
+    
+# Schema for returning a single resume in a list
+class ResumeBase(BaseModel):
+    id: int
+    filename: str
+    company: str
+
+    # This tells Pydantic to read the data even if it's an ORM model
+    class Config:
+        from_attributes = True
+
+# Schema for the full list response
+class ResumeListResponse(BaseModel):
+    resumes: List[ResumeBase]
