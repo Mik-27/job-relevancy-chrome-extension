@@ -44,7 +44,7 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
         <ul>
         {resumes.map(resume => (
             <li key={resume.id}>
-            <strong>{resume.company}</strong> - {resume.filename}
+            <strong>{resume.company}</strong> {resume.filename}
             <button onClick={() => handleSelectResume(resume.id)}>Select</button>
             </li>
         ))}
