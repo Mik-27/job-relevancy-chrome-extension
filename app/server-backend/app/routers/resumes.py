@@ -36,8 +36,13 @@ async def upload_resume(
             content=extracted_text,
             company=company
         )
-        
-        return {"filename": file.filename, "company": company, "message": "Upload successful"}
+
+        return {
+            "filename": file.filename, 
+            "company": company,
+            "content": extracted_text, 
+            "message": "Upload successful"
+        }
 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")

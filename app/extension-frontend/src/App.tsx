@@ -49,10 +49,11 @@ function App() {
     });
   };
 
-  // This function is passed to the Upload tab.
-  // When an upload succeeds, it increments the version, forcing the Choose tab to re-render and refetch.
-  const handleUploadSuccess = useCallback(() => {
+  // This function accepts the parsed text
+  const handleUploadSuccess = useCallback((parsedText: string) => {
+    setResumeText(parsedText);
     setUploadVersion(v => v + 1);
+    alert("Resume uploaded and content is ready for analysis!");
   }, []);
 
   const tabs = [

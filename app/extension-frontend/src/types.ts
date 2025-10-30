@@ -48,3 +48,10 @@ export interface Resume {
   filename: string;
   company: string;
 }
+
+export interface UploadResponse {
+  filename: string;
+  company: string;
+  message: string;
+  content: string;
+}

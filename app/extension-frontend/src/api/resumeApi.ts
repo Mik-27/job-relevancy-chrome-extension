@@ -1,8 +1,8 @@
-import { Resume } from "../types";
+import { Resume, UploadResponse } from "../types";
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
 
-export const uploadResume = async (file: File, company: string): Promise<{ file_url: string }> => {
+export const uploadResume = async (file: File, company: string): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("company", company);
