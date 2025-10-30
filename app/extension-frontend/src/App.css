@@ -8,18 +8,23 @@
   border-radius: 2px;
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 400px; /* Set a good width for the popup */
+  width: 400px; /* Set a good width for the popup */
   min-height: 300px;
 }
 
-.app-container {
-  width: 90%;
+main {
+  width: 100%;
   padding: 1rem;
   text-align: center;
+  box-sizing: border-box;
 }
 
 header h1 {
@@ -31,19 +36,6 @@ header p {
   font-size: 0.9em;
   color: #a0a0a0;
   margin-top: 0;
-}
-
-.resume-textarea {
-  width: 100%;
-  height: 150px;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  box-sizing: border-box;
-  border-radius: 8px;
-  border: 1px solid #555;
-  background-color: #333;
-  color: #eee;
-  font-family: inherit;
 }
 
 .analyze-button {
@@ -103,4 +95,39 @@ header p {
 .suggestions-list li {
   padding-left: 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+.analyze-button {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a6aff;
+  color: white;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.analyze-button:hover {
+  background-color: #3b82f6;
+  border-color: #646cff;
+}
+
+.analyze-button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.analysis-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #444;
+}
+
+.analysis-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
 }

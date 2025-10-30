@@ -1,0 +1,196 @@
+.tabs-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tabs-nav {
+  display: flex; /* Use flexbox for alignment */
+  justify-content: space-around; /* Distribute items evenly */
+  border-bottom: 1px solid #444; /* Slightly lighter border */
+  margin-bottom: 1rem;
+}
+
+.tab-button {
+  flex: 1; /* Each tab will take up equal space */
+  text-align: center; /* Center the text within the tab */
+  padding: 0.75rem 0.5rem; /* Increase padding for a better feel */
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+  color: #a0a0a0;
+  font-size: 0.9em;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease-in-out; /* Smooth transition for hover and active states */
+}
+
+.tab-button:hover {
+    color: #ccc;
+}
+
+.tab-button.active {
+  color: #fff;
+  font-weight: 500;
+  border-bottom: 2px solid #1a6aff;
+  background-color: #464646;
+}
+
+.tab-content {
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.tab-content * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.paste-text-container,
+.upload-form-container,
+.choose-resume-container {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+}
+
+.upload-form-container > .form-group {
+  margin-bottom: 1em;
+  text-align: left;
+}
+
+.resume-textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 150px;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background-color: #333;
+  color: #eee;
+  font-family: inherit;
+  resize: none;
+}
+
+.company-name {
+  display: block;
+  font-size: 0.9em;
+  color: #a0a0a0;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-right: 5px;
+}
+
+.file-upload {
+  display: block;
+  font-size: 0.9em;
+  color: #a0a0a0;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-right: 5px;
+}
+
+/* Form elements styling */
+.upload-form-container input[type="text"],
+.upload-form-container input[type="file"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background-color: #333;
+  color: #eee;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.upload-form-container input[type="file"] {
+  padding: 0.4rem;
+  font-size: 0.9em;
+}
+
+.upload-button {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a6aff;
+  color: white;
+  cursor: pointer;
+  transition: all 0.25s;
+  box-sizing: border-box;
+}
+
+.upload-button:hover {
+  background-color: #3b82f6;
+  border-color: #646cff;
+}
+
+.upload-button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.success-message {
+  color: #4ade80;
+  margin-top: 1rem;
+  font-size: 0.9em;
+}
+
+.error-message {
+  color: #ff6b6b;
+  margin-top: 1rem;
+  font-size: 0.9em;
+}
+
+/* Choose Resume tab styling */
+.choose-resume-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.choose-resume-container li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background-color: #333;
+  border-radius: 8px;
+  border: 1px solid #555;
+}
+
+.choose-resume-container button {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 0.9em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a6aff;
+  color: white;
+  cursor: pointer;
+  transition: all 0.25s;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.choose-resume-container button:hover {
+  background-color: #3b82f6;
+  border-color: #646cff;
+}
