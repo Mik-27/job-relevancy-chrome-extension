@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import analysis, resumes
+from app.routers import analysis, resumes, tailor
 
 app = FastAPI(
     title="Resume Analyzer API",
@@ -24,6 +24,7 @@ app.add_middleware(
 # --- Include Routers ---
 app.include_router(analysis.router, prefix="/api")
 app.include_router(resumes.router, prefix="/api")
+app.include_router(tailor.router, prefix="/api")
 
 @app.get("/", tags=["Root"])
 def read_root():

@@ -41,3 +41,7 @@
 /app/server-backend/**/__pycache__
 
 /app/server-backend/gcp-credentials.json
+
+# Temp Resume Files
+/app/server-backend/.temp_files
+/app/server-backend/temp_files
