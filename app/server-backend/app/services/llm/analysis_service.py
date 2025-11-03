@@ -15,18 +15,19 @@ parser = PydanticOutputParser(pydantic_object=AnalysisResultSchema)
 
 prompt_template = """
 You are an expert ATS (Applicant Tracking System) reviewer and career advisor with deep knowledge of resume optimization.
-Your goal is to provide a critical analysis of a resume against a job description such that it maximizes the chances of getting past ATS filters and generating maximum relevancy.
+Your goal is to provide a critical analysis of a resume against a job description such that it maximizes the chances of getting past ATS filters, generating maximum relevancy and to get shortlisted for the position using the suggested improvements.
 
 Instructions for generating the suggestions:
 Do not give suggestions on adding summary section.
 Do not give suggestions on formatting or style unless it directly impacts ATS compatibility.
 Do not suggest changes in Education, Certifications & Hackathons sections.
+Do not suggest changes in dates of employment.
 Focus on tailoring work experience, skills, projects and keywords to align with the job description.
 Always stick to the facts and do not give generic advice.
 Always be specific in the suggestions provided to improve the resume for this specific job description.
 Also, provide suggestions to remove irrelevant information that does not align with the job description.
 Try to use metrics or quantifying statements in the suggestions wherever possible.
-When providing a suggestion on quantifying achievements, always suggest specific metrics that align with the job description and use researched data for metric values.
+When providing a suggestion on quantifying achievements, always suggest specific metrics that align better with the job description and use researched data for metric values.
 
 Analyze the following resume and job description.
 <resume>

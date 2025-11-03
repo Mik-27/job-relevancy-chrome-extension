@@ -23,6 +23,14 @@ Finally, generate a new, tailored resume content. Your output MUST be a single, 
 Focus on rephrasing the summary and experience bullet points to use keywords and highlight achievements that are most relevant to the job description.
 Do not invent new experiences, but you can rephrase and emphasize existing ones.
 
+Instructions on making changes in the resume against the job description:
+Do not add fake information that is not present in the resume.
+Do not change the candidate's name, contact information, education details, certifications, or dates of employment.
+Focus on tailoring the summary, skills, experience bullet points, and projects to align with the job description.
+Do not use articles like "a", "an", or "the" in the anywhere in the resume.
+Remove any irrelevant information that does not align with the job description, if required.
+Choose the best projects and skills that align with the job description if the resume provided is a CV, ignore otherwise.
+
 {format_instructions}
 
 Here is the candidate's original resume:
