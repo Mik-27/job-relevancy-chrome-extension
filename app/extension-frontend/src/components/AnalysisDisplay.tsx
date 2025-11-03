@@ -29,8 +29,9 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, isTail
           onClick={onTailorClick}
           disabled={isTailoring}
         >
-          {isTailoring ? 'Generating PDF...' : 'Tailor Resume & Download PDF'}
+          {isTailoring ? 'Generating Tailored PDF...' : 'Tailor Resume & Download PDF'}
         </button>
+        {isTailoring && <p className="loading-message">This may take up to 30 seconds...</p>}
       </div>
     </section>
   );

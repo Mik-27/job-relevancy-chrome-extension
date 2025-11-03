@@ -13,7 +13,20 @@ class AnalyzeResponse(BaseModel):
     relevancyScore: int
     suggestions: List[str]
     
+# Schema for returning a single resume in a list
+class ResumeBase(BaseModel):
+    id: int
+    filename: str
+    company: str
 
+    # This tells Pydantic to read the data even if it's an ORM model
+    class Config:
+        from_attributes = True
+
+# Schema for the full list response
+class ResumeListResponse(BaseModel):
+    resumes: List[ResumeBase]
+    
 # --- Sub-models for the new, detailed resume structure ---
 
 class EducationSchema(BaseModel):
@@ -58,5 +71,3 @@ class TailoredResumeSchema(BaseModel):
     experience: List[ExperienceSchema]
     projects: List[ProjectSchema]
     achievements: List[str] = Field(description="A list of 1-3 certifications or achievements.")
-
-# Keep your other schemas like AnalyzeRequest, etc.
