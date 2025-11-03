@@ -67,3 +67,21 @@ export const tailorResume = async (resumeText: string, jobDescriptionText: strin
   // The response is the raw PDF file, so we get it as a blob
   return response.blob();
 };
+
+
+export const deleteResume = async (resumeId: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/resumes/${resumeId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    // 204 No Content is a success, but response.ok might be false.
+    // We check for specific success/failure statuses.
+    if (response.status === 404) {
+        throw new Error("Resume not found on the server.");
+    }
+    if (response.status !== 204) {
+        throw new Error("Failed to delete resume.");
+    }
+  }
+};

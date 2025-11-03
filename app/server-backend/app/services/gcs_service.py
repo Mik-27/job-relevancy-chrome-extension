@@ -29,3 +29,13 @@ def download_file_as_bytes(source_path: str) -> bytes:
     """Downloads a file from GCS and returns its content as bytes."""
     blob = bucket.blob(source_path)
     return blob.download_as_bytes()
+
+def delete_file_from_gcs(source_path: str):
+    """Deletes a file from the GCS bucket."""
+    try:
+        blob = bucket.blob(source_path)
+        blob.delete()
+        print(f"Successfully deleted {source_path} from GCS.")
+    except Exception as e:
+        print(f"Failed to delete {source_path} from GCS: {e}")
+        # raise e

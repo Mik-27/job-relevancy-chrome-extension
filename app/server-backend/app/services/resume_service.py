@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from .. import database, schemas
+from .. import database
+from . import gcs_service
 
 def get_all_resumes(db: Session):
     """Retrieves all resumes, returning only basic info."""
@@ -22,3 +23,20 @@ def create_resume_entry(db: Session, filename: str, storage_path: str, content: 
     db.commit()
     db.refresh(new_resume)
     return new_resume
+
+def delete_resume_by_id(db: Session, resume_id: int) -> database.Resume | None:
+    """Finds a resume, deletes its file from GCS, then deletes the DB record."""
+    resume_to_delete = db.query(database.Resume).filter(database.Resume.id == resume_id).first()
+    
+    if not resume_to_delete:
+        return None # Resume not found
+
+    # Important: Delete the file from GCS first.
+    if resume_to_delete.storage_path:
+        gcs_service.delete_file_from_gcs(resume_to_delete.storage_path)
+
+    # Now, delete the record from the database.
+    db.delete(resume_to_delete)
+    db.commit()
+    
+    return resume_to_delete

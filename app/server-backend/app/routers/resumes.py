@@ -26,13 +26,13 @@ async def upload_resume(
         # Create GCS Path and upload the file
         destination_path = f"public/{company}/{file.filename}"
         await file.seek(0)
-        gcs_url = await gcs_service.upload_file_to_gcs(file, destination_path)
+        await gcs_service.upload_file_to_gcs(file, destination_path)
 
         # Create a new resume record in the database
         resume_service.create_resume_entry(
             db=db,
             filename=file.filename,
-            storage_path=gcs_url,
+            storage_path=destination_path,
             content=extracted_text,
             company=company
         )
@@ -62,3 +62,13 @@ def get_resume_content(resume_id: int, db: Session = Depends(database.get_db)):
     if content is None:
         raise HTTPException(status_code=404, detail="Resume not found.")
     return content
+
+@router.delete("/{resume_id}", status_code=204)
+def delete_resume(resume_id: int, db: Session = Depends(database.get_db)):
+    """Deletes a resume by its ID from the database and cloud storage."""
+    deleted_resume = resume_service.delete_resume_by_id(db=db, resume_id=resume_id)
+    if deleted_resume is None:
+        raise HTTPException(status_code=404, detail="Resume not found.")
+    
+    # A 204 No Content response is standard for a successful DELETE
+    return
