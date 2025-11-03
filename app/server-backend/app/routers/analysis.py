@@ -12,7 +12,7 @@ async def analyze_resume_and_job(request: AnalyzeRequest):
 
     try:
         # Call the specific, segregated function
-        score, suggestions = await analysis_service.get_analysis(
+        score, suggestions = await analysis_service.get_llm_analysis(
             resume=request.resumeText,
             job_description=request.jobDescriptionText
         )
