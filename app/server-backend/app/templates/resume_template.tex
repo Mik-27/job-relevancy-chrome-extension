@@ -1,62 +1,91 @@
-\documentclass{resume_style}
+\documentclass{resume} % Use the custom resume.cls style
+
+\usepackage[left=0.4 in,top=0.4in,right=0.4 in,bottom=0.4in]{geometry} % Document margins
+\usepackage{setspace}
+
+\newcommand{\tab}[1]{\hspace{.2667\textwidth}\rlap{#1}} 
+\newcommand{\itab}[1]{\hspace{0em}\rlap{#1}}
+
+\name{(( name | escape_tex ))}
+\address{(( phone | escape_tex )) \\ (( location | escape_tex ))} 
+\address{(( email | escape_tex )) \\ \href{(( portfolio_url | escape_tex ))/}{(( portfolio_url | escape_tex ))} \\ \href{(( linkedin_url | escape_tex ))}{Linkedin} \\ \href{(( github_url | escape_tex ))}{GitHub}}
+
 \begin{document}
 
-%----------HEADING----------%
-\begin{center}
-    \textbf{\Huge \scshape (( name | escape_tex )) } \\ \vspace{1pt}
-    \small \faIcon{phone}\ (( phone | escape_tex ))
-    \hspace{1pt} | \hspace{1pt}
-    \href{mailto:(( email | escape_tex ))}{\faIcon{envelope}\  \underline{(( email | escape_tex ))}}
-    \hspace{1pt} | \hspace{1pt}
-    \href{https://linkedin.com/in/(( linkedin | escape_tex ))}{\faIcon{linkedin}\ \underline{linkedin.com/in/(( linkedin | escape_tex ))}}
-    \hspace{1pt} | \hspace{1pt}
-    \href{https://github.com/(( github | escape_tex ))}{\faIcon{github}\ \underline{github.com/(( github | escape_tex ))}}
-\end{center}
-
-%-----------SUMMARY-----------%
-\section{Summary}
+\vspace{-0.9em}
+\begin{rSection}{OBJECTIVE}
+\vspace{-0.2em}
 (( summary | escape_tex ))
+\end{rSection}
 
-%-----------EXPERIENCE-----------%
-\section{Experience}
-\resumeSubHeadingListStart
+\vspace{-0.8em}
+\begin{rSection}{Education}
+\setstretch{0.9}
+[% for edu in education %]
+    {\bf (( edu['school'] | escape_tex ))}, (( edu['degree'] | escape_tex )) \hfill {(( edu['date'] | escape_tex ))}\\
+    \textit{Coursework}: (( edu['coursework'] | escape_tex )) \hfill GPA: (( edu['gpa'] | escape_tex ))
+    \vspace{-0.3em}
+[% endfor %]
+\end{rSection}
+
+\vspace{-0.8em}
+\begin{rSection}{SKILLS}
+    \begin{flushleft}
+    \textbf{Languages and Databases:} (( skills['languages_databases'] | escape_tex )) \\
+    \textbf{Cloud:} (( skills['cloud'] | escape_tex )) \\
+    \textbf{Development:} (( skills['development'] | escape_tex )) \\
+    \textbf{Others:} (( skills['others'] | escape_tex )) \\
+    \end{flushleft}
+\end{rSection}
+
+\vspace{-0.75em}
+\begin{rSection}{EXPERIENCE}
+\setstretch{0.9}
 [% for job in experience %]
-    \resumeSubheading
-      {\textbf{(( job['title'] | escape_tex ))}}
-      {\textit{(( job['company'] | escape_tex ))}}
-      {(( job['location'] | escape_tex ))}
-      {(( job['dates'] | escape_tex ))}
-    \resumeItemListStart
-      [% for point in job['points'] %]
-        \resumeItem{(( point | escape_tex ))}
-      [% endfor %]
-    \resumeItemListEnd
-[% endfor %]
-\resumeSubHeadingListEnd
-
-%-----------PROJECTS-----------%
-\section{Projects}
-\resumeSubHeadingListStart
-[% for project in projects %]
-    \resumeProjectHeading
-        {\textbf{(( project['name'] | escape_tex ))} | \textit{(( project['technologies'] | escape_tex ))}}
-        {}
-    \resumeItemListStart
-        [% for point in project['points'] %]
-            \resumeItem{(( point | escape_tex ))}
+    \textbf{(( job['company'] | escape_tex ))} \hfill (( job['date'] | escape_tex ))\\
+    (( job['title'] | escape_tex )) \hfill \textit{(( job['location'] | escape_tex ))}
+    \vspace{-0.4em}
+    \begin{itemize}
+        \setlength{\itemsep}{2pt}
+        \setlength{\parskip}{0pt}
+        \setlength{\parsep}{1pt}
+        [% for point in job['points'] %]
+            \item (( point | escape_tex ))
         [% endfor %]
-    \resumeItemListEnd
+    \end{itemize}
+    \vspace{-0.2em}
 [% endfor %]
-\resumeSubHeadingListEnd
+\end{rSection} 
 
-%-----------SKILLS-----------%
-\section{Skills}
-\begin{itemize}[leftmargin=0.15in, label={}]
-    \small\item{
-     \textbf{Languages:} (( skills['languages'] | escape_tex )) \\
-     \textbf{Frameworks:} (( skills['frameworks'] | escape_tex )) \\
-     \textbf{Developer Tools:} (( skills['tools'] | escape_tex ))
-    }
+\vspace{-0.7em}
+\begin{rSection}{PROJECTS}
+\setstretch{0.9}
+\vspace{-1em}
+[% for project in projects %]
+    \vspace{-0.2em}
+    \item \textbf{(( project['name'] | escape_tex ))} {| (( project['technologies'] | escape_tex ))}
+    \vspace{-0.4em}
+    \begin{itemize}
+        \setlength{\itemsep}{2pt}
+        \setlength{\parskip}{0pt}
+        \setlength{\parsep}{1pt}
+        [% for point in project['points'] %]
+            \item (( point | escape_tex ))
+        [% endfor %]
+    \end{itemize}
+[% endfor %]
+\end{rSection} 
+
+\vspace{-0.7em}
+\begin{rSection}{Achievements and Certifications} 
+\begin{itemize}
+    \setlength{\itemsep}{2pt}
+    \setlength{\parskip}{0pt}
+    \setlength{\parsep}{1pt}
+    [% for cert in achievements %]
+        \item (( cert | escape_tex ))
+    [% endfor %]
 \end{itemize}
+\end{rSection}
 
 \end{document}
