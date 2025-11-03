@@ -17,10 +17,15 @@ export interface StartAnalysisMessage {
   resumeText: string;
 }
 
+export interface AnalysisCompletePayload {
+  analysis: AnalysisResult;
+  jobDescription: string;
+}
+
 // Message from Background to Popup with the final analysis result
 export interface AnalysisCompleteMessage {
   type: "analysisComplete";
-  data: AnalysisResult;
+  data: AnalysisCompletePayload;
 }
 
 // Message from Background to Popup when an error occurs

@@ -37,7 +37,13 @@ async function analyzeJobPosting(resumeText: string) {
 
     const analysisResult: AnalysisResult = await apiResponse.json();
     
-    chrome.runtime.sendMessage({ type: "analysisComplete", data: analysisResult });
+    chrome.runtime.sendMessage({ 
+      type: "analysisComplete", 
+      data: {
+        analysis: analysisResult,
+        jobDescription: jobDescriptionText // Include the scraped JD
+      } 
+    });
 
   } catch (error) {
     console.error("Error in analysis pipeline:", error);

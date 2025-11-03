@@ -47,3 +47,23 @@ export const getResumeContent = async (resumeId: number): Promise<string> => {
   // The backend returns the raw text, so we use .text()
   return response.text();
 };
+
+
+export const tailorResume = async (resumeText: string, jobDescriptionText: string): Promise<Blob> => {
+  const response = await fetch(`${API_BASE_URL}/tailor/`, { // Note the trailing slash
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ resumeText, jobDescriptionText }),
+  });
+
+  if (!response.ok) {
+    // Try to get a more specific error message from the backend
+    const errorData = await response.json().catch(() => ({ detail: "Failed to generate PDF." }));
+    throw new Error(errorData.detail || "Failed to generate tailored resume.");
+  }
+
+  // The response is the raw PDF file, so we get it as a blob
+  return response.blob();
+};

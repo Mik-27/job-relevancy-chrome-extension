@@ -3,9 +3,11 @@ import { AnalysisResult } from '../types';
 
 interface AnalysisDisplayProps {
   result: AnalysisResult;
+  isTailoring: boolean;
+  onTailorClick: () => void; // A function to be called when the button is clicked
 }
 
-export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result }) => {
+export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, isTailoring, onTailorClick }) => {
   return (
     <section className="results-section">
       <h2>Analysis Result</h2>
@@ -19,6 +21,17 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result }) => {
           <li key={index}>{suggestion}</li>
         ))}
       </ul>
+
+      {/* --- NEW: Tailoring Button --- */}
+      <div className="tailor-section">
+        <button 
+          className="analyze-button" // Reuse the same button style
+          onClick={onTailorClick}
+          disabled={isTailoring}
+        >
+          {isTailoring ? 'Generating PDF...' : 'Tailor Resume & Download PDF'}
+        </button>
+      </div>
     </section>
   );
 };

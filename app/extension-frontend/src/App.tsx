@@ -6,10 +6,13 @@ import { PasteTextTab } from './components/resume-tabs/PasteTextTab';
 import { UploadResumeTab } from './components/resume-tabs/UploadResumeTab';
 import { ChooseResumeTab } from './components/resume-tabs/ChooseResumeTab';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
+import { tailorResume } from './api/resumeApi';
 
 function App() {
   // This state holds the final resume content ready for analysis
   const [resumeText, setResumeText] = useState('');
+  const [jobDescriptionText, setJobDescriptionText] = useState(''); // NEW: State to hold the scraped JD
+  const [isTailoring, setIsTailoring] = useState(false);
   
   // This state is just to trigger a refresh of the "ChooseResume" tab after an upload
   const [uploadVersion, setUploadVersion] = useState(0);
@@ -22,7 +25,8 @@ function App() {
   useEffect(() => {
     const messageListener = (message: ChromeMessage) => {
       if (message.type === "analysisComplete") {
-        setAnalysisResult(message.data);
+        setAnalysisResult(message.data.analysis);
+        setJobDescriptionText(message.data.jobDescription);
         setIsLoading(false);
       } else if (message.type === "analysisError") {
         setError(message.error);
@@ -41,6 +45,7 @@ function App() {
     setIsLoading(true);
     setError('');
     setAnalysisResult(null);
+    setJobDescriptionText('');
 
     // This is now fully functional and sends the correct resume text
     chrome.runtime.sendMessage({
@@ -48,6 +53,36 @@ function App() {
       resumeText: resumeText,
     });
   };
+
+
+  // NEW: Handler for the "Tailor Resume" button click
+  const handleTailorClick = async () => {
+    if (!resumeText || !jobDescriptionText) {
+      setError("Cannot tailor resume. Missing original resume or job description.");
+      return;
+    }
+    setIsTailoring(true);
+    setError('');
+    try {
+      const pdfBlob = await tailorResume(resumeText, jobDescriptionText);
+      
+      // Create a URL for the blob and trigger download
+      const url = window.URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Tailored_Resume.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred during tailoring.");
+    } finally {
+      setIsTailoring(false);
+    }
+  };
+
 
   // This function accepts the parsed text
   const handleUploadSuccess = useCallback((parsedText: string) => {
@@ -96,7 +131,14 @@ function App() {
 
       {isLoading && <p className="loading-message">Analyzing, please wait...</p>}
       {error && <p className="error-message">Error: {error}</p>}
-      {analysisResult && <AnalysisDisplay result={analysisResult} />}
+      {/* Pass the new state and handler to the display component */}
+      {analysisResult && (
+        <AnalysisDisplay 
+          result={analysisResult} 
+          isTailoring={isTailoring}
+          onTailorClick={handleTailorClick}
+        />
+      )}
     </main>
   );
 }
