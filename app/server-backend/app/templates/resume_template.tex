@@ -1,15 +1,62 @@
-\documentclass{article}
-\usepackage[utf8]{inputenc}
-
-\title{My Tailored Resume}
-\author{ {{ name }} }
-\date{May 2024}
-
+\documentclass{resume_style}
 \begin{document}
 
-\maketitle
+%----------HEADING----------%
+\begin{center}
+    \textbf{\Huge \scshape (( name | escape_tex )) } \\ \vspace{1pt}
+    \small \faIcon{phone}\ (( phone | escape_tex ))
+    \hspace{1pt} | \hspace{1pt}
+    \href{mailto:(( email | escape_tex ))}{\faIcon{envelope}\  \underline{(( email | escape_tex ))}}
+    \hspace{1pt} | \hspace{1pt}
+    \href{https://linkedin.com/in/(( linkedin | escape_tex ))}{\faIcon{linkedin}\ \underline{linkedin.com/in/(( linkedin | escape_tex ))}}
+    \hspace{1pt} | \hspace{1pt}
+    \href{https://github.com/(( github | escape_tex ))}{\faIcon{github}\ \underline{github.com/(( github | escape_tex ))}}
+\end{center}
 
+%-----------SUMMARY-----------%
 \section{Summary}
-{{ summary }}
+(( summary | escape_tex ))
+
+%-----------EXPERIENCE-----------%
+\section{Experience}
+\resumeSubHeadingListStart
+[% for job in experience %]
+    \resumeSubheading
+      {\textbf{(( job['title'] | escape_tex ))}}
+      {\textit{(( job['company'] | escape_tex ))}}
+      {(( job['location'] | escape_tex ))}
+      {(( job['dates'] | escape_tex ))}
+    \resumeItemListStart
+      [% for point in job['points'] %]
+        \resumeItem{(( point | escape_tex ))}
+      [% endfor %]
+    \resumeItemListEnd
+[% endfor %]
+\resumeSubHeadingListEnd
+
+%-----------PROJECTS-----------%
+\section{Projects}
+\resumeSubHeadingListStart
+[% for project in projects %]
+    \resumeProjectHeading
+        {\textbf{(( project['name'] | escape_tex ))} | \textit{(( project['technologies'] | escape_tex ))}}
+        {}
+    \resumeItemListStart
+        [% for point in project['points'] %]
+            \resumeItem{(( point | escape_tex ))}
+        [% endfor %]
+    \resumeItemListEnd
+[% endfor %]
+\resumeSubHeadingListEnd
+
+%-----------SKILLS-----------%
+\section{Skills}
+\begin{itemize}[leftmargin=0.15in, label={}]
+    \small\item{
+     \textbf{Languages:} (( skills['languages'] | escape_tex )) \\
+     \textbf{Frameworks:} (( skills['frameworks'] | escape_tex )) \\
+     \textbf{Developer Tools:} (( skills['tools'] | escape_tex ))
+    }
+\end{itemize}
 
 \end{document}
