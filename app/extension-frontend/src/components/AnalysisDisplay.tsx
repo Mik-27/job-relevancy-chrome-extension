@@ -1,10 +1,11 @@
 import React from 'react';
 import { AnalysisResult } from '../types';
+import { Spinner } from './ui/Spinner';
 
 interface AnalysisDisplayProps {
   result: AnalysisResult;
   isTailoring: boolean;
-  onTailorClick: () => void; // A function to be called when the button is clicked
+  onTailorClick: () => void;
 }
 
 export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, isTailoring, onTailorClick }) => {
@@ -22,16 +23,17 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, isTail
         ))}
       </ul>
 
-      {/* --- NEW: Tailoring Button --- */}
       <div className="tailor-section">
         <button 
-          className="analyze-button" // Reuse the same button style
+          className="analyze-button"
           onClick={onTailorClick}
           disabled={isTailoring}
         >
-          {isTailoring ? 'Generating Tailored PDF...' : 'Tailor Resume & Download PDF'}
+          {/* --- NEW: Specific button text --- */}
+          {isTailoring ?  <Spinner size="small" /> : 'Tailor Resume & Download PDF'}
         </button>
-        {isTailoring && <p className="loading-message">This may take up to 30 seconds...</p>}
+        {/* --- NEW: Specific sub-text for the slow process --- */}
+        {isTailoring && <p className="loading-message sub-text">This may take up to 30 seconds...</p>}
       </div>
     </section>
   );

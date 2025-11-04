@@ -7,18 +7,21 @@ import { UploadResumeTab } from './components/resume-tabs/UploadResumeTab';
 import { ChooseResumeTab } from './components/resume-tabs/ChooseResumeTab';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
 import { tailorResume } from './api/resumeApi';
+import { Spinner } from './components/ui/Spinner';
+
+
+// Define the possible statuses for our application workflow
+type AppStatus = 'idle' | 'analyzing' | 'tailoring' | 'error';
 
 function App() {
   // This state holds the final resume content ready for analysis
   const [resumeText, setResumeText] = useState('');
-  const [jobDescriptionText, setJobDescriptionText] = useState(''); // NEW: State to hold the scraped JD
-  const [isTailoring, setIsTailoring] = useState(false);
-  
+  const [jobDescriptionText, setJobDescriptionText] = useState('');
   // This state is just to trigger a refresh of the "ChooseResume" tab after an upload
   const [uploadVersion, setUploadVersion] = useState(0);
 
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<AppStatus>('idle');
   const [error, setError] = useState('');
 
   // Listener for results from background script (no change)
@@ -27,10 +30,10 @@ function App() {
       if (message.type === "analysisComplete") {
         setAnalysisResult(message.data.analysis);
         setJobDescriptionText(message.data.jobDescription);
-        setIsLoading(false);
+        setStatus('idle');
       } else if (message.type === "analysisError") {
         setError(message.error);
-        setIsLoading(false);
+        setStatus('error');
       }
     };
     chrome.runtime.onMessage.addListener(messageListener);
@@ -42,7 +45,7 @@ function App() {
       alert("Please select or paste resume content before analyzing.");
       return;
     }
-    setIsLoading(true);
+    setStatus('analyzing');
     setError('');
     setAnalysisResult(null);
     setJobDescriptionText('');
@@ -61,7 +64,7 @@ function App() {
       setError("Cannot tailor resume. Missing original resume or job description.");
       return;
     }
-    setIsTailoring(true);
+    setStatus('tailoring');
     setError('');
     try {
       const pdfBlob = await tailorResume(resumeText, jobDescriptionText);
@@ -78,8 +81,11 @@ function App() {
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred during tailoring.");
+      setStatus('error');
     } finally {
-      setIsTailoring(false);
+      if (status !== 'error') {
+        setStatus('idle');
+      }
     }
   };
 
@@ -107,6 +113,8 @@ function App() {
     },
   ];
 
+  const isProcessing = status === 'analyzing' || status === 'tailoring';
+
   return (
     <main>
       <header>
@@ -119,23 +127,26 @@ function App() {
 
       <section className="analysis-section">
         <h3>Analyze Against Job Posting</h3>
-        {/* And the new class for the button */}
         <button 
-            onClick={handleAnalyzeClick} 
-            disabled={isLoading || !resumeText.trim()}
-            className="analyze-button"
+          onClick={handleAnalyzeClick} 
+          disabled={isProcessing || !resumeText.trim()} 
+          className="analyze-button"
         >
-            {isLoading ? 'Analyzing...' : 'Analyze Current Page'}
+          {status === 'analyzing' ? "Analyzing..." : 'Analyze Current Page'}
         </button>
       </section>
 
-      {isLoading && <p className="loading-message">Analyzing, please wait...</p>}
-      {error && <p className="error-message">Error: {error}</p>}
-      {/* Pass the new state and handler to the display component */}
+      {/* --- Loading messages --- */}
+      {status === 'analyzing' && <Spinner />}
+      
+      {/* Show specific error messages */}
+      {status === 'error' && <p className="error-message">Error: {error}</p>}
+      
       {analysisResult && (
         <AnalysisDisplay 
           result={analysisResult} 
-          isTailoring={isTailoring}
+          // Pass the 'tailoring' status to the child component
+          isTailoring={status === 'tailoring'}
           onTailorClick={handleTailorClick}
         />
       )}

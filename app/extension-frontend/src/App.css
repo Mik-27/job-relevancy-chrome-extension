@@ -109,6 +109,10 @@ header p {
   color: white;
   cursor: pointer;
   transition: all 0.25s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
 }
 
 .analyze-button:hover {
@@ -130,4 +134,8 @@ header p {
 .analysis-section h3 {
   margin-top: 0;
   margin-bottom: 1rem;
+}
+
+.analyze-button .spinner-container {
+  margin: 0;
 }
