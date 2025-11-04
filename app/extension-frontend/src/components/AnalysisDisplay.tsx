@@ -1,39 +1,83 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AnalysisResult } from '../types';
 import { Spinner } from './ui/Spinner';
+import { tailorResume } from './../api/resumeApi'; // Import the API call here
 
 interface AnalysisDisplayProps {
-  result: AnalysisResult;
-  isTailoring: boolean;
-  onTailorClick: () => void;
+  result: Partial<AnalysisResult>;
+  initialResumeText: string;
+  initialJobDescriptionText: string;
 }
 
-export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ result, isTailoring, onTailorClick }) => {
+export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ 
+  result, 
+  initialResumeText, 
+  initialJobDescriptionText 
+}) => {
+  // NEW: State for tailoring is now managed locally within this component
+  const [isTailoring, setIsTailoring] = useState(false);
+  const [tailorError, setTailorError] = useState('');
+
+  const handleTailorClick = async () => {
+    setIsTailoring(true);
+    setTailorError('');
+    try {
+      const pdfBlob = await tailorResume(initialResumeText, initialJobDescriptionText);
+      
+      const url = window.URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Tailored_Resume.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? `PDF Generation Failed: ${err.message}` : "An unknown error occurred during tailoring.";
+      setTailorError(errorMessage);
+    } finally {
+      setIsTailoring(false);
+    }
+  };
+
   return (
     <section className="results-section">
       <h2>Analysis Result</h2>
+      
       <div className="score-container">
         <p>Relevancy Score:</p>
-        <span className="score">{result.relevancyScore}%</span>
+        {/* This logic correctly handles a missing score */}
+        {result.relevancyScore !== undefined ? (
+          <span className="score">{result.relevancyScore}%</span>
+        ) : (
+          <Spinner size="small" />
+        )}
       </div>
+
       <h3>Suggestions for Improvement:</h3>
-      <ul className="suggestions-list">
-        {result.suggestions.map((suggestion, index) => (
-          <li key={index}>{suggestion}</li>
-        ))}
-      </ul>
+      {/* This logic correctly handles missing suggestions */}
+      {result.suggestions ? (
+        <ul className="suggestions-list">
+          {result.suggestions.map((suggestion, index) => (
+            <li key={index}>{suggestion}</li>
+          ))}
+        </ul>
+      ) : (
+        <Spinner />
+      )}
 
       <div className="tailor-section">
         <button 
           className="analyze-button"
-          onClick={onTailorClick}
-          disabled={isTailoring}
+          onClick={handleTailorClick}
+          // Button is disabled until all data is present
+          disabled={isTailoring || result.relevancyScore === undefined || !result.suggestions}
         >
-          {/* --- NEW: Specific button text --- */}
-          {isTailoring ?  <Spinner size="small" /> : 'Tailor Resume & Download PDF'}
+          {isTailoring ? <Spinner size="small" /> : 'Tailor Resume & Download PDF'}
         </button>
-        {/* --- NEW: Specific sub-text for the slow process --- */}
         {isTailoring && <p className="loading-message sub-text">This may take up to 30 seconds...</p>}
+        {tailorError && <p className="error-message">{tailorError}</p>}
       </div>
     </section>
   );

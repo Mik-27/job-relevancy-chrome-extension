@@ -1,61 +1,44 @@
-import { ChromeMessage, ScrapeTextResponse, AnalysisResult } from "./types";
+import { ScrapeTextResponse } from "./types";
 
-const API_URL = "http://127.0.0.1:8000/api/analyze";
-
-async function analyzeJobPosting(resumeText: string) {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !tab.id) throw new Error("Could not find active tab.");
-
-    // --- NEW: PROGRAMMATIC INJECTION ---
-    // We first inject the content script into the active tab.
-    // This guarantees the script is running before we send a message.
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ['src/content.js'], // This path is relative to the root of the 'dist' folder
-    });
-    // ------------------------------------
-
-    // Now that we know the script is injected, we can safely send the message.
-    const response: ScrapeTextResponse = await chrome.tabs.sendMessage(tab.id, { type: "scrapeText" });
-    const jobDescriptionText = response.text;
-
-    if (!jobDescriptionText) throw new Error("Could not scrape any text from the page.");
+/**
+ * Listens for a message from the frontend to initiate the scraping process.
+ * This script's sole responsibility is to inject the content script,
+ * get the page text, and send it back.
+ */
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  // Check if the message is the one we're expecting
+  if (request.type === "getJobDescription") {
     
-    console.log("Background script received scraped text. Calling API...");
+    const scrapeAndRespond = async () => {
+      try {
+        // 1. Get the currently active tab
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab || !tab.id) {
+          throw new Error("Could not find an active tab to scrape.");
+        }
 
-    const apiResponse = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ resumeText, jobDescriptionText }),
-    });
+        // 2. Programmatically inject the content script into the active tab
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['src/content.js'],
+        });
+        
+        // 3. Send a message to the now-active content script to perform the scrape
+        const response: ScrapeTextResponse = await chrome.tabs.sendMessage(tab.id, { type: "scrapeText" });
+        
+        // 4. Send the successful response back to the original caller (the App.tsx)
+        sendResponse(response);
 
-    if (!apiResponse.ok) {
-      const errorData = await apiResponse.json();
-      throw new Error(errorData.detail || `HTTP error! status: ${apiResponse.status}`);
-    }
-
-    const analysisResult: AnalysisResult = await apiResponse.json();
+      } catch (e) {
+        // If any step fails, send an error response back
+        const errorMessage = e instanceof Error ? e.message : "An unknown scraping error occurred.";
+        sendResponse({ error: errorMessage });
+      }
+    };
     
-    chrome.runtime.sendMessage({ 
-      type: "analysisComplete", 
-      data: {
-        analysis: analysisResult,
-        jobDescription: jobDescriptionText // Include the scraped JD
-      } 
-    });
-
-  } catch (error) {
-    console.error("Error in analysis pipeline:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-    chrome.runtime.sendMessage({ type: "analysisError", error: errorMessage });
+    scrapeAndRespond();
+    
+    // Return true to indicate that sendResponse will be called asynchronously
+    return true; 
   }
-}
-
-chrome.runtime.onMessage.addListener((request: ChromeMessage) => {
-  if (request.type === "startAnalysis") {
-    console.log("Background script received startAnalysis message.");
-    analyzeJobPosting(request.resumeText);
-  }
-  return true;
 });

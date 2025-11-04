@@ -1,4 +1,4 @@
-import { Resume, UploadResponse } from "../types";
+import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse } from "../types";
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
 
@@ -46,6 +46,28 @@ export const getResumeContent = async (resumeId: number): Promise<string> => {
 
   // The backend returns the raw text, so we use .text()
   return response.text();
+};
+
+
+export const getAnalysisScore = async (resumeText: string, jobDescriptionText: string): Promise<ScoreResponse> => {
+  const response = await fetch(`${API_BASE_URL}/analyze/score`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resumeText, jobDescriptionText }),
+  });
+  if (!response.ok) throw new Error("Failed to fetch analysis score.");
+  return response.json();
+};
+
+
+export const getAnalysisSuggestions = async (resumeText: string, jobDescriptionText: string): Promise<SuggestionsResponse> => {
+  const response = await fetch(`${API_BASE_URL}/analyze/suggestions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resumeText, jobDescriptionText }),
+  });
+  if (!response.ok) throw new Error("Failed to fetch analysis suggestions.");
+  return response.json();
 };
 
 

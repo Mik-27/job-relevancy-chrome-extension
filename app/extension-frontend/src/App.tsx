@@ -1,91 +1,69 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import './App.css';
-import { AnalysisResult, ChromeMessage } from './types';
+import { AnalysisResult } from './types';
 import { Tabs } from './components/ui/Tabs';
 import { PasteTextTab } from './components/resume-tabs/PasteTextTab';
 import { UploadResumeTab } from './components/resume-tabs/UploadResumeTab';
 import { ChooseResumeTab } from './components/resume-tabs/ChooseResumeTab';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
-import { tailorResume } from './api/resumeApi';
+import { getAnalysisScore, getAnalysisSuggestions } from './api/resumeApi';
 import { Spinner } from './components/ui/Spinner';
 
 
 // Define the possible statuses for our application workflow
-type AppStatus = 'idle' | 'analyzing' | 'tailoring' | 'error';
+type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'complete' | 'error';
+
 
 function App() {
-  // This state holds the final resume content ready for analysis
   const [resumeText, setResumeText] = useState('');
   const [jobDescriptionText, setJobDescriptionText] = useState('');
-  // This state is just to trigger a refresh of the "ChooseResume" tab after an upload
   const [uploadVersion, setUploadVersion] = useState(0);
 
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<Partial<AnalysisResult> | null>(null);
   const [status, setStatus] = useState<AppStatus>('idle');
   const [error, setError] = useState('');
 
-  // Listener for results from background script (no change)
-  useEffect(() => {
-    const messageListener = (message: ChromeMessage) => {
-      if (message.type === "analysisComplete") {
-        setAnalysisResult(message.data.analysis);
-        setJobDescriptionText(message.data.jobDescription);
-        setStatus('idle');
-      } else if (message.type === "analysisError") {
-        setError(message.error);
-        setStatus('error');
-      }
-    };
-    chrome.runtime.onMessage.addListener(messageListener);
-    return () => chrome.runtime.onMessage.removeListener(messageListener);
-  }, []);
 
-  const handleAnalyzeClick = () => {
+  const handleAnalyzeClick = async () => {
     if (!resumeText.trim()) {
       alert("Please select or paste resume content before analyzing.");
       return;
     }
-    setStatus('analyzing');
+    setStatus('scraping');
     setError('');
     setAnalysisResult(null);
-    setJobDescriptionText('');
 
-    // This is now fully functional and sends the correct resume text
-    chrome.runtime.sendMessage({
-      type: "startAnalysis",
-      resumeText: resumeText,
-    });
-  };
-
-
-  // NEW: Handler for the "Tailor Resume" button click
-  const handleTailorClick = async () => {
-    if (!resumeText || !jobDescriptionText) {
-      setError("Cannot tailor resume. Missing original resume or job description.");
-      return;
-    }
-    setStatus('tailoring');
-    setError('');
     try {
-      const pdfBlob = await tailorResume(resumeText, jobDescriptionText);
-      
-      // Create a URL for the blob and trigger download
-      const url = window.URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'Tailored_Resume.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      // We need the job description first, which still comes from the background script
+      const jobDescription = await new Promise<string>((resolve, reject) => {
+        chrome.runtime.sendMessage({ type: "getJobDescription" }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (response && response.text) {
+            resolve(response.text);
+          } else {
+            reject(new Error("Could not scrape job description."));
+          }
+        });
+      });
+      setJobDescriptionText(jobDescription);
 
+      // Fetch the score
+      setStatus('analyzing_score');
+      const scoreResponse = await getAnalysisScore(resumeText, jobDescription);
+      setAnalysisResult(prev => ({ ...prev, relevancyScore: scoreResponse.relevancyScore }));
+
+      // Fetch the suggestions
+      setStatus('analyzing_suggestions');
+      const suggestionsResponse = await getAnalysisSuggestions(resumeText, jobDescription);
+      setAnalysisResult(prev => ({ ...prev, suggestions: suggestionsResponse.suggestions }));
+
+      setStatus('complete');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred during tailoring.");
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during analysis.";
+      setError(errorMessage);
       setStatus('error');
-    } finally {
-      if (status !== 'error') {
-        setStatus('idle');
-      }
+      setAnalysisResult(null); // Clear partial results on error
     }
   };
 
@@ -113,7 +91,7 @@ function App() {
     },
   ];
 
-  const isProcessing = status === 'analyzing' || status === 'tailoring';
+  const isProcessingAnalysis = status === 'scraping' || status === 'analyzing_score' || status === 'analyzing_suggestions';
 
   return (
     <main>
@@ -129,25 +107,23 @@ function App() {
         <h3>Analyze Against Job Posting</h3>
         <button 
           onClick={handleAnalyzeClick} 
-          disabled={isProcessing || !resumeText.trim()} 
+          disabled={isProcessingAnalysis || !resumeText.trim()} 
           className="analyze-button"
         >
-          {status === 'analyzing' ? "Analyzing..." : 'Analyze Current Page'}
+          {isProcessingAnalysis ? 'Analyzing...' : 'Analyze Current Page'}
         </button>
       </section>
 
-      {/* --- Loading messages --- */}
-      {status === 'analyzing' && <Spinner />}
+      {status === 'scraping' && <Spinner />}
       
-      {/* Show specific error messages */}
       {status === 'error' && <p className="error-message">Error: {error}</p>}
       
-      {analysisResult && (
+      {/* Render the display component only when the full analysis is complete */}
+      {analysisResult && (status === 'analyzing_score' || status === 'analyzing_suggestions' || status === 'complete') && (
         <AnalysisDisplay 
-          result={analysisResult} 
-          // Pass the 'tailoring' status to the child component
-          isTailoring={status === 'tailoring'}
-          onTailorClick={handleTailorClick}
+          result={analysisResult as AnalysisResult}
+          initialResumeText={resumeText}
+          initialJobDescriptionText={jobDescriptionText}
         />
       )}
     </main>

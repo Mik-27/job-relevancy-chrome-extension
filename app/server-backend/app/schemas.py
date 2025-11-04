@@ -9,9 +9,23 @@ class AnalysisResultSchema(BaseModel):
     relevancyScore: int = Field(description="An integer score from 0 to 100 representing how relevant the resume is to the job description.")
     suggestions: List[str] = Field(description="A list of 3-5 concrete, actionable suggestions for the user to improve their resume for this specific job.")
 
-class AnalyzeResponse(BaseModel):
+class ScoreResponse(BaseModel):
     relevancyScore: int
+
+class SuggestionsResponse(BaseModel):
     suggestions: List[str]
+    
+# Schema for the first, fast LLM call to get only the score
+class RelevancyScoreSchema(BaseModel):
+    relevancyScore: int = Field(
+        description="A single integer from 0 to 100 representing the resume's relevance to the job description.",
+        ge=0, # 'greater than or equal to 0'
+        le=100 # 'less than or equal to 100'
+    )
+
+# Schema for the second, more detailed LLM call to get only the suggestions
+class SuggestionsSchema(BaseModel):
+    suggestions: List[str] = Field(description="A list of 3-5 concrete, actionable suggestions for the user to improve their resume for this specific job.")
     
 # Schema for returning a single resume in a list
 class ResumeBase(BaseModel):

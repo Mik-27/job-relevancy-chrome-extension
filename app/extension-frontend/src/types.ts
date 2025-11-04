@@ -34,6 +34,15 @@ export interface AnalysisErrorMessage {
   error: string;
 }
 
+// --- Responses Sent FROM API Calls ---
+export interface ScoreResponse {
+  relevancyScore: number;
+}
+
+export interface SuggestionsResponse {
+  suggestions: string[];
+}
+
 // A union type representing all possible messages our listeners can receive
 export type ChromeMessage = 
   | ScrapeTextMessage
