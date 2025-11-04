@@ -1,4 +1,4 @@
-from ...schemas import RelevancyScoreSchema, AnalysisResultSchema, SuggestionsSchema
+from ...schemas import RelevancyScoreSchema, SuggestionsSchema
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -74,6 +74,15 @@ Always be specific in the suggestions provided to improve the resume for this sp
 Also, provide suggestions to remove irrelevant information that does not align with the job description.
 Try to use metrics or quantifying statements in the suggestions wherever possible.
 When providing a suggestion on quantifying achievements, always suggest specific metrics that align better with the job description and use researched data for metric values.
+
+Formatting Instructions for suggestions:
+- If the suggestion is regarding rephrasing/rewriting and bullet point in experience or projects, provide the full rewritten bullet point as follows:
+    "Rewrite the bullet point under [Experience/Project] at [Company/Project Name]: '[Original Bullet Point]...' -> '[Rewritten Bullet Point]'"
+- If the suggestion is regarding adding a new bullet point in experience or projects, provide the full new bullet point as follows:
+    "Add the following bullet point under [Experience/Project] at [Company/Project Name]: '[New Bullet Point]'"
+- If the suggestion is regarding merging bullet points, provide the merged bullet point as follows:
+    "Merge the following bullet points under [Experience/Project] at [Company/Project Name]: '[Bullet Point 1]...' and '[Bullet Point 2]...' -> '[Merged Bullet Point]'"
+- If the suggestion is anything else, provide it as a concise action item (ignore the rephrasing format).
 
 Analyze the following resume and job description.
 <resume>
