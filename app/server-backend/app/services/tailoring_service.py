@@ -59,80 +59,50 @@ jinja_env.filters['escape_tex'] = latex_escape
 
 # --- 3. Main Service Function ---
 
-async def generate_tailored_resume_pdf(resume_text: str, job_description: str) -> str:
+async def compile_latex_to_pdf(resume_data: dict) -> str:
     """
-    Orchestrates the entire resume tailoring and PDF generation process.
-    
-    Args:
-        resume_text: The original resume content from the user.
-        job_description: The job description text scraped from the page.
-    
-    Returns:
-        The absolute file path to the generated PDF.
+    Generates a PDF from a LaTeX template using pre-generated, structured data.
+    This function's sole responsibility is PDF compilation.
     """
-    # Step A: Get the tailored content from the LLM service
-    print("Calling LLM service for tailored content...")
-    tailored_content_json = await llm_tailor_service.get_tailored_content_as_json(
-        resume=resume_text, 
-        job_description=job_description
-    )
-    print("LLM content received. Starting PDF compilation...")
+    
+    print("PDF compilation process started with final data...")
 
-    # Step B: Load the LaTeX template
     template = jinja_env.get_template('resume_template.tex')
+    rendered_latex = template.render(resume_data)
 
-    # Step C: Render the template with the data from the LLM
-    rendered_latex = template.render(tailored_content_json)
-
-    # Step D: Compile the rendered LaTeX to PDF in an isolated temporary directory
     unique_id = str(uuid.uuid4())
     temp_dir = os.path.abspath(f"./temp_files/{unique_id}")
     os.makedirs(temp_dir, exist_ok=True)
     
-    print(f"Temporary directory created at: {temp_dir}")
-
     try:
         tex_filepath = os.path.join(temp_dir, 'resume.tex')
         pdf_filepath = os.path.join(temp_dir, 'resume.pdf')
         
-        # Copy the required .cls style file into the compilation directory
         cls_source_path = os.path.join(template_dir, 'resume_style.cls')
         cls_dest_path = os.path.join(temp_dir, 'resume_style.cls')
         shutil.copyfile(cls_source_path, cls_dest_path)
 
-        # Write the final .tex file
         with open(tex_filepath, 'w', encoding='utf-8') as f:
             f.write(rendered_latex)
 
-        # Run the pdflatex command twice to resolve any cross-references
         for i in range(2):
-            print(f"Running pdflatex compilation pass {i+1}...")
             process = subprocess.run(
                 ['pdflatex', '-interaction=nonstopmode', '-output-directory', temp_dir, tex_filepath],
                 capture_output=True, text=True, encoding='utf-8'
             )
 
-        # Final check to ensure the PDF was created
         if not os.path.exists(pdf_filepath):
-            print(f"--- LaTeX Compilation FAILED in {temp_dir} ---")
             log_path = os.path.join(temp_dir, 'resume.log')
             if os.path.exists(log_path):
                 with open(log_path, 'r', encoding='utf-8') as log_file:
                     print("--- COMPILER LOG ---")
                     print(log_file.read())
-                    print("--------------------")
-            else:
-                print("Log file not found. Raw process output:")
-                print("STDOUT:", process.stdout)
-                print("STDERR:", process.stderr)
-            raise Exception("Failed to compile LaTeX document. Check server logs for details.")
+            raise Exception("Failed to compile LaTeX document. Check server logs.")
 
-        print(f"--- LaTeX Compilation SUCCESS ---")
-        print(f"PDF generated at: {pdf_filepath}")
+        print(f"PDF successfully generated at: {pdf_filepath}")
         return pdf_filepath
 
     except Exception as e:
-        # Re-raise the exception to be handled by the FastAPI router
         raise e
     # Note: We are intentionally not cleaning up the temp_files for now
     # to make debugging easier. In production, you would add a finally block:
