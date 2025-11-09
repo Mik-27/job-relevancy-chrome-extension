@@ -36,7 +36,7 @@ Analyze the following resume and job description.
 {job_description}
 </job_description>
 
-Based on your analysis, provide a relevancy score from 0-100 and a list of 3-5 actionable suggestions.
+Based on your analysis, provide a relevancy score from 0-100 and a list of 5-7 actionable suggestions.
 
 {format_instructions}
 """
