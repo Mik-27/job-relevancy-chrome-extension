@@ -69,3 +69,40 @@ export interface UploadResponse {
   message: string;
   content: string;
 }
+
+export interface TailoredResumeSchema {
+  name: string;
+  phone: string;
+  location: string;
+  email: string;
+  portfolio_url: string;
+  linkedin_url: string;
+  github_url: string;
+  summary: string;
+  education: {
+    school: string;
+    degree: string;
+    date: string;
+    coursework: string;
+    gpa: string;
+  }[];
+  skills: {
+    languages_databases: string;
+    cloud: string;
+    development: string;
+    others: string;
+  };
+  experience: {
+    company: string;
+    date: string;
+    title: string;
+    location: string;
+    points: string[];
+  }[];
+  projects: {
+    name: string;
+    technologies: string;
+    points: string[];
+  }[];
+  achievements: string[];
+}

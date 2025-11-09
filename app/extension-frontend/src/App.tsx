@@ -11,7 +11,7 @@ import { Spinner } from './components/ui/Spinner';
 
 
 // Define the possible statuses for our application workflow
-type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'complete' | 'error';
+type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'generating_content' | 'complete' | 'error';
 
 
 function App() {
@@ -118,10 +118,19 @@ function App() {
       
       {status === 'error' && <p className="error-message">Error: {error}</p>}
       
-      {/* Render the display component only when the full analysis is complete */}
-      {analysisResult && (status === 'analyzing_score' || status === 'analyzing_suggestions' || status === 'complete') && (
+      {/* Render the AnalysisDisplay as soon as analysis starts (after scraping) */}
+      {isProcessingAnalysis && analysisResult && (
         <AnalysisDisplay 
-          result={analysisResult as AnalysisResult}
+          result={analysisResult}
+          initialResumeText={resumeText}
+          initialJobDescriptionText={jobDescriptionText}
+        />
+      )}
+      
+      {/* Also render it when the process is complete */}
+      {status === 'complete' && analysisResult && (
+        <AnalysisDisplay 
+          result={analysisResult as AnalysisResult} // We can assert the full type here
           initialResumeText={resumeText}
           initialJobDescriptionText={jobDescriptionText}
         />

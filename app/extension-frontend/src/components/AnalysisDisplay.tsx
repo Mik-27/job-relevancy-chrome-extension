@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { AnalysisResult } from '../types';
+import { AnalysisResult, TailoredResumeSchema } from '../types';
 import { Spinner } from './ui/Spinner';
-import { tailorResume } from './../api/resumeApi'; // Import the API call here
+import { generateTailoredContent } from './../api/resumeApi'; // Import the API call here
+import { ResumeEditor } from './editor/ResumeEditor';
+
+type DisplayView = 'results' | 'editor';
 
 interface AnalysisDisplayProps {
   result: Partial<AnalysisResult>;
@@ -14,49 +17,68 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   initialResumeText, 
   initialJobDescriptionText 
 }) => {
-  // NEW: State for tailoring is now managed locally within this component
-  const [isTailoring, setIsTailoring] = useState(false);
-  const [tailorError, setTailorError] = useState('');
+  const [view, setView] = useState<DisplayView>('results');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [tailoredContent, setTailoredContent] = useState<TailoredResumeSchema | null>(null);
+  const [error, setError] = useState('');
 
-  const handleTailorClick = async () => {
-    setIsTailoring(true);
-    setTailorError('');
+
+  const handleGoToEditorClick = async () => {
+    setIsGenerating(true);
+    setError('');
     try {
-      const pdfBlob = await tailorResume(initialResumeText, initialJobDescriptionText);
-      
-      const url = window.URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'Tailored_Resume.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-
+      const content = await generateTailoredContent(initialResumeText, initialJobDescriptionText);
+      setTailoredContent(content);
+      setView('editor'); // Switch to the editor view on success
     } catch (err) {
-      const errorMessage = err instanceof Error ? `PDF Generation Failed: ${err.message}` : "An unknown error occurred during tailoring.";
-      setTailorError(errorMessage);
+      setError(err instanceof Error ? err.message : "Failed to generate AI content.");
     } finally {
-      setIsTailoring(false);
+      setIsGenerating(false);
     }
   };
+
+//   const handleTailorClick = async () => {
+//     setIsTailoring(true);
+//     setTailorError('');
+//     try {
+//       const pdfBlob = await tailorResume(initialResumeText, initialJobDescriptionText);
+      
+//       const url = window.URL.createObjectURL(pdfBlob);
+//       const a = document.createElement('a');
+//       a.href = url;
+//       a.download = 'Tailored_Resume.pdf';
+//       document.body.appendChild(a);
+//       a.click();
+//       a.remove();
+//       window.URL.revokeObjectURL(url);
+
+//     } catch (err) {
+//       const errorMessage = err instanceof Error ? `PDF Generation Failed: ${err.message}` : "An unknown error occurred during tailoring.";
+//       setTailorError(errorMessage);
+//     } finally {
+//       setIsTailoring(false);
+//     }
+//   };
+
+
+  // If the view is 'editor', show the ResumeEditor component
+  if (view === 'editor' && tailoredContent) {
+    return (
+      <ResumeEditor 
+        content={tailoredContent}
+        onBack={() => setView('results')} // Pass a function to switch the view back
+      />
+    );
+  }
 
   return (
     <section className="results-section">
       <h2>Analysis Result</h2>
-      
       <div className="score-container">
         <p>Relevancy Score:</p>
-        {/* This logic correctly handles a missing score */}
-        {result.relevancyScore !== undefined ? (
-          <span className="score">{result.relevancyScore}%</span>
-        ) : (
-          <Spinner size="small" />
-        )}
+        <span className="score">{result.relevancyScore}%</span>
       </div>
-
       <h3>Suggestions for Improvement:</h3>
-      {/* This logic correctly handles missing suggestions */}
       {result.suggestions ? (
         <ul className="suggestions-list">
           {result.suggestions.map((suggestion, index) => (
@@ -70,14 +92,13 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
       <div className="tailor-section">
         <button 
           className="analyze-button"
-          onClick={handleTailorClick}
-          // Button is disabled until all data is present
-          disabled={isTailoring || result.relevancyScore === undefined || !result.suggestions}
+          onClick={handleGoToEditorClick}
+          disabled={isGenerating || result.relevancyScore === undefined || !result.suggestions}
         >
-          {isTailoring ? <Spinner size="small" /> : 'Tailor Resume & Download PDF'}
+          {isGenerating ? <Spinner size="small" /> : 'Tailor Resume with AI Editor'}
         </button>
-        {isTailoring && <p className="loading-message sub-text">This may take up to 30 seconds...</p>}
-        {tailorError && <p className="error-message">{tailorError}</p>}
+        {isGenerating && <p className="loading-message sub-text">Generating editable content...</p>}
+        {error && <p className="error-message">{error}</p>}
       </div>
     </section>
   );

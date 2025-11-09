@@ -1,4 +1,4 @@
-import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse } from "../types";
+import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema } from "../types";
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
 
@@ -71,22 +71,51 @@ export const getAnalysisSuggestions = async (resumeText: string, jobDescriptionT
 };
 
 
-export const tailorResume = async (resumeText: string, jobDescriptionText: string): Promise<Blob> => {
-  const response = await fetch(`${API_BASE_URL}/tailor/`, { // Note the trailing slash
+// export const tailorResume = async (resumeText: string, jobDescriptionText: string): Promise<Blob> => {
+//   const response = await fetch(`${API_BASE_URL}/tailor/`, { // Note the trailing slash
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//     },
+//     body: JSON.stringify({ resumeText, jobDescriptionText }),
+//   });
+
+//   if (!response.ok) {
+//     // Try to get a more specific error message from the backend
+//     const errorData = await response.json().catch(() => ({ detail: "Failed to generate PDF." }));
+//     throw new Error(errorData.detail || "Failed to generate tailored resume.");
+//   }
+
+//   // The response is the raw PDF file, so we get it as a blob
+//   return response.blob();
+// };
+
+
+// Fetches the AI-generated content for the editor
+export const generateTailoredContent = async (resumeText: string, jobDescriptionText: string): Promise<TailoredResumeSchema> => {
+  const response = await fetch(`${API_BASE_URL}/tailor/generate-content`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resumeText, jobDescriptionText }),
   });
-
   if (!response.ok) {
-    // Try to get a more specific error message from the backend
-    const errorData = await response.json().catch(() => ({ detail: "Failed to generate PDF." }));
-    throw new Error(errorData.detail || "Failed to generate tailored resume.");
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to generate tailored content from AI.");
   }
+  return response.json();
+};
 
-  // The response is the raw PDF file, so we get it as a blob
+// Sends the final edited data to be compiled into a PDF
+export const compilePdf = async (resumeData: TailoredResumeSchema): Promise<Blob> => {
+  const response = await fetch(`${API_BASE_URL}/tailor/compile-pdf`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(resumeData),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to compile PDF from the provided data.");
+  }
   return response.blob();
 };
 
