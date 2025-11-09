@@ -39,6 +39,10 @@ export interface ScoreResponse {
   relevancyScore: number;
 }
 
+export interface ResumeWithScore extends Resume {
+  score?: number | 'loading';
+}
+
 export interface SuggestionsResponse {
   suggestions: string[];
 }

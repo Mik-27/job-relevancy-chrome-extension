@@ -1,18 +1,25 @@
-import React, { useState, useEffect } from 'react';
-// NEW: Import the trash icon from the react-icons library
+import React, { useState, useEffect, useRef } from 'react';
 import { FaTrash } from 'react-icons/fa';
-import { listResumes, getResumeContent, deleteResume } from '../../api/resumeApi';
-import { Resume } from '../../types';
+import { listResumes, getResumeContent, deleteResume, getAnalysisScore } from '../../api/resumeApi';
+import { ResumeWithScore } from '../../types';
+import { Spinner } from '../ui/Spinner';
 import './ChooseResumeTab.css';
 
 interface ChooseResumeTabProps {
   setSelectedResumeText: (text: string) => void;
+  jobDescriptionText: string;
 }
 
-export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedResumeText }) => {
-  const [resumes, setResumes] = useState<Resume[]>([]);
+// Hardcoded list of companies to auto-score
+const AUTO_SCORE_COMPANIES = ['Microsoft', 'Agreeya'];
+
+export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedResumeText, jobDescriptionText }) => {
+  const [resumes, setResumes] = useState<ResumeWithScore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedResumeId, setSelectedResumeId] = useState<number | null>(null);
+
+  // We use a ref to track if the auto-scoring has already been initiated.
+  const scoringInitiated = useRef(false);
 
   useEffect(() => {
     const fetchResumes = async () => {
@@ -29,8 +36,63 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
     fetchResumes();
   }, []);
 
+    // --- NEW: Effect 2: Trigger auto-scoring when data is ready ---
+  useEffect(() => {
+    // Only run if we have a job description and the initial resume list has loaded
+    if (jobDescriptionText && !isLoading && !scoringInitiated.current) {
+
+      // Mark that we are starting the scoring process.
+      scoringInitiated.current = true;
+      
+      const fetchScores = async () => {
+        // Find the resumes that match our hardcoded list
+        const resumesToScore = resumes.filter(r => AUTO_SCORE_COMPANIES.includes(r.company));
+
+        // If there are no target resumes, do nothing.
+        if (resumesToScore.length === 0) return;
+
+        // Set their status to 'loading' to show the spinner
+        setResumes(current => current.map(r => 
+          resumesToScore.some(rts => rts.id === r.id) ? { ...r, score: 'loading' } : r
+        ));
+
+        // Create a promise for each API call
+        const scorePromises = resumesToScore.map(async resume => {
+          try {
+            const content = await getResumeContent(resume.id);
+            const scoreResponse = await getAnalysisScore(content, jobDescriptionText);
+            return { id: resume.id, score: scoreResponse.relevancyScore };
+          } catch (error) {
+            console.error(`Failed to get score for resume ${resume.id}:`, error);
+            return { id: resume.id, score: undefined }; // Mark as failed
+          }
+        });
+
+        // Wait for all API calls to complete
+        const results = await Promise.all(scorePromises);
+
+        // Update the state with the new scores
+        setResumes(current => current.map(r => {
+          const result = results.find(res => res.id === r.id);
+          return result ? { ...r, score: result.score } : r;
+        }));
+      };
+
+      fetchScores();
+    }
+    // This effect depends on the job description and the initial resume list
+  }, [jobDescriptionText, isLoading, resumes]); 
+
+  // Helper function to determine the CSS class for the score ---
+  const getScoreColorClass = (score: number | undefined): string => {
+    if (score === undefined) return '';
+    if (score > 80) return 'good';
+    if (score > 60) return 'medium';
+    return 'low';
+  };
+
   // CHANGED: This handler is now for the entire list item
-  const handleItemClick = async (resume: Resume) => {
+  const handleItemClick = async (resume: ResumeWithScore) => {
     // If the user is already selecting this resume, do nothing.
     if (selectedResumeId === resume.id) return;
 
@@ -83,14 +145,21 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
               <strong>{resume.company}</strong>
               <span>{resume.filename}</span>
             </div>
-            {/* CHANGED: The text button is replaced with an icon button */}
-            <button 
-              className="delete-icon-button" 
-              onClick={(e) => handleDeleteClick(e, resume.id)}
-              aria-label={`Delete resume for ${resume.company}`} // Good for accessibility
-            >
-              <FaTrash />
-            </button>
+            <div className="resume-actions">
+              {/* --- NEW: Conditional rendering for the score/spinner --- */}
+              {resume.score === 'loading' ? (
+                <div className="score-spinner-container"><Spinner size="small" /></div>
+              ) : (
+                typeof resume.score === 'number' && <span className={`score-badge ${getScoreColorClass(resume.score)}`}>{resume.score}%</span>
+              )}
+              <button 
+                className="delete-icon-button" 
+                onClick={(e) => handleDeleteClick(e, resume.id)}
+                aria-label={`Delete resume for ${resume.company}`}
+              >
+                <FaTrash />
+              </button>
+            </div>
           </li>
         ))}
       </ul>

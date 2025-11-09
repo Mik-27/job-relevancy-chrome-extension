@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { AnalysisResult } from './types';
 import { Tabs } from './components/ui/Tabs';
@@ -22,6 +22,22 @@ function App() {
   const [analysisResult, setAnalysisResult] = useState<Partial<AnalysisResult> | null>(null);
   const [status, setStatus] = useState<AppStatus>('idle');
   const [error, setError] = useState('');
+
+
+  useEffect(() => {
+    // Set a status to prevent other actions while scraping
+    setStatus('scraping');
+    chrome.runtime.sendMessage({ type: "getJobDescription" }, (response) => {
+      if (chrome.runtime.lastError || response.error) {
+        // Don't show an error, just fail silently. The user can still analyze manually.
+        console.error("Initial scrape failed:", chrome.runtime.lastError?.message || response.error);
+        setJobDescriptionText(''); // Ensure it's empty on failure
+      } else if (response && response.text) {
+        setJobDescriptionText(response.text);
+      }
+      setStatus('idle'); // Return to idle after initial scrape attempt
+    });
+  }, []);
 
 
   const handleAnalyzeClick = async () => {
@@ -87,7 +103,7 @@ function App() {
     { 
       label: "Choose Resume", 
       // The key prop is essential here. When it changes, React remounts the component.
-      content: <ChooseResumeTab key={uploadVersion} setSelectedResumeText={setResumeText} /> 
+      content: <ChooseResumeTab key={uploadVersion} setSelectedResumeText={setResumeText} jobDescriptionText={jobDescriptionText} /> 
     },
   ];
 
