@@ -28,17 +28,22 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
   useEffect(() => {
     // Set a status to prevent other actions while scraping
-    setStatus('scraping');
-    chrome.runtime.sendMessage({ type: "getJobDescription" }, (response) => {
-      if (chrome.runtime.lastError || response.error) {
-        // Don't show an error, just fail silently. The user can still analyze manually.
-        console.error("Initial scrape failed:", chrome.runtime.lastError?.message || response.error);
-        setJobDescriptionText(''); // Ensure it's empty on failure
-      } else if (response && response.text) {
-        setJobDescriptionText(response.text);
-      }
-      setStatus('idle'); // Return to idle after initial scrape attempt
-    });
+    const timer = setTimeout(() => {
+      console.log("Attempting initial scrape...");
+      chrome.runtime.sendMessage({ type: "getJobDescription" }, (response) => {
+        if (chrome.runtime.lastError || response.error) {
+          console.error("Initial scrape failed:", chrome.runtime.lastError?.message || response.error);
+          setJobDescriptionText(''); // Ensure it's empty on failure
+        } else if (response && response.text) {
+          console.log("Initial scrape successful.");
+          setJobDescriptionText(response.text);
+        }
+        // Whether it succeeds or fails, the initialization is done.
+        setStatus('idle');
+      });
+    }, 200);
+
+    return () => clearTimeout(timer);
   }, []);
 
 
