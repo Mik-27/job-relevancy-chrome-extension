@@ -1,7 +1,7 @@
 from ...schemas import RelevancyScoreSchema, SuggestionsSchema
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_vertexai import ChatVertexAI
 # from app.config import settings
 from dotenv import load_dotenv
 
@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize the model using the key from our settings config
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0.1)
+llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0.1)
 
 # --- Chain 1: Fast Relevancy Score ---
 
@@ -92,7 +92,7 @@ Analyze the following resume and job description.
 {job_description}
 </job_description>
 
-Based on your analysis, provide a relevancy score from 0-100 and a list of 3-5 actionable suggestions.
+Based on your analysis, provide a relevancy score from 0-100 and a list of 5-7 actionable suggestions.
 
 {format_instructions}
 """

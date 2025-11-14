@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     GOOGLE_APPLICATION_CREDENTIALS: str
     
     # Google AI Settings
-    GOOGLE_API_KEY: str
+    # GOOGLE_API_KEY: str
 
 # Create a single, importable instance of the settings
 settings = Settings()

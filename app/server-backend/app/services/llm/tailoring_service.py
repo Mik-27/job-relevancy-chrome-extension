@@ -1,14 +1,14 @@
 from ...schemas import TailoredResumeSchema
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_vertexai import ChatVertexAI
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Initialize the LLM once for this module
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0.1)
+llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0.1)
 
 # --- Logic for the Tailoring Feature ---
 parser = PydanticOutputParser(pydantic_object=TailoredResumeSchema)
