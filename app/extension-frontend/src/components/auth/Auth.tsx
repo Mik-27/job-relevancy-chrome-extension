@@ -10,7 +10,7 @@ export const Auth: React.FC = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = async (event: React.FormEvent) => {
+  const handleAuthAction = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError('');
@@ -23,7 +23,10 @@ export const Auth: React.FC = () => {
 
       if (error) throw error;
       
-      setMessage(isSignUp ? 'Sign up successful! Please check your email for confirmation.' : 'Login successful!');
+      const msg = isSignUp ? 'Account created successfully!' : 'Login successful!';
+      setIsSignUp(false);
+      setMessage(msg);
+
     } catch (err: unknown) {
       // Narrow unknown to a shape that may contain error_description/message
       const e = err as { error_description?: string; message?: string };
@@ -36,9 +39,9 @@ export const Auth: React.FC = () => {
   return (
     <div className="auth-container">
       <h2>{isSignUp ? 'Create an Account' : 'Sign In'}</h2>
-      <p>{isSignUp ? 'Get started with your free account.' : 'Sign in to access your resumes.'}</p>
+      <p>{isSignUp ? 'Get started with your free account.' : 'Sign in to tailor your resumes.'}</p>
       
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleAuthAction} className="auth-form">
         <div className="form-group">
           <label htmlFor="email">Email</label>
           <input
@@ -47,6 +50,7 @@ export const Auth: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            placeholder='your@email.com'
           />
         </div>
         <div className="form-group">
@@ -57,6 +61,7 @@ export const Auth: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            placeholder='••••••••'
           />
         </div>
         <button type="submit" disabled={loading} className="auth-button">

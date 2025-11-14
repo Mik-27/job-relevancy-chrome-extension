@@ -66,17 +66,17 @@ def list_resumes(current_user_id: str = Depends(get_current_user_id), db: Sessio
 
 
 @router.get("/{resume_id}/content", response_model=str)
-def get_resume_content(resume_id: int, db: Session = Depends(database.get_db)):
+def get_resume_content(resume_id: int, current_user_id: str = Depends(get_current_user_id), db: Session = Depends(database.get_db)):
     """Retrieves the full parsed text content of a specific resume."""
-    content = resume_service.get_resume_content_by_id(db=db, resume_id=resume_id)
+    content = resume_service.get_resume_content_by_id(db=db, resume_id=resume_id, user_id=current_user_id)
     if content is None:
         raise HTTPException(status_code=404, detail="Resume not found.")
     return content
 
 @router.delete("/{resume_id}", status_code=204)
-def delete_resume(resume_id: int, db: Session = Depends(database.get_db)):
+def delete_resume(resume_id: int, current_user_id: str = Depends(get_current_user_id), db: Session = Depends(database.get_db)):
     """Deletes a resume by its ID from the database and cloud storage."""
-    deleted_resume = resume_service.delete_resume_by_id(db=db, resume_id=resume_id)
+    deleted_resume = resume_service.delete_resume_by_id(db=db, resume_id=resume_id, user_id=current_user_id)
     if deleted_resume is None:
         raise HTTPException(status_code=404, detail="Resume not found.")
     

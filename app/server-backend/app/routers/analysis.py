@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from ..schemas import AnalyzeRequest, ScoreResponse, SuggestionsResponse
 from ..services.llm import analysis_service
+from ..security import get_current_user_id
 
 router = APIRouter(
     prefix="/analyze",
@@ -8,7 +9,7 @@ router = APIRouter(
 )
 
 @router.post("/score", response_model=ScoreResponse)
-async def get_score_endpoint(request: AnalyzeRequest):
+async def get_score_endpoint(request: AnalyzeRequest, user_id: str = Depends(get_current_user_id)):
     """
     A fast endpoint that returns only the relevancy score.
     """
@@ -26,7 +27,7 @@ async def get_score_endpoint(request: AnalyzeRequest):
 
 
 @router.post("/suggestions", response_model=SuggestionsResponse)
-async def get_suggestions_endpoint(request: AnalyzeRequest):
+async def get_suggestions_endpoint(request: AnalyzeRequest, user_id: str = Depends(get_current_user_id)):
     """
     A slower endpoint that returns only the detailed improvement suggestions.
     """

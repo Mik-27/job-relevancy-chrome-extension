@@ -1,6 +1,55 @@
 .auth-container {
-  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem; /* Add more padding */
   text-align: center;
+  color: #f0f0f0;
+}
+
+.auth-container h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.8em;
+}
+
+.auth-container p {
+  color: #a0a0a0;
+  margin-top: 0;
+  margin-bottom: 2rem; /* More space before the form */
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem; /* Consistent spacing between form elements */
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.form-group label {
+  margin-bottom: 0.5rem;
+  font-size: 0.9em;
+  color: #ccc;
+}
+
+.form-group input {
+  padding: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background-color: #333;
+  color: #eee;
+  font-family: inherit;
+  font-size: 1em;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #1a6aff; /* Highlight on focus */
+  box-shadow: 0 0 0 2px rgba(26, 106, 255, 0.3);
 }
 
 .auth-button {
@@ -14,22 +63,44 @@
   background-color: #1a6aff;
   color: white;
   margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.auth-button:hover {
+    background-color: #3b82f6;
 }
 
 .auth-button:disabled {
   background-color: #555;
+  cursor: not-allowed;
 }
 
 .toggle-auth {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   font-size: 0.9em;
+  color: #a0a0a0;
 }
 
 .toggle-auth button {
   background: none;
   border: none;
-  color: #1a6aff;
+  color: #3b82f6; /* Brighter blue for the link */
   cursor: pointer;
   text-decoration: underline;
   margin-left: 0.5rem;
+  font-size: 1em; /* Make it the same size as the surrounding text */
+  padding: 0;
+}
+
+.toggle-auth button:hover {
+    color: #60a5fa;
+}
+
+/* These are for the success/error messages */
+.success-message {
+    color: #27c77d;
+}
+.error-message {
+    color: #ff4d4d;
 }
