@@ -8,6 +8,29 @@ interface SupabaseAuthError {
   status?: number;
 }
 
+// Email Validation Helper Function ---
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Helper function for auto-formatting the phone number ---
+const formatPhoneNumber = (value: string): string => {
+  // 1. Remove all non-digit characters
+  const cleaned = ('' + value).replace(/\D/g, '');
+  
+  // 2. Apply the formatting based on the number of digits
+  const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+  
+  if (match) {
+    // 3. Reconstruct the string with dashes
+    return [match[1], match[2], match[3]].filter(Boolean).join('-');
+  }
+  
+  return value;
+};
+
+
 export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -24,6 +47,7 @@ export const Auth: React.FC = () => {
   const [website, setWebsite] = useState('');
   const [phone, setPhone] = useState('');
   const [location, setLocation] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   const handleAuthAction = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -31,7 +55,12 @@ export const Auth: React.FC = () => {
     setError('');
     setMessage('');
 
-    // --- NEW: Validation for Sign Up ---
+    // Validation for Sign Up
+    if (isSignUp && !validateEmail(email)) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+
     if (isSignUp && password !== confirmPassword) {
       setError("Passwords do not match.");
       setLoading(false);
@@ -40,7 +69,7 @@ export const Auth: React.FC = () => {
 
     try {
       if (isSignUp) {
-        // --- NEW: Sign up with additional metadata ---
+        // --- Sign up with additional metadata ---
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -79,18 +108,48 @@ export const Auth: React.FC = () => {
     }
   };
 
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    if (isSignUp && newEmail && !validateEmail(newEmail)) {
+      setEmailError("Invalid email format.");
+    } else {
+      setEmailError(''); // Clear error if format is valid or field is empty
+    }
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedPhoneNumber = formatPhoneNumber(e.target.value);
+    setPhone(formattedPhoneNumber);
+  };
+
   return (
     <div className="auth-container">
       <h2>{isSignUp ? 'Create an Account' : 'Sign In'}</h2>
-      <p>{isSignUp ? 'Get started with your free account.' : 'Sign in to access your resumes.'}</p>
+      <p className="auth-description">{isSignUp ? 'Get started with your free account.' : 'Sign in to access your resumes.'}</p>
       
       <form onSubmit={handleAuthAction} className="auth-form">
-        {/* --- NEW: Conditional rendering for Sign Up fields --- */}
+        {/* --- Sign In Page --- */}
+        {!isSignUp && (
+            <>
+            <div className="form-group">
+                <label htmlFor="email">Email</label>
+                <input id="email" type="email" value={email} onChange={handleEmailChange} required placeholder="your@email.com" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
+            </div>
+          </>
+        )}
+
+
+        {/* --- Sign Up Page --- */}
         {isSignUp && (
           <>
             <div className="form-group-row">
               <div className="form-group">
-                <label htmlFor="firstName">First Name</label>
+                <label htmlFor="firstName">First Name *</label>
                 <input id="firstName" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
               </div>
               <div className="form-group">
@@ -98,27 +157,29 @@ export const Auth: React.FC = () => {
                 <input id="lastName" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
               </div>
             </div>
-          </>
-        )}
-
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="your@email.com" />
-        </div>
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
-        </div>
-
-        {isSignUp && (
-          <>
             <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm Password</label>
+              <label htmlFor="email">Email *</label>
+              <input 
+                id="email" 
+                type="email" 
+                value={email} 
+                onChange={handleEmailChange}
+                required 
+                placeholder="your@email.com" 
+              />
+              {emailError && <p className="validation-error">{emailError}</p>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="password">Password *</label>
+              <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Confirm Password *</label>
               <input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required placeholder="••••••••" />
             </div>
             <hr className="form-divider" />
             <div className="form-group">
-              <label htmlFor="linkedin">LinkedIn Profile URL</label>
+              <label htmlFor="linkedin">LinkedIn Profile URL *</label>
               <input id="linkedin" type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} required placeholder="https://linkedin.com/in/..." />
             </div>
             <div className="form-group">
@@ -126,11 +187,19 @@ export const Auth: React.FC = () => {
               <input id="website" type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://..." />
             </div>
             <div className="form-group">
-              <label htmlFor="phone">Phone Number</label>
-              <input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+              <label htmlFor="phone">Phone Number *</label>
+              <input 
+                id="phone" 
+                type="tel" 
+                value={phone} 
+                onChange={handlePhoneChange}
+                required 
+                maxLength={12} // 10 digits + 2 dashes
+                placeholder="000-000-0000"
+              />
             </div>
             <div className="form-group">
-              <label htmlFor="location">Location</label>
+              <label htmlFor="location">Location *</label>
               <input id="location" type="text" value={location} onChange={(e) => setLocation(e.target.value)} required placeholder="e.g., San Francisco, CA" />
             </div>
           </>

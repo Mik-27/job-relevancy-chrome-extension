@@ -12,7 +12,7 @@
   font-size: 1.8em;
 }
 
-.auth-container p {
+.auth-container .auth-description {
   color: #a0a0a0;
   margin-top: 0;
   margin-bottom: 2rem;
@@ -92,7 +92,7 @@
 }
 
 .toggle-auth {
-  margin-top: 2rem;
+  margin-top: 1rem;
   font-size: 0.9em;
   color: #a0a0a0;
 }
@@ -118,4 +118,11 @@
 }
 .error-message {
     color: #ff4d4d;
+}
+
+.validation-error {
+  color: #ff4d4d;
+  font-size: 0.85em;
+  margin-top: 0.25rem;
+  margin-bottom: 0rem;
 }

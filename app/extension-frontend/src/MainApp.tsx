@@ -123,12 +123,13 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
   const isProcessingAnalysis = status === 'scraping' || status === 'analyzing_score' || status === 'analyzing_suggestions';
 
+//   console.log("User Session:", session.user);
   return (
     <main>
       <header className="app-header">
         <div className="user-info">
           <p>Welcome,</p>
-          <span>{session.user.email}</span>
+          <span>{session.user.user_metadata.first_name}</span>
         </div>
         <button onClick={handleLogout} className="logout-button">Sign Out</button>
       </header>
