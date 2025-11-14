@@ -22,7 +22,7 @@ const authFetch = async (url: string, options: RequestInit = {}): Promise<Respon
   // 4. For FormData, we let the browser set the Content-Type. For JSON, we set it.
   if (!(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
-  }
+  }  
 
   // 5. Make the fetch call with the authenticated headers.
   const response = await fetch(url, {
@@ -38,6 +38,14 @@ export const uploadResume = async (file: File, company: string): Promise<UploadR
   const formData = new FormData();
   formData.append("file", file);
   formData.append("company", company);
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error("User is not authenticated.");
+  }
+  
+  // Append the token to the form data under a specific key, like 'token'.
+  formData.append("token", session.access_token);
 
   const response = await fetch(`${API_BASE_URL}/resumes/upload`, {
     method: "POST",

@@ -4,20 +4,27 @@ from typing import List
 
 from .. import database, schemas
 from ..services import gcs_service, pdf_service, resume_service
-from ..security import get_current_user_id #
+from ..security import get_current_user_id, validate_token_and_get_user_id #
 
 router = APIRouter(
     prefix="/resumes",
     tags=["Resumes"]
 )
 
+
 @router.post("/upload", status_code=201)
 async def upload_resume(
-    current_user_id: str = Depends(get_current_user_id),
-    company: str = Form("General"), 
+    company: str = Form("General"),
+    token: str = Form(...),
     file: UploadFile = File(...), 
     db: Session = Depends(database.get_db)
 ):
+    
+    # --- THIS IS THE KEY CHANGE ---
+    # Manually call our validation function with the token from the form.
+    # If it fails, it will raise an HTTPException and stop execution.
+    current_user_id = validate_token_and_get_user_id(token)
+    
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Invalid file type. Only PDFs are allowed.")
 
