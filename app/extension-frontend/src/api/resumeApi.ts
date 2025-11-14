@@ -1,6 +1,38 @@
+import { supabase } from '../lib/supabaseClient';
 import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema } from "../types";
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
+
+
+// --- NEW: Authenticated Fetch Helper ---
+// This is the core of our authenticated API client.
+const authFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  // 1. Get the current session from Supabase.
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("User is not authenticated. Please log in.");
+  }
+
+  // 2. Prepare the headers.
+  const headers = new Headers(options.headers || {});
+  // 3. Attach the JWT as a Bearer token.
+  headers.set('Authorization', `Bearer ${session.access_token}`);
+
+  // 4. For FormData, we let the browser set the Content-Type. For JSON, we set it.
+  if (!(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  // 5. Make the fetch call with the authenticated headers.
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  return response;
+};
+
 
 export const uploadResume = async (file: File, company: string): Promise<UploadResponse> => {
   const formData = new FormData();
@@ -22,7 +54,7 @@ export const uploadResume = async (file: File, company: string): Promise<UploadR
 
 
 export const listResumes = async (): Promise<Resume[]> => {
-  const response = await fetch(`${API_BASE_URL}/resumes/`, {
+  const response = await authFetch(`${API_BASE_URL}/resumes/`, {
     method: 'GET',
   });
 
@@ -36,7 +68,7 @@ export const listResumes = async (): Promise<Resume[]> => {
 
 
 export const getResumeContent = async (resumeId: number): Promise<string> => {
-  const response = await fetch(`${API_BASE_URL}/resumes/${resumeId}/content`, {
+  const response = await authFetch(`${API_BASE_URL}/resumes/${resumeId}/content`, {
     method: 'GET',
   });
 
@@ -50,7 +82,7 @@ export const getResumeContent = async (resumeId: number): Promise<string> => {
 
 
 export const getAnalysisScore = async (resumeText: string, jobDescriptionText: string): Promise<ScoreResponse> => {
-  const response = await fetch(`${API_BASE_URL}/analyze/score`, {
+  const response = await authFetch(`${API_BASE_URL}/analyze/score`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resumeText, jobDescriptionText }),
@@ -61,7 +93,7 @@ export const getAnalysisScore = async (resumeText: string, jobDescriptionText: s
 
 
 export const getAnalysisSuggestions = async (resumeText: string, jobDescriptionText: string): Promise<SuggestionsResponse> => {
-  const response = await fetch(`${API_BASE_URL}/analyze/suggestions`, {
+  const response = await authFetch(`${API_BASE_URL}/analyze/suggestions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resumeText, jobDescriptionText }),
@@ -93,7 +125,7 @@ export const getAnalysisSuggestions = async (resumeText: string, jobDescriptionT
 
 // Fetches the AI-generated content for the editor
 export const generateTailoredContent = async (resumeText: string, jobDescriptionText: string): Promise<TailoredResumeSchema> => {
-  const response = await fetch(`${API_BASE_URL}/tailor/generate-content`, {
+  const response = await authFetch(`${API_BASE_URL}/tailor/generate-content`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resumeText, jobDescriptionText }),
@@ -107,7 +139,7 @@ export const generateTailoredContent = async (resumeText: string, jobDescription
 
 // Sends the final edited data to be compiled into a PDF
 export const compilePdf = async (resumeData: TailoredResumeSchema): Promise<Blob> => {
-  const response = await fetch(`${API_BASE_URL}/tailor/compile-pdf`, {
+  const response = await authFetch(`${API_BASE_URL}/tailor/compile-pdf`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(resumeData),
@@ -121,7 +153,7 @@ export const compilePdf = async (resumeData: TailoredResumeSchema): Promise<Blob
 
 
 export const deleteResume = async (resumeId: number): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/resumes/${resumeId}`, {
+  const response = await authFetch(`${API_BASE_URL}/resumes/${resumeId}`, {
     method: 'DELETE',
   });
 

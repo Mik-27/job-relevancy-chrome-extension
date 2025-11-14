@@ -17,6 +17,8 @@ class Resume(Base):
     __tablename__ = "resumes"
 
     id = Column(Integer, primary_key=True, index=True)
+    # NEW: Add the user_id column. It will be a string (UUID from Supabase).
+    user_id = Column(String, nullable=False, index=True)
     filename = Column(String, index=True)
     company = Column(String, index=True, default="General")
     storage_path = Column(String, unique=True, nullable=False)

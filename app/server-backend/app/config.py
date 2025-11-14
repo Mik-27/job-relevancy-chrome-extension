@@ -9,7 +9,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=env_path, env_file_encoding='utf-8')
 
     # Supabase Settings
+    SUPABASE_URL: str
     SUPABASE_DB_URL: str
+    SUPABASE_ANON_KEY: str
+    SUPABASE_JWT_SECRET: str
     
     # GCS Settings
     BUCKET_NAME: str

@@ -27,6 +27,41 @@ main {
   box-sizing: border-box;
 }
 
+/* Add these styles to your main CSS file */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #444;
+  margin-bottom: 1rem;
+}
+
+.user-info p {
+  margin: 0;
+  font-size: 0.8em;
+  color: #a0a0a0;
+}
+
+.user-info span {
+  margin: 0;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.logout-button {
+  background: none;
+  border: 1px solid #555;
+  color: #f0f0f0;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background-color: #3a3a3a;
+}
+
 header h1 {
   font-size: 1.5em;
   margin-bottom: 0.5rem;

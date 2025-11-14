@@ -4,6 +4,7 @@ from typing import List
 
 from .. import database, schemas
 from ..services import gcs_service, pdf_service, resume_service
+from ..security import get_current_user_id #
 
 router = APIRouter(
     prefix="/resumes",
@@ -12,6 +13,7 @@ router = APIRouter(
 
 @router.post("/upload", status_code=201)
 async def upload_resume(
+    current_user_id: str = Depends(get_current_user_id),
     company: str = Form("General"), 
     file: UploadFile = File(...), 
     db: Session = Depends(database.get_db)
@@ -24,13 +26,14 @@ async def upload_resume(
         extracted_text = pdf_service.extract_text_from_pdf_bytes(pdf_bytes)
 
         # Create GCS Path and upload the file
-        destination_path = f"public/{company}/{file.filename}"
+        destination_path = f"public/{current_user_id}/{company}/{file.filename}"
         await file.seek(0)
         await gcs_service.upload_file_to_gcs(file, destination_path)
 
         # Create a new resume record in the database
         resume_service.create_resume_entry(
             db=db,
+            user_id=current_user_id,
             filename=file.filename,
             storage_path=destination_path,
             content=extracted_text,
@@ -50,9 +53,9 @@ async def upload_resume(
     
 
 @router.get("/", response_model=List[schemas.ResumeBase])
-def list_resumes(db: Session = Depends(database.get_db)):
+def list_resumes(current_user_id: str = Depends(get_current_user_id), db: Session = Depends(database.get_db)):
     """Retrieves a list of all uploaded resumes (ID and filename)."""
-    return resume_service.get_all_resumes(db=db)
+    return resume_service.get_all_resumes_for_user(db=db, user_id=current_user_id)
 
 
 @router.get("/{resume_id}/content", response_model=str)

@@ -1,0 +1,35 @@
+.auth-container {
+  padding: 1rem;
+  text-align: center;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  background-color: #1a6aff;
+  color: white;
+  margin-top: 1rem;
+}
+
+.auth-button:disabled {
+  background-color: #555;
+}
+
+.toggle-auth {
+  margin-top: 1.5rem;
+  font-size: 0.9em;
+}
+
+.toggle-auth button {
+  background: none;
+  border: none;
+  color: #1a6aff;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 0.5rem;
+}
