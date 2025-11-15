@@ -1,4 +1,4 @@
-from ...schemas import TailoredResumeSchema
+from ...schemas import TailoredContentSchema
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_google_vertexai import ChatVertexAI
@@ -11,7 +11,7 @@ load_dotenv()
 llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0.1)
 
 # --- Logic for the Tailoring Feature ---
-parser = PydanticOutputParser(pydantic_object=TailoredResumeSchema)
+parser = PydanticOutputParser(pydantic_object=TailoredContentSchema)
 
 prompt_template = """
 You are an expert career coach and professional resume writer. Your task is to analyze the provided RESUME and JOB_DESCRIPTION, then rewrite and tailor the resume content to be a perfect fit for the job.

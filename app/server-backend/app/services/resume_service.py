@@ -52,3 +52,9 @@ def delete_resume_by_id(db: Session, resume_id: int, user_id: str) -> database.R
     db.commit()
     
     return resume_to_delete
+
+def get_user_profile_by_id(db: Session, user_id: str):
+    """Retrieves a user's profile from the public.users table."""
+    # Note: We are querying the 'users' table here, not the 'resumes' table.
+    # You will need to create a 'User' model in database.py
+    return db.query(database.User).filter(database.User.id == user_id).first()

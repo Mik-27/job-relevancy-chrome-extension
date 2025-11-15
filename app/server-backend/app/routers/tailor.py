@@ -1,20 +1,24 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
 
 # Import the schema that defines the shape of our incoming request body
-from ..schemas import AnalyzeRequest, TailoredResumeSchema
+from ..schemas import AnalyzeRequest, TailoredContentSchema, TailoredResumeSchema
+
+from .. import database
 
 # Import the high-level service that orchestrates the tailoring process
 from ..services.llm import tailoring_service as llm_tailor_service
-from ..services import tailoring_service
+from ..services import tailoring_service, resume_service
+from ..security import get_current_user_id
 
 router = APIRouter(
     prefix="/tailor",
     tags=["Tailoring"]
 )
 
-@router.post("/generate-content", response_model=TailoredResumeSchema)
-async def generate_tailored_content_endpoint(request: AnalyzeRequest):
+@router.post("/generate-content", response_model=TailoredContentSchema)
+async def generate_tailored_content_endpoint(request: AnalyzeRequest, user_id: str = Depends(get_current_user_id)):
     """
     STEP 1: Receives a resume and job description, calls the LLM, and returns
     the structured, tailored JSON content for the user to edit.
@@ -35,15 +39,37 @@ async def generate_tailored_content_endpoint(request: AnalyzeRequest):
 
 
 @router.post("/compile-pdf", response_class=FileResponse)
-async def compile_pdf_endpoint(resume_data: TailoredResumeSchema):
+async def compile_pdf_endpoint(
+    resume_data: TailoredContentSchema,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db)
+):
     """
     STEP 2: Receives the final, user-approved JSON data, populates the
     LaTeX template, compiles it, and returns the final PDF for download.
     """
     try:
+        # 1. Fetch the user's profile from the database
+        user_profile = resume_service.get_user_profile_by_id(db=db, user_id=user_id)
+        if not user_profile:
+            raise HTTPException(status_code=404, detail="User profile not found.")
+        
+        final_resume_data = TailoredResumeSchema(
+            name=f"{user_profile.first_name} {user_profile.last_name}",
+            phone=user_profile.phone_number,
+            location=user_profile.location,
+            email=user_profile.email,
+            portfolio_url=user_profile.personal_website or "",
+            linkedin_url=user_profile.linkedin_profile,
+            github_url="",
+            
+            # Unpack the dictionary of the edited content from the request
+            **resume_data.model_dump()
+        )
+        
         # Call the compilation service with the user-approved data
         pdf_path = await tailoring_service.compile_latex_to_pdf(
-            resume_data=resume_data.model_dump() # Convert Pydantic model to a dictionary
+            resume_data=final_resume_data.model_dump() # Convert Pydantic model to a dictionary
         )
         
         return FileResponse(

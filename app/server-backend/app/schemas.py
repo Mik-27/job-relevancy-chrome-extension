@@ -72,6 +72,7 @@ class SkillsSchema(BaseModel):
 # --- Main Schema for the entire resume ---
 # This is the top-level object the LLM must generate.
 
+# Deprecated: Use TailoredContentSchema instead
 class TailoredResumeSchema(BaseModel):
     name: str = Field(description="The full name of the candidate.")
     phone: str = Field(description="The candidate's phone number.")
@@ -85,4 +86,12 @@ class TailoredResumeSchema(BaseModel):
     skills: SkillsSchema
     experience: List[ExperienceSchema]
     projects: List[ProjectSchema]
+    achievements: List[str] = Field(description="A list of 1-3 certifications or achievements.")
+    
+    
+class TailoredContentSchema(BaseModel):
+    summary: str = Field(description="A 2-3 sentence professional summary (called 'OBJECTIVE' in the template), rewritten to be highly relevant to the job description.")
+    experience: List[ExperienceSchema]
+    projects: List[ProjectSchema]
+    skills: SkillsSchema
     achievements: List[str] = Field(description="A list of 1-3 certifications or achievements.")
