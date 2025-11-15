@@ -26,6 +26,19 @@ class Resume(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     autoscore = Column(Boolean, default=False, nullable=False)
 
+# ORM Model for the 'users' table
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, index=True) # Assuming UUID stored as string
+    first_name = Column(String)
+    last_name = Column(String)
+    email = Column(String)
+    linkedin_profile = Column(String)
+    personal_website = Column(String, nullable=True)
+    phone_number = Column(String)
+    location = Column(String)
+
 # Dependency to get a DB session in our API endpoints
 def get_db():
     db = SessionLocal()

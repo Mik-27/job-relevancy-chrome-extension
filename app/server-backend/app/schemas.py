@@ -91,6 +91,7 @@ class TailoredResumeSchema(BaseModel):
     
 class TailoredContentSchema(BaseModel):
     summary: str = Field(description="A 2-3 sentence professional summary (called 'OBJECTIVE' in the template), rewritten to be highly relevant to the job description.")
+    education: List[EducationSchema]
     experience: List[ExperienceSchema]
     projects: List[ProjectSchema]
     skills: SkillsSchema

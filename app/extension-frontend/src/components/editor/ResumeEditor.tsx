@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { TailoredResumeSchema } from '../../types';
+import { TailoredContent } from '../../types';
 import { EditableField } from './EditableField';
 import { compilePdf } from '../../api/resumeApi';
 import { Spinner } from '../ui/Spinner';
 import './ResumeEditor.css';
 
 interface ResumeEditorProps {
-  content: TailoredResumeSchema;
+  content: TailoredContent;
   onBack: () => void;
 }
 
 export const ResumeEditor: React.FC<ResumeEditorProps> = ({ content, onBack }) => {
-  const [editedContent, setEditedContent] = useState<TailoredResumeSchema>(content);
+  const [editedContent, setEditedContent] = useState<TailoredContent>(content);
   const [isCompiling, setIsCompiling] = useState(false);
   const [error, setError] = useState('');
 

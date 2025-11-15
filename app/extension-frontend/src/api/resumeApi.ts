@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
-import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema } from "../types";
+import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema, TailoredContent } from "../types";
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
 
@@ -147,7 +147,7 @@ export const generateTailoredContent = async (resumeText: string, jobDescription
 };
 
 // Sends the final edited data to be compiled into a PDF
-export const compilePdf = async (resumeData: TailoredResumeSchema): Promise<Blob> => {
+export const compilePdf = async (resumeData: TailoredContent): Promise<Blob> => {
   const response = await authFetch(`${API_BASE_URL}/tailor/compile-pdf`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

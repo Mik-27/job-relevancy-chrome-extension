@@ -75,14 +75,8 @@ export interface UploadResponse {
   content: string;
 }
 
-export interface TailoredResumeSchema {
-  name: string;
-  phone: string;
-  location: string;
-  email: string;
-  portfolio_url: string;
-  linkedin_url: string;
-  github_url: string;
+
+export interface TailoredContent {
   summary: string;
   education: {
     school: string;
@@ -110,4 +104,14 @@ export interface TailoredResumeSchema {
     points: string[];
   }[];
   achievements: string[];
+}
+
+export interface TailoredResumeSchema extends TailoredContent {
+  name: string;
+  phone: string;
+  location: string;
+  email: string;
+  portfolio_url: string;
+  linkedin_url: string;
+  github_url: string;
 }
