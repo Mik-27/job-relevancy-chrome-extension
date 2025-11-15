@@ -34,10 +34,11 @@ const authFetch = async (url: string, options: RequestInit = {}): Promise<Respon
 };
 
 
-export const uploadResume = async (file: File, company: string): Promise<UploadResponse> => {
+export const uploadResume = async (file: File, company: string, autoscore: boolean): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("company", company);
+  formData.append("autoscore", String(autoscore));
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {

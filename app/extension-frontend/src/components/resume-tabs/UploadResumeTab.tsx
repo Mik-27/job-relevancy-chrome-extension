@@ -8,6 +8,7 @@ interface UploadResumeTabProps {
 export const UploadResumeTab: React.FC<UploadResumeTabProps> = ({ onUploadSuccess }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [companyName, setCompanyName] = useState('');
+  const [enableAutoscore, setEnableAutoscore] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -31,7 +32,7 @@ export const UploadResumeTab: React.FC<UploadResumeTabProps> = ({ onUploadSucces
     setError('');
     setSuccessMessage('');
     try {
-      const result = await uploadResume(selectedFile, companyName || "General");
+      const result = await uploadResume(selectedFile, companyName || "General", enableAutoscore);
       setSuccessMessage(`✅ Resume for ${companyName || "General"} uploaded successfully!`);
       onUploadSuccess(result.content); // Notify parent to refetch the list of resumes
     } catch (err) {
@@ -60,6 +61,19 @@ export const UploadResumeTab: React.FC<UploadResumeTabProps> = ({ onUploadSucces
         <label className='file-upload' htmlFor="file-upload">Resume PDF</label>
         <input id="file-upload" type="file" accept=".pdf" onChange={handleFileChange} />
       </div>
+
+      <div className="form-group-checkbox">
+        <input 
+          id="autoscore-checkbox"
+          type="checkbox" 
+          checked={enableAutoscore}
+          onChange={(e) => setEnableAutoscore(e.target.checked)}
+        />
+        <label htmlFor="autoscore-checkbox">Enable Auto-Scoring</label>
+      </div>
+      <p className="form-note">
+        Note: The 3 most recent resumes with auto-scoring enabled will be automatically scored against the job description.
+      </p>
 
       <button onClick={handleUploadClick} disabled={!selectedFile || isUploading} className="upload-button">
         {isUploading ? 'Uploading...' : 'Upload'}

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
+from sqlalchemy import Boolean, create_engine, Column, Integer, String, Text, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
 from .config import settings
 import datetime
@@ -24,6 +24,7 @@ class Resume(Base):
     storage_path = Column(String, unique=True, nullable=False)
     content = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    autoscore = Column(Boolean, default=False, nullable=False)
 
 # Dependency to get a DB session in our API endpoints
 def get_db():

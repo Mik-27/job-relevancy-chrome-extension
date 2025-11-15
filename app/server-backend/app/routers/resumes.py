@@ -14,8 +14,9 @@ router = APIRouter(
 
 @router.post("/upload", status_code=201)
 async def upload_resume(
-    company: str = Form("General"),
     token: str = Form(...),
+    company: str = Form("General"),
+    autoscore: bool = Form(False),
     file: UploadFile = File(...), 
     db: Session = Depends(database.get_db)
 ):
@@ -44,7 +45,8 @@ async def upload_resume(
             filename=file.filename,
             storage_path=destination_path,
             content=extracted_text,
-            company=company
+            company=company,
+            autoscore=autoscore
         )
 
         return {

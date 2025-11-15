@@ -1,0 +1,19 @@
+.form-group-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.form-group-checkbox label {
+  font-size: 0.9em;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.form-note {
+  font-size: 0.8em;
+  color: #a0a0a0;
+  text-align: left;
+  margin-top: -0.75rem;
+}

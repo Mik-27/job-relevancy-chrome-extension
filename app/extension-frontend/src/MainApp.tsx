@@ -102,7 +102,6 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
   const handleUploadSuccess = useCallback((parsedText: string) => {
     setResumeText(parsedText);
     setUploadVersion(v => v + 1);
-    alert("Resume uploaded and content is ready for analysis!");
   }, []);
 
   const tabs = [

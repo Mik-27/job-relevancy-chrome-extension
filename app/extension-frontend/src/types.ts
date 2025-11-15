@@ -65,6 +65,7 @@ export interface Resume {
   id: number;
   filename: string;
   company: string;
+  autoscore: boolean;
 }
 
 export interface UploadResponse {

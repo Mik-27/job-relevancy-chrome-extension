@@ -10,8 +10,6 @@ interface ChooseResumeTabProps {
   jobDescriptionText: string;
 }
 
-// Hardcoded list of companies to auto-score
-const AUTO_SCORE_COMPANIES = ['Microsoft', 'Agreeya'];
 
 export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedResumeText, jobDescriptionText }) => {
   const [resumes, setResumes] = useState<ResumeWithScore[]>([]);
@@ -39,14 +37,14 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
     // --- NEW: Effect 2: Trigger auto-scoring when data is ready ---
   useEffect(() => {
     // Only run if we have a job description and the initial resume list has loaded
-    if (jobDescriptionText && !isLoading && !scoringInitiated.current) {
+    if (jobDescriptionText && !isLoading && !scoringInitiated.current && resumes.length > 0) {
 
       // Mark that we are starting the scoring process.
       scoringInitiated.current = true;
       
       const fetchScores = async () => {
         // Find the resumes that match our hardcoded list
-        const resumesToScore = resumes.filter(r => AUTO_SCORE_COMPANIES.includes(r.company));
+        const resumesToScore = resumes.filter(r => r.autoscore).slice(0, 3);
 
         // If there are no target resumes, do nothing.
         if (resumesToScore.length === 0) return;
