@@ -1,11 +1,11 @@
-import { ScrapeTextResponse } from "./types";
+import { ExtensionMessage, ScrapeTextResponse } from "./types";
 
 /**
  * Listens for a message from the frontend to initiate the scraping process.
  * This script's sole responsibility is to inject the content script,
  * get the page text, and send it back.
  */
-chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request: ExtensionMessage, _sender, sendResponse) => {
   // Check if the message is the one we're expecting
   if (request.type === "getJobDescription") {
     

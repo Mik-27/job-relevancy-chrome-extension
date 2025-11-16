@@ -31,6 +31,7 @@ export const CoverLetterDisplay: React.FC<CoverLetterDisplayProps> = ({ initialT
     } finally {
       setIsCompiling(false);
     }
+    onClose();
   };
 
   return (

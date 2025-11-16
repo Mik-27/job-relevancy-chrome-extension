@@ -6,9 +6,32 @@ export interface AnalysisResult {
 
 // --- Messages Sent TO Listeners ---
 
-// Message from Popup/Background to Content Script to start scraping
+// Message from Popup -> Background to start scraping the JD
+export interface GetJobDescriptionMessage {
+  type: "getJobDescription";
+}
+
+// Message from Background -> Content Script to execute the scrape
 export interface ScrapeTextMessage {
   type: "scrapeText";
+}
+
+// Response from Content Script -> Background with the scraped text
+export interface ScrapeTextResponse {
+  text?: string;
+  error?: string;
+}
+
+// Message from Popup -> Content Script to show the cover letter modal
+export interface ShowCoverLetterModalMessage {
+  type: "showCoverLetterModal";
+  text: string;
+}
+
+// Message from Background -> Popup with the final analysis result
+export interface AnalysisCompletePayload {
+  analysis: AnalysisResult;
+  jobDescription: string;
 }
 
 // Message from Popup to Background Script to start the full analysis pipeline
@@ -17,18 +40,12 @@ export interface StartAnalysisMessage {
   resumeText: string;
 }
 
-export interface AnalysisCompletePayload {
-  analysis: AnalysisResult;
-  jobDescription: string;
-}
-
-// Message from Background to Popup with the final analysis result
 export interface AnalysisCompleteMessage {
   type: "analysisComplete";
   data: AnalysisCompletePayload;
 }
 
-// Message from Background to Popup when an error occurs
+// Message from Background -> Popup when an analysis error occurs
 export interface AnalysisErrorMessage {
   type: "analysisError";
   error: string;
@@ -47,19 +64,16 @@ export interface SuggestionsResponse {
   suggestions: string[];
 }
 
-// A union type representing all possible messages our listeners can receive
-export type ChromeMessage = 
+// --- A Comprehensive Union Type for ALL Messages ---
+// This is the type that all our onMessage listeners will use.
+export type ExtensionMessage =
+  | GetJobDescriptionMessage
   | ScrapeTextMessage
-  | StartAnalysisMessage
+  | ShowCoverLetterModalMessage
   | AnalysisCompleteMessage
   | AnalysisErrorMessage;
 
 // --- Responses Sent VIA sendResponse Callback ---
-
-// Response from Content Script back to the sender with the scraped text
-export interface ScrapeTextResponse {
-  text: string;
-}
 
 export interface Resume {
   id: number;

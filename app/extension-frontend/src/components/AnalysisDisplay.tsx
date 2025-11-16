@@ -3,7 +3,6 @@ import { AnalysisResult, TailoredResumeSchema } from '../types';
 import { Spinner } from './ui/Spinner';
 import { generateTailoredContent, generateCoverLetter } from '../api/resumeApi';
 import { ResumeEditor } from './editor/ResumeEditor';
-import { CoverLetterDisplay } from './CoverLetterDisplay';
 
 // Define the two views within this component
 type DisplayView = 'results' | 'editor';
@@ -27,7 +26,6 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   const [error, setError] = useState('');
   
   const [tailoredContent, setTailoredContent] = useState<TailoredResumeSchema | null>(null);
-  const [coverLetterText, setCoverLetterText] = useState<string | null>(null);
 
   const handleGoToEditorClick = async () => {
     setIsGeneratingEditor(true);
@@ -48,7 +46,14 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
     setError('');
     try {
       const response = await generateCoverLetter(initialResumeText, initialJobDescriptionText);
-      setCoverLetterText(response.cover_letter_text);
+      // Send message to content script to show the modal
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab && tab.id) {
+        chrome.tabs.sendMessage(tab.id, {
+          type: "showCoverLetterModal",
+          text: response.cover_letter_text,
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate cover letter.");
     } finally {
@@ -94,12 +99,11 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
           <button 
             className="analyze-button"
             onClick={handleGoToEditorClick}
-            disabled={isGeneratingEditor || isGeneratingCL || !result.suggestions}
+            disabled={isGeneratingEditor || !result.suggestions}
           >
             {isGeneratingEditor ? <Spinner size="small" /> : 'Tailor with AI Editor'}
           </button>
         </div>
-
         <div className="cover-letter-section">
           <button 
             className="analyze-button secondary"
@@ -112,14 +116,6 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         
         {error && <p className="error-message" style={{ marginTop: '1rem' }}>{error}</p>}
       </section>
-
-      {/* Render the Cover Letter modal conditionally */}
-      {coverLetterText && (
-        <CoverLetterDisplay 
-          initialText={coverLetterText} 
-          onClose={() => setCoverLetterText(null)} 
-        />
-      )}
     </>
   );
 };

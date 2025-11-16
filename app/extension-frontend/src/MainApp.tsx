@@ -23,11 +23,13 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
   const [analysisResult, setAnalysisResult] = useState<Partial<AnalysisResult> | null>(null);
   const [status, setStatus] = useState<AppStatus>('idle');
-  const [error, setError] = useState('');
-
+  const [error, setError] = useState('');  
 
   useEffect(() => {
     // Set a status to prevent other actions while scraping
+    setStatus('scraping');
+
+    // Small delay to ensure the content script is ready
     const timer = setTimeout(() => {
       console.log("Attempting initial scrape...");
       chrome.runtime.sendMessage({ type: "getJobDescription" }, (response) => {
