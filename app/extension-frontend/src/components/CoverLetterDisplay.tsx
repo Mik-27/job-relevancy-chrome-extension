@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Spinner } from './ui/Spinner';
-import { compileCoverLetterPdf } from '../api/resumeApi'; // Import the new API function
+import { compileCoverLetterPdf } from '../api/resumeApi';
+import './CoverLetterDisplay.css'; // Import the new CSS
 
 interface CoverLetterDisplayProps {
   initialText: string;
@@ -8,7 +9,6 @@ interface CoverLetterDisplayProps {
 }
 
 export const CoverLetterDisplay: React.FC<CoverLetterDisplayProps> = ({ initialText, onClose }) => {
-  // NEW: State to hold the editable text
   const [editedText, setEditedText] = useState(initialText);
   const [isCompiling, setIsCompiling] = useState(false);
   const [error, setError] = useState('');
@@ -18,8 +18,6 @@ export const CoverLetterDisplay: React.FC<CoverLetterDisplayProps> = ({ initialT
     setError('');
     try {
       const pdfBlob = await compileCoverLetterPdf(editedText);
-      
-      // Trigger download
       const url = window.URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = url;
@@ -28,7 +26,6 @@ export const CoverLetterDisplay: React.FC<CoverLetterDisplayProps> = ({ initialT
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to download.");
     } finally {
@@ -37,10 +34,9 @@ export const CoverLetterDisplay: React.FC<CoverLetterDisplayProps> = ({ initialT
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Edit and Download Cover Letter</h2>
-        {/* Textarea is no longer readOnly */}
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <h2>Edit Cover Letter</h2>
         <textarea 
           value={editedText}
           onChange={(e) => setEditedText(e.target.value)}

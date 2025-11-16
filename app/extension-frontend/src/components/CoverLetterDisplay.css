@@ -1,0 +1,67 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8); /* Darker overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.modal-content {
+  background-color: #242424; /* Match the app background */
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #444;
+  width: 100%;
+  max-width: 600px; /* A wider modal for better editing */
+  height: 90vh; /* Take up most of the vertical space */
+  display: flex;
+  flex-direction: column; /* Key for layout */
+  gap: 1rem;
+}
+
+.modal-content h2 {
+  margin: 0;
+  font-size: 1.5em;
+}
+
+.cover-letter-textarea {
+  flex-grow: 1; /* THIS IS THE KEY: Makes the textarea fill available space */
+  width: 100%;
+  padding: 0.75rem;
+  box-sizing: border-box;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background-color: #333;
+  color: #eee;
+  font-family: inherit; /* THIS IS THE KEY: Matches the app's font */
+  resize: vertical; /* Allow user to resize vertically if they want */
+  font-size: 1em;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0; /* Prevent this section from shrinking */
+}
+
+.secondary-button {
+  background-color: #3a3a3a;
+  border: 1px solid #555;
+  color: #f0f0f0;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.secondary-button:hover {
+  background-color: #4a4a4a;
+}
