@@ -115,3 +115,8 @@ export interface TailoredResumeSchema extends TailoredContent {
   linkedin_url: string;
   github_url: string;
 }
+
+// Type for the cover letter response
+export interface CoverLetterResponse {
+  cover_letter_text: string;
+}

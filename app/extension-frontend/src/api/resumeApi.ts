@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
-import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema, TailoredContent } from "../types";
+import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema, TailoredContent, CoverLetterResponse } from "../types";
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
 
@@ -176,4 +176,31 @@ export const deleteResume = async (resumeId: number): Promise<void> => {
         throw new Error("Failed to delete resume.");
     }
   }
+};
+
+
+// Function to generate the cover letter
+export const generateCoverLetter = async (resumeText: string, jobDescriptionText: string): Promise<CoverLetterResponse> => {
+  const response = await authFetch(`${API_BASE_URL}/cover-letter/generate`, {
+    method: 'POST',
+    body: JSON.stringify({ resumeText, jobDescriptionText }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to generate cover letter.");
+  }
+  return response.json();
+};
+
+// NEW: Function to compile the cover letter PDF
+export const compileCoverLetterPdf = async (coverLetterText: string): Promise<Blob> => {
+  const response = await authFetch(`${API_BASE_URL}/cover-letter/compile-pdf`, {
+    method: 'POST',
+    body: JSON.stringify({ cover_letter_text: coverLetterText }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to compile Cover Letter PDF.");
+  }
+  return response.blob();
 };

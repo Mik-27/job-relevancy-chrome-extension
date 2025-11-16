@@ -1,3 +1,4 @@
+import datetime
 import os
 import re
 import subprocess
@@ -109,3 +110,57 @@ async def compile_latex_to_pdf(resume_data: dict) -> str:
     # finally:
     #     if os.path.exists(temp_dir):
     #         shutil.rmtree(temp_dir)
+    
+
+# Function to compile the cover letter ---
+async def compile_cover_letter_to_pdf(user_profile: dict, cover_letter_text: str) -> str:
+    """
+    Generates a cover letter PDF from a LaTeX template, user profile data,
+    and the final cover letter text.
+    """
+    print("Cover letter PDF compilation process started...")
+    
+    now = datetime.datetime.utcnow()
+    date_today = now.strftime("%B %d, %Y")
+
+    # Combine user profile and cover letter text into a single context dictionary
+    context = {
+        "name": f"{user_profile.first_name} {user_profile.last_name}",
+        "location": user_profile.location,
+        "phone": user_profile.phone_number,
+        "email": user_profile.email,
+        "date_today": date_today,
+        "cover_letter_text": cover_letter_text
+    }
+
+    template = jinja_env.get_template('cover_letter_template.tex')
+    rendered_latex = template.render(context)
+
+    # The rest of this logic is identical to the resume compilation
+    unique_id = str(uuid.uuid4())
+    temp_dir = os.path.abspath(f"./temp_files/{unique_id}")
+    os.makedirs(temp_dir, exist_ok=True)
+    
+    try:
+        tex_filepath = os.path.join(temp_dir, 'cover_letter.tex')
+        pdf_filepath = os.path.join(temp_dir, 'cover_letter.pdf')
+        
+        with open(tex_filepath, 'w', encoding='utf-8') as f:
+            f.write(rendered_latex)
+
+        # Run pdflatex command twice
+        for i in range(2):
+            process = subprocess.run(
+                ['pdflatex', '-interaction=nonstopmode', '-output-directory', temp_dir, tex_filepath],
+                capture_output=True, text=True, encoding='utf-8'
+            )
+
+        if not os.path.exists(pdf_filepath):
+            # ... (error handling logic is the same)
+            raise Exception("Failed to compile Cover Letter LaTeX document.")
+
+        print(f"Cover Letter PDF generated at: {pdf_filepath}")
+        return pdf_filepath
+
+    except Exception as e:
+        raise e

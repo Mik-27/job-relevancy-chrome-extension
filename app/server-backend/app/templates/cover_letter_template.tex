@@ -1,0 +1,51 @@
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[margin=1in]{geometry}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em}
+
+\newcommand{\boldrule}{\noindent\makebox[\linewidth]{\rule{\textwidth}{1pt}}}
+
+\begin{document}
+
+\begin{raggedright}
+
+% --- 1. USER PROFILE HEADER ---
+\begin{center}
+    \Large\textbf{(( name | escape_tex ))} \\
+    \vspace{0.5em}
+    (( location | escape_tex )) \\
+    (( email | escape_tex )) | (( phone | escape_tex ))
+\end{center}
+
+\vspace{1em}
+\boldrule
+\vspace{2em}
+
+% --- 2. DATE ---
+(( date_today | escape_tex ))
+
+\vspace{2em}
+
+% --- 3. HARDCODED SALUTATION ---
+Dear Hiring Manager,
+
+\vspace{1em}
+
+% --- 4. COVER LETTER BODY (from LLM) ---
+(( cover_letter_text | escape_tex ))
+
+\vspace{2em}
+
+% --- 5. HARDCODED CLOSING ---
+Sincerely, \\
+\vspace{1em}
+(( name | escape_tex ))
+
+\end{raggedright}
+
+\end{document}
