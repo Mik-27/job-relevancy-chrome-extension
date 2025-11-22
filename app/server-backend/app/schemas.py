@@ -1,5 +1,29 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
+
+# NEW: Schema for updating profile (all fields optional)
+class UserUpdateSchema(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    linkedin_profile: Optional[str] = None
+    personal_website: Optional[str] = None
+    phone_number: Optional[str] = None
+    location: Optional[str] = None
+
+# UPDATE: Add cv_url to the existing response schema
+class UserSchema(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    linkedin_profile: str
+    personal_website: Optional[str] = None
+    phone_number: str
+    location: str
+    cv_url: Optional[str] = None # NEW
+
+    class Config:
+        from_attributes = True
+        
 
 class AnalyzeRequest(BaseModel):
     resumeText: str

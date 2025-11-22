@@ -39,6 +39,7 @@ class User(Base):
     phone_number = Column(String)
     location = Column(String)
     github_profile = Column(String, nullable=True)
+    cv_url = Column(String, nullable=True)
 
 # Dependency to get a DB session in our API endpoints
 def get_db():

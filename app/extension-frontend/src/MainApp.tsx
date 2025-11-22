@@ -10,7 +10,11 @@ import { AnalysisDisplay } from './components/AnalysisDisplay';
 import { getAnalysisScore, getAnalysisSuggestions } from './api/resumeApi';
 import { Spinner } from './components/ui/Spinner';
 import { supabase } from './lib/supabaseClient';
+import { Profile } from './components/profile/Profile';
 
+
+// Update AppView type
+type AppView = 'analysis' | 'profile'; 
 
 // Define the possible statuses for our application workflow
 type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'generating_content' | 'complete' | 'error';
@@ -20,6 +24,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
   const [resumeText, setResumeText] = useState('');
   const [jobDescriptionText, setJobDescriptionText] = useState('');
   const [uploadVersion, setUploadVersion] = useState(0);
+  const [view, setView] = useState<AppView>('analysis');
 
   const [analysisResult, setAnalysisResult] = useState<Partial<AnalysisResult> | null>(null);
   const [status, setStatus] = useState<AppStatus>('idle');
@@ -53,6 +58,16 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
     if (error) {
       console.error("Error signing out:", error);
     }
+  };
+
+  // --- NEW: Handler to go to profile ---
+  const handleProfileClick = () => {
+    setView('profile');
+  };
+
+  // --- NEW: Handler to go back from profile ---
+  const handleBackFromProfile = () => {
+    setView('analysis');
   };
 
   const handleAnalyzeClick = async () => {
@@ -136,46 +151,57 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
       <header className="app-header">
         <div className="user-info">
           <p>Welcome,</p>
-          <span>{session.user.user_metadata.first_name}</span>
+          <span onClick={handleProfileClick} 
+            style={{ cursor: 'pointer', textDecoration: 'underline' }}
+            title="Edit Profile"
+          >
+            {session.user.user_metadata.first_name || session.user.email}
+          </span>
         </div>
         <button onClick={handleLogout} className="logout-button">Sign Out</button>
       </header>
-      
-      <Tabs tabs={tabs} />
 
-      <hr style={{ margin: '1rem 0' }} />
+      {view === 'profile' ? (
+        <Profile onBack={handleBackFromProfile} />
+      ) : (
+        <>
+            <Tabs tabs={tabs} />
 
-      <section className="analysis-section">
-        <h3>Analyze Against Job Posting</h3>
-        <button 
-          onClick={handleAnalyzeClick} 
-          disabled={isProcessingAnalysis || !resumeText.trim()} 
-          className="analyze-button"
-        >
-          {isProcessingAnalysis ? 'Analyzing...' : 'Analyze Current Page'}
-        </button>
-      </section>
+            <hr style={{ margin: '1rem 0' }} />
 
-      {status === 'scraping' && <Spinner />}
-      
-      {status === 'error' && <p className="error-message">Error: {error}</p>}
-      
-      {/* Render the AnalysisDisplay as soon as analysis starts (after scraping) */}
-      {isProcessingAnalysis && analysisResult && (
-        <AnalysisDisplay 
-          result={analysisResult}
-          initialResumeText={resumeText}
-          initialJobDescriptionText={jobDescriptionText}
-        />
-      )}
-      
-      {/* Also render it when the process is complete */}
-      {status === 'complete' && analysisResult && (
-        <AnalysisDisplay 
-          result={analysisResult as AnalysisResult} // We can assert the full type here
-          initialResumeText={resumeText}
-          initialJobDescriptionText={jobDescriptionText}
-        />
+            <section className="analysis-section">
+                <h3>Analyze Against Job Posting</h3>
+                <button 
+                onClick={handleAnalyzeClick} 
+                disabled={isProcessingAnalysis || !resumeText.trim()} 
+                className="analyze-button"
+                >
+                {isProcessingAnalysis ? 'Analyzing...' : 'Analyze Current Page'}
+                </button>
+            </section>
+
+            {status === 'scraping' && <Spinner />}
+            
+            {status === 'error' && <p className="error-message">Error: {error}</p>}
+            
+            {/* Render the AnalysisDisplay as soon as analysis starts (after scraping) */}
+            {isProcessingAnalysis && analysisResult && (
+                <AnalysisDisplay 
+                result={analysisResult}
+                initialResumeText={resumeText}
+                initialJobDescriptionText={jobDescriptionText}
+                />
+            )}
+            
+            {/* Also render it when the process is complete */}
+            {status === 'complete' && analysisResult && (
+                <AnalysisDisplay 
+                result={analysisResult as AnalysisResult} // We can assert the full type here
+                initialResumeText={resumeText}
+                initialJobDescriptionText={jobDescriptionText}
+                />
+            )}
+        </>
       )}
     </main>
   );
