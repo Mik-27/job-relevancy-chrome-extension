@@ -1,25 +1,33 @@
 {
     "manifest_version": 3,
     "name": "Resume Analyzer",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Analyzes your resume against job descriptions using AI.",
     "permissions": ["scripting", "activeTab"],
     "host_permissions": ["http://127.0.0.1:8000/*"],
     "action": {
-        "default_popup": "index.html",
-        "default_icon": {
-            "16": "icon16.png",
-            "48": "icon48.png",
-            "80": "icon80.png"
-        }
-    },
-    "icons": {
-        "16": "icon16.png",
-        "48": "icon48.png",
-        "80": "icon80.png"
+        "default_title": "Toggle Resume Analyzer"
     },
     "background": {
         "service_worker": "src/background.js",
         "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["src/overlay.js"],
+            "run_at": "document_end"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": ["assets/*", "src/*"],
+            "matches": ["<all_urls>"]
+        }
+    ],
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "80": "icon80.png"
     }
 }

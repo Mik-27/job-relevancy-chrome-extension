@@ -1,3 +1,7 @@
+:host {
+  all: initial; /* Try to reset inherited properties */
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -14,17 +18,59 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  width: 400px; /* Set a good width for the popup */
-  min-height: 300px;
+  padding: 0;
+  /* Ensure it fills the side panel height */
+  min-height: 100vh;
+  width: 100%;
+  background-color: #242424;
+  color: rgba(255, 255, 255, 0.87);
+  overflow-x: hidden; /* Prevent horizontal scrollbars */
+}
+
+#root {
+  width: 100%;
+  height: 100%;
 }
 
 main {
   width: 100%;
   padding: 1rem;
-  text-align: center;
   box-sizing: border-box;
+  /* Add this to ensure scrolling works nicely in the panel */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* The main wrapper inside the overlay */
+.app-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #1e1e1e; /* Ensure solid background matches root */
+  color: #f0f0f0;
+  overflow-y: auto; /* Enable vertical scrolling inside the card */
+  padding: 1rem;
+}
+
+/* Style the scrollbar to be thin and dark (Chrome/Webkit) */
+.app-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.app-container::-webkit-scrollbar-track {
+  background: #2c2c2e;
+}
+
+.app-container::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 4px;
+}
+
+/* Ensure inputs don't overflow */
+input, textarea, button {
+  max-width: 100%;
 }
 
 /* Add these styles to your main CSS file */

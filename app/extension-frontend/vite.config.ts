@@ -9,10 +9,11 @@ export default defineConfig({
     rollupOptions: {
       input: {
         // Define the entry points for your extension
-        popup: resolve(__dirname, 'index.html'),
+        // popup: resolve(__dirname, 'index.html'),
         background: resolve(__dirname, 'src/background.ts'),
-        content: resolve(__dirname, 'src/content.ts'),
-        modal: resolve(__dirname, 'src/modal.tsx'), 
+        // content: resolve(__dirname, 'src/content.ts'),
+        // modal: resolve(__dirname, 'src/modal.tsx'), 
+        overlay: resolve(__dirname, 'src/overlay.tsx'),
       },
       output: {
         // Configure the output file names

@@ -30,7 +30,7 @@ function App() {
   }
 
   return (
-    <div className="container">
+    <div className="app-container">
       {/* If there is no active session, show the Auth component */}
       {!session ? (
         <Auth />

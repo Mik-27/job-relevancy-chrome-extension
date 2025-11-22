@@ -1,5 +1,18 @@
 import { ExtensionMessage, ScrapeTextResponse } from "./types";
 
+// Listen for the extension icon click
+chrome.action.onClicked.addListener((tab) => {
+  // Ensure we have a tab ID
+  if (tab.id) {
+    console.log("Icon clicked. Sending toggle message to tab:", tab.id);
+    
+    // Send a message to the content script (overlay.tsx) in the active tab
+    chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_OVERLAY" }).catch((err) => {
+      console.error("Could not send message to overlay. Is the content script loaded?", err);
+    });
+  }
+});
+
 /**
  * Listens for a message from the frontend to initiate the scraping process.
  * This script's sole responsibility is to inject the content script,

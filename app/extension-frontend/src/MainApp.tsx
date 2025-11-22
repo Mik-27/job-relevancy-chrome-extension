@@ -32,17 +32,16 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
     // Small delay to ensure the content script is ready
     const timer = setTimeout(() => {
       console.log("Attempting initial scrape...");
-      chrome.runtime.sendMessage({ type: "getJobDescription" }, (response) => {
-        if (chrome.runtime.lastError || response.error) {
-          console.error("Initial scrape failed:", chrome.runtime.lastError?.message || response.error);
-          setJobDescriptionText(''); // Ensure it's empty on failure
-        } else if (response && response.text) {
-          console.log("Initial scrape successful.");
-          setJobDescriptionText(response.text);
-        }
-        // Whether it succeeds or fails, the initialization is done.
+      const pageText = document.body.innerText; 
+    
+      if (pageText && pageText.length > 50) {
+        setJobDescriptionText(pageText);
         setStatus('idle');
-      });
+      } else {
+        // Fallback or retry logic
+        console.log("Waiting for content...");
+        setStatus('idle');
+      }
     }, 200);
 
     return () => clearTimeout(timer);
@@ -133,6 +132,13 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
           <span>{session.user.user_metadata.first_name}</span>
         </div>
         <button onClick={handleLogout} className="logout-button">Sign Out</button>
+        <button 
+          onClick={() => document.getElementById('resume-analyzer-overlay-root')?.remove()} 
+          className="logout-button"
+          style={{ border: 'none', fontSize: '1.2rem', padding: '0 0.5rem' }}
+        >
+          &times;
+        </button>
       </header>
       
       <Tabs tabs={tabs} />
