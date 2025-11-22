@@ -4,11 +4,8 @@ import { getUserProfile, updateUserProfile, uploadUserCV } from '../../api/resum
 import { Spinner } from '../ui/Spinner';
 import './Profile.css';
 
-interface ProfileProps {
-  onBack: () => void;
-}
 
-export const Profile: React.FC<ProfileProps> = ({ onBack }) => {
+export const Profile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,7 +65,7 @@ export const Profile: React.FC<ProfileProps> = ({ onBack }) => {
   return (
     <div className="profile-container">
       <div className="profile-header">
-        <button onClick={onBack} className="back-button">&larr; Back</button>
+        {/* <button onClick={onBack} className="back-button">&larr; Back</button> */}
         <h2>My Profile</h2>
       </div>
 
@@ -107,6 +104,11 @@ export const Profile: React.FC<ProfileProps> = ({ onBack }) => {
         <div className="form-group">
           <label>Personal Website</label>
           <input name="personal_website" value={profile.personal_website || ''} onChange={handleChange} />
+        </div>
+
+        <div className="form-group">
+          <label>GitHub Profile URL</label>
+          <input name="github_profile" value={profile.github_profile || ''} onChange={handleChange} />
         </div>
 
         <hr className="divider" />

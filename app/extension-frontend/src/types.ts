@@ -5,9 +5,10 @@ export interface UserProfile {
   email: string;
   linkedin_profile: string;
   personal_website?: string;
+  github_profile?: string;
   phone_number: string;
   location: string;
-  cv_url?: string; // NEW
+  cv_url?: string;
 }
 
 // This interface defines the structure of a successful analysis from the backend

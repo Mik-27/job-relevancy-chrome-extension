@@ -141,13 +141,16 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 //   console.log("User Session:", session.user);
   return (
     <main>
-      <button 
-        onClick={() => document.getElementById('resume-analyzer-overlay-root')?.remove()} 
-        className="logout-button"
-        style={{ border: 'none', fontSize: '1.2rem', padding: '0 0.5rem', marginLeft: 'auto' }}
-      >
-        &times;
-      </button>
+      <div className="top-bar">
+        {view === 'profile' && <button onClick={handleBackFromProfile} className="back-button">&larr; </button>}
+        <button 
+          onClick={() => document.getElementById('resume-analyzer-overlay-root')?.remove()} 
+          className="close-button"
+          style={{ border: 'none', fontSize: '1.2rem', padding: '0 0.5rem', marginLeft: 'auto' }}
+        >
+          &times;
+        </button>
+      </div>
       <header className="app-header">
         <div className="user-info">
           <p>Welcome,</p>
@@ -162,7 +165,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
       </header>
 
       {view === 'profile' ? (
-        <Profile onBack={handleBackFromProfile} />
+        <Profile/>
       ) : (
         <>
             <Tabs tabs={tabs} />
@@ -172,11 +175,11 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
             <section className="analysis-section">
                 <h3>Analyze Against Job Posting</h3>
                 <button 
-                onClick={handleAnalyzeClick} 
-                disabled={isProcessingAnalysis || !resumeText.trim()} 
-                className="analyze-button"
-                >
-                {isProcessingAnalysis ? 'Analyzing...' : 'Analyze Current Page'}
+                    onClick={handleAnalyzeClick} 
+                    disabled={isProcessingAnalysis || !resumeText.trim()} 
+                    className="analyze-button"
+                    >
+                    {isProcessingAnalysis ? 'Analyzing...' : 'Analyze Current Page'}
                 </button>
             </section>
 
