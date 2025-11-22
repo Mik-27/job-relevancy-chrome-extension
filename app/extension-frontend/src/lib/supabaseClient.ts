@@ -13,36 +13,52 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Supabase URL and Anon Key must be provided.");
 }
 
-// --- Custom Storage Adapter for Chrome Extension ---
+// --- Custom Storage Adapter with Safety Checks ---
 const chromeStorageAdapter = {
   getItem: (key: string): Promise<string | null> => {
     return new Promise((resolve) => {
-      chrome.storage.local.get([key], (result) => {
-        resolve(result[key] || null);
-      });
+      // Check if chrome.storage exists
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get([key], (result) => {
+          resolve(result[key] || null);
+        });
+      } else {
+        // Fallback to localStorage if not in extension context
+        resolve(localStorage.getItem(key));
+      }
     });
   },
   setItem: (key: string, value: string): Promise<void> => {
     return new Promise((resolve) => {
-      chrome.storage.local.set({ [key]: value }, () => {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ [key]: value }, () => {
+          resolve();
+        });
+      } else {
+        localStorage.setItem(key, value);
         resolve();
-      });
+      }
     });
   },
   removeItem: (key: string): Promise<void> => {
     return new Promise((resolve) => {
-      chrome.storage.local.remove([key], () => {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.remove([key], () => {
+          resolve();
+        });
+      } else {
+        localStorage.removeItem(key);
         resolve();
-      });
+      }
     });
   },
 };
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: chromeStorageAdapter, // Use Chrome's storage
+    storage: chromeStorageAdapter,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false, // Important: Disable this in extensions
+    detectSessionInUrl: false,
   },
 });
