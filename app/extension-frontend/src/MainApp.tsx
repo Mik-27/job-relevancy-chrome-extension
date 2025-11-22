@@ -126,19 +126,19 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 //   console.log("User Session:", session.user);
   return (
     <main>
+      <button 
+        onClick={() => document.getElementById('resume-analyzer-overlay-root')?.remove()} 
+        className="logout-button"
+        style={{ border: 'none', fontSize: '1.2rem', padding: '0 0.5rem', marginLeft: 'auto' }}
+      >
+        &times;
+      </button>
       <header className="app-header">
         <div className="user-info">
           <p>Welcome,</p>
           <span>{session.user.user_metadata.first_name}</span>
         </div>
         <button onClick={handleLogout} className="logout-button">Sign Out</button>
-        <button 
-          onClick={() => document.getElementById('resume-analyzer-overlay-root')?.remove()} 
-          className="logout-button"
-          style={{ border: 'none', fontSize: '1.2rem', padding: '0 0.5rem' }}
-        >
-          &times;
-        </button>
       </header>
       
       <Tabs tabs={tabs} />

@@ -62,14 +62,16 @@ export const UploadResumeTab: React.FC<UploadResumeTabProps> = ({ onUploadSucces
         <input id="file-upload" type="file" accept=".pdf" onChange={handleFileChange} />
       </div>
 
-      <div className="form-group-checkbox">
-        <input 
-          id="autoscore-checkbox"
-          type="checkbox" 
-          checked={enableAutoscore}
-          onChange={(e) => setEnableAutoscore(e.target.checked)}
-        />
-        <label htmlFor="autoscore-checkbox">Enable Auto-Scoring</label>
+      <div className="form-group">
+        <div className="form-group-checkbox">
+            <input 
+            id="autoscore-checkbox"
+            type="checkbox" 
+            checked={enableAutoscore}
+            onChange={(e) => setEnableAutoscore(e.target.checked)}
+            />
+            <label htmlFor="autoscore-checkbox">Enable Auto-Scoring</label>
+        </div>
       </div>
       <p className="form-note">
         Note: The 3 most recent resumes with auto-scoring enabled will be automatically scored against the job description.

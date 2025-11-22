@@ -17,6 +17,7 @@
   cursor: pointer;
   border: none;
   background-color: transparent;
+  border-radius: 3px;
   color: #a0a0a0;
   font-size: 0.9em;
   border-bottom: 2px solid transparent;
@@ -25,6 +26,7 @@
 
 .tab-button:hover {
     color: #ccc;
+    background-color: #262626;
 }
 
 .tab-button.active {
@@ -55,7 +57,7 @@
 }
 
 .upload-form-container > .form-group {
-  margin-bottom: 1em;
+  margin-bottom: 0.85em;
   text-align: left;
 }
 

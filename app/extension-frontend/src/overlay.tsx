@@ -35,7 +35,13 @@ export function mountOverlay() {
   host.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
   host.style.borderRadius = '12px';
   host.style.display = 'block';
+  host.style.zIndex = '2147483647';
+  
+  // CHANGED: Apply the system font stack directly to the host
+  host.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"';
+  
   document.body.appendChild(host);
+
 
   // 2. Create Shadow DOM (Isolation)
   const shadow = host.attachShadow({ mode: 'open' });
@@ -63,14 +69,15 @@ export function mountOverlay() {
     #react-root {
       width: 100%;
       height: 100%;
-      max-height: 90vh;
+      max-height: 95vh;
       background-color: #1e1e1e; /* Dark background color */
       color: #ffffff;
       border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+      box-shadow: 0 10px 10px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
       overflow: hidden; /* Clips corners */
       display: flex;
       flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
   `;
   shadow.appendChild(styleTag);
