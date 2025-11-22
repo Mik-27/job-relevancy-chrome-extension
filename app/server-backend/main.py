@@ -5,7 +5,7 @@ from app.routers import analysis, resumes, tailor, cover_letter
 app = FastAPI(
     title="Resume Analyzer API",
     description="API for analyzing resumes against job descriptions.",
-    version="1.1.0"
+    version="1.2.0"
 )
 
 # --- CORS Configuration ---
@@ -15,10 +15,10 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origin_regex=".*", 
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+    allow_headers=["*"],
 )
 
 # --- Include Routers ---
