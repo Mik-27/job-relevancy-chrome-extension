@@ -14,7 +14,18 @@ def get_current_user_profile(
     user_profile = resume_service.get_user_profile_by_id(db=db, user_id=current_user_id)
     if not user_profile:
         raise HTTPException(status_code=404, detail="User profile not found.")
-    return user_profile
+    
+    # --- NEW: Logic to Sign the URL ---
+    # Convert the ORM object to a Pydantic model so we can modify the cv_url
+    response = schemas.UserSchema.model_validate(user_profile)
+    
+    # If a CV path exists in the DB, generate a temporary signed URL for it
+    if response.cv_url:
+        signed_url = gcs_service.generate_signed_url(response.cv_url)
+        if signed_url:
+            response.cv_url = signed_url
+    
+    return response
 
 # --- NEW: Endpoint to update text fields ---
 @router.put("/me", response_model=schemas.UserSchema)
@@ -59,12 +70,19 @@ async def upload_user_cv(
     try:
         # Upload to GCS (overwrite if exists)
         destination_path = f"public/{current_user_id}/cv/master_cv"
-        public_url = gcs_service.upload_file_to_gcs(file, destination_path)
+        public_url = await gcs_service.upload_file_to_gcs(file, destination_path)
 
         # Update DB with URL
-        user.cv_url = public_url
+        user.cv_url = destination_path
         db.commit()
         db.refresh(user)
-        return user
+        
+        # When returning the user immediately, we also need to sign the URL
+        # so the frontend can display it right away
+        response = schemas.UserSchema.model_validate(user)
+        response.cv_url = gcs_service.generate_signed_url(destination_path)
+        
+        return response
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to upload CV: {e}")

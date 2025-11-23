@@ -1,3 +1,4 @@
+import datetime
 from google.cloud import storage
 from fastapi import UploadFile
 from app.config import settings
@@ -29,6 +30,27 @@ def download_file_as_bytes(source_path: str) -> bytes:
     """Downloads a file from GCS and returns its content as bytes."""
     blob = bucket.blob(source_path)
     return blob.download_as_bytes()
+
+# --- NEW: Function to generate a temporary access link ---
+def generate_signed_url(source_path: str) -> str:
+    """Generates a temporary signed URL for a private GCS blob."""
+    try:
+        # If the DB contains a full URL by mistake, strip the domain part.
+        # This fixes the "No such object" error for existing data.
+        clean_path = source_path.replace(f"https://storage.googleapis.com/{settings.BUCKET_NAME}/", "")
+        
+        blob = bucket.blob(clean_path)
+        
+        url = blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(minutes=5),
+            method="GET",
+        )
+        return url
+    
+    except Exception as e:
+        print(f"Error generating signed URL: {e}")
+        return ""
 
 def delete_file_from_gcs(source_path: str):
     """Deletes a file from the GCS bucket."""
