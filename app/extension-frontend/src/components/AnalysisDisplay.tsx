@@ -2,10 +2,6 @@ import React, { useState } from 'react';
 import { AnalysisResult, TailoredResumeSchema } from '../types';
 import { Spinner } from './ui/Spinner';
 import { generateTailoredContent, generateCoverLetter } from '../api/resumeApi';
-// import { ResumeEditor } from './editor/ResumeEditor';
-
-// Define the two views within this component
-// type DisplayView = 'results' | 'editor';
 
 interface AnalysisDisplayProps {
   // It receives the result, which can be partial while loading
@@ -22,14 +18,9 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   onTailoringSuccess
 }) => {
   // --- All state is now managed locally ---
-//   const [view, setView] = useState<DisplayView>('results');
   const [isGeneratingEditor, setIsGeneratingEditor] = useState(false);
   const [isGeneratingCL, setIsGeneratingCL] = useState(false);
   const [error, setError] = useState('');
-
-//   const [coverLetterText, setCoverLetterText] = useState<string | null>(null);
-  
-//   const [tailoredContent, setTailoredContent] = useState<TailoredResumeSchema | null>(null);
 
   const handleGoToEditorClick = async () => {
     setIsGeneratingEditor(true);
@@ -66,16 +57,7 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
       setIsGeneratingCL(false);
     }
   };
-
-  // If the view is 'editor', render the ResumeEditor
-//   if (view === 'editor' && tailoredContent) {
-//     return (
-//       <ResumeEditor 
-//         content={tailoredContent}
-//         onBack={() => setView('results')}
-//       />
-//     );
-//   }
+  
 
   // Otherwise, render the main analysis results
   return (

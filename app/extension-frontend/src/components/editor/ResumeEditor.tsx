@@ -7,10 +7,9 @@ import './ResumeEditor.css';
 
 interface ResumeEditorProps {
   content: TailoredContent;
-  onBack: () => void;
 }
 
-export const ResumeEditor: React.FC<ResumeEditorProps> = ({ content, onBack }) => {
+export const ResumeEditor: React.FC<ResumeEditorProps> = ({ content }) => {
   const [editedContent, setEditedContent] = useState<TailoredContent>(content);
   const [isCompiling, setIsCompiling] = useState(false);
   const [error, setError] = useState('');
@@ -43,8 +42,6 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({ content, onBack }) =
 
   return (
     <div className="editor-container">
-      <button className='back-to-analysis-button' onClick={onBack}>&larr; Back to Analysis</button>
-      
       <div className="editor-section">
         <h4>Summary (Objective)</h4>
         <EditableField

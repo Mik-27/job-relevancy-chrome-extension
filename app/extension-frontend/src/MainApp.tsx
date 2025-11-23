@@ -239,7 +239,6 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
              {tailoredContent && (
                <ResumeEditor 
                  content={tailoredContent} 
-                 onBack={() => setView(previousView)} 
                />
              )}
           </div>
