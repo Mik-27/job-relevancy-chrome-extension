@@ -200,6 +200,20 @@ export const generateTailoredContent = async (resumeText: string, jobDescription
   return response.json();
 };
 
+// NEW: Generate content from the uploaded Master CV
+export const generateFromMasterCV = async (jobDescriptionText: string): Promise<TailoredContent> => {
+  const response = await authFetch(`${API_BASE_URL}/tailor/generate-from-cv`, {
+    method: 'POST',
+    body: JSON.stringify({ jobDescriptionText }), // We only need to send the JD
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to generate from Master CV.");
+  }
+  return response.json();
+};
+
 // Sends the final edited data to be compiled into a PDF
 export const compilePdf = async (resumeData: TailoredContent): Promise<Blob> => {
   const response = await authFetch(`${API_BASE_URL}/tailor/compile-pdf`, {

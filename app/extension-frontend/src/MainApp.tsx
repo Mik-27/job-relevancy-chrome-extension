@@ -1,211 +1,281 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import type { Session } from '@supabase/supabase-js';
-import { AnalysisResult } from './types';
-import { Tabs } from './components/ui/Tabs';
-import { PasteTextTab } from './components/resume-tabs/PasteTextTab';
+import { AnalysisResult, TailoredResumeSchema } from './types';
+import { Home } from './components/dashboard/Home';
+// We reuse the existing tab components as "Pages" for now
+import { PasteResumePage } from './components/pages/PasteResumePage';
+import { MasterCVPage } from './components/pages/MasterCVPage';
 import { UploadResumeTab } from './components/resume-tabs/UploadResumeTab';
 import { ChooseResumeTab } from './components/resume-tabs/ChooseResumeTab';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
+import { Profile } from './components/profile/Profile';
 import { getAnalysisScore, getAnalysisSuggestions } from './api/resumeApi';
 import { Spinner } from './components/ui/Spinner';
 import { supabase } from './lib/supabaseClient';
-import { Profile } from './components/profile/Profile';
+import { ResumeEditor } from './components/editor/ResumeEditor';
 
+// NEW: Expanded View Types
+type AppView = 'home' | 'profile' | 'choose_resume' | 'upload_resume' | 'paste_text' | 'master_cv' | 'analysis_results' | 'editor';
 
-// Update AppView type
-type AppView = 'analysis' | 'profile'; 
-
-// Define the possible statuses for our application workflow
 type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'generating_content' | 'complete' | 'error';
-
 
 export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
   const [resumeText, setResumeText] = useState('');
   const [jobDescriptionText, setJobDescriptionText] = useState('');
+  
+  // We keep uploadVersion to trigger refreshes of the list
   const [uploadVersion, setUploadVersion] = useState(0);
-  const [view, setView] = useState<AppView>('analysis');
+
+  // UI State
+  const [view, setView] = useState<AppView>('home');
+  const [previousView, setPreviousView] = useState<AppView>('home');
 
   const [analysisResult, setAnalysisResult] = useState<Partial<AnalysisResult> | null>(null);
+  const [tailoredContent, setTailoredContent] = useState<TailoredResumeSchema | null>(null);
+
   const [status, setStatus] = useState<AppStatus>('idle');
-  const [error, setError] = useState('');  
+  const [error, setError] = useState('');
 
+  // Initial Scrape Logic (Unchanged)
   useEffect(() => {
-    // Set a status to prevent other actions while scraping
     setStatus('scraping');
-
-    // Small delay to ensure the content script is ready
     const timer = setTimeout(() => {
-      console.log("Attempting initial scrape...");
-      const pageText = document.body.innerText; 
-    
+      const pageText = document.body.innerText;
       if (pageText && pageText.length > 50) {
         setJobDescriptionText(pageText);
         setStatus('idle');
       } else {
-        // Fallback or retry logic
         console.log("Waiting for content...");
         setStatus('idle');
       }
     }, 200);
-
     return () => clearTimeout(timer);
   }, []);
 
-
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Error signing out:", error);
-    }
+    await supabase.auth.signOut();
   };
 
-  // --- NEW: Handler to go to profile ---
-  const handleProfileClick = () => {
-    setView('profile');
+  // --- Navigation Helpers ---
+  const goHome = () => {
+    setError('');
+    setStatus('idle');
+    setView('home');
   };
 
-  // --- NEW: Handler to go back from profile ---
-  const handleBackFromProfile = () => {
-    setView('analysis');
+  const handleProfileClick = () => setView('profile');
+
+  // --- 2. Shared Handlers ---
+
+  // Called when Master CV flow finishes generating content
+  const handleMasterCVSuccess = (content: TailoredResumeSchema) => {
+    setTailoredContent(content); 
+    setPreviousView('master_cv'); // Remember where we came from
+    setView('editor'); 
   };
 
-  const handleAnalyzeClick = async () => {
-    if (!resumeText.trim()) {
-      alert("Please select or paste resume content before analyzing.");
+  // Called when AnalysisDisplay finishes generating content
+  const handleStandardTailoringSuccess = (content: TailoredResumeSchema) => {
+    setTailoredContent(content);
+    setPreviousView('analysis_results'); // Remember where we came from
+    setView('editor');
+  };
+
+  // Core Analysis Logic
+  const startAnalysis = async (textToAnalyze: string) => {
+    if (!textToAnalyze.trim()) {
+      alert("Resume content is empty.");
       return;
     }
-    setStatus('scraping');
+    
+    // Switch to results view immediately
+    setView('analysis_results'); 
+    setStatus('analyzing_score');
     setError('');
-    setAnalysisResult(null);
+    setAnalysisResult({});
 
     try {
-      // We need the job description first, which still comes from the background script
-      const jobDescription = await new Promise<string>((resolve, reject) => {
-        chrome.runtime.sendMessage({ type: "getJobDescription" }, (response) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else if (response && response.text) {
-            resolve(response.text);
-          } else {
-            reject(new Error("Could not scrape job description."));
-          }
-        });
+      // Re-verify JD just in case
+      let jd = jobDescriptionText;
+      if (!jd) {
+         jd = document.body.innerText;
+         setJobDescriptionText(jd);
+      }
+
+      // Parallel fetching
+      const [scoreResponse, suggestionsResponse] = await Promise.all([
+        getAnalysisScore(textToAnalyze, jd),
+        getAnalysisSuggestions(textToAnalyze, jd)
+      ]);
+
+      setAnalysisResult({
+        relevancyScore: scoreResponse.relevancyScore,
+        suggestions: suggestionsResponse.suggestions
       });
-      setJobDescriptionText(jobDescription);
-
-      // Fetch the score
-      setStatus('analyzing_score');
-      const scoreResponse = await getAnalysisScore(resumeText, jobDescription);
-      setAnalysisResult(prev => ({ ...prev, relevancyScore: scoreResponse.relevancyScore }));
-
-      // Fetch the suggestions
-      setStatus('analyzing_suggestions');
-      const suggestionsResponse = await getAnalysisSuggestions(resumeText, jobDescription);
-      setAnalysisResult(prev => ({ ...prev, suggestions: suggestionsResponse.suggestions }));
-
       setStatus('complete');
+
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during analysis.";
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
       setError(errorMessage);
       setStatus('error');
-      setAnalysisResult(null); // Clear partial results on error
     }
   };
 
+  // --- Logic Adapters ---
 
-  // This function accepts the parsed text
+  // When a resume is uploaded successfully
   const handleUploadSuccess = useCallback((parsedText: string) => {
     setResumeText(parsedText);
     setUploadVersion(v => v + 1);
+    // After upload, ask user if they want to analyze immediately
+    if(window.confirm("Upload successful! Analyze this resume now?")) {
+        startAnalysis(parsedText);
+    } else {
+        goHome();
+    }
   }, []);
 
-  const tabs = [
-    { 
-      label: "Paste Text", 
-      content: <PasteTextTab resumeText={resumeText} setResumeText={setResumeText} /> 
-    },
-    { 
-      label: "Upload Resume", 
-      content: <UploadResumeTab onUploadSuccess={handleUploadSuccess} /> 
-    },
-    { 
-      label: "Choose Resume", 
-      // The key prop is essential here. When it changes, React remounts the component.
-      content: <ChooseResumeTab key={uploadVersion} setSelectedResumeText={setResumeText} jobDescriptionText={jobDescriptionText} /> 
-    },
-  ];
+  // When a resume is selected from the list
+  const handleResumeSelection = (text: string) => {
+    setResumeText(text);
+    startAnalysis(text); // Auto-start analysis on selection
+  };
 
-  const isProcessingAnalysis = status === 'scraping' || status === 'analyzing_score' || status === 'analyzing_suggestions';
+  // --- Render Logic based on View ---
+  const renderContent = () => {
+    switch (view) {
+      case 'home':
+        return <Home onNavigate={(v) => setView(v as AppView)} userName={session.user.user_metadata.first_name || 'User'} />;
+      
+      case 'profile':
+        return <Profile onBack={goHome} />;
 
-//   console.log("User Session:", session.user);
+      case 'upload_resume':
+        return (
+          <div className="page-container">
+            <button onClick={goHome} className="back-link">&larr;</button>
+            <h2>Upload Resume</h2>
+            <UploadResumeTab onUploadSuccess={handleUploadSuccess} />
+          </div>
+        );
+
+      case 'choose_resume':
+        return (
+          <div className="page-container">
+            <button onClick={goHome} className="back-link">&larr;</button>
+            <ChooseResumeTab 
+              key={uploadVersion} 
+              // When user clicks "Select", we now trigger analysis immediately
+              setSelectedResumeText={handleResumeSelection} 
+              jobDescriptionText={jobDescriptionText} 
+            />
+          </div>
+        );
+
+      case 'paste_text':
+        return (
+          <div className="page-container">
+            <button onClick={goHome} className="back-link">&larr;</button>
+            <h2>Paste Resume</h2>
+            {/* Use new component */}
+            <PasteResumePage 
+              onAnalyze={(text) => {
+                setResumeText(text); // Update state
+                startAnalysis(text); // Trigger analysis
+              }}
+              isAnalyzing={status.startsWith('analyzing')}
+            />
+          </div>
+        );
+
+      case 'master_cv':
+        return (
+            <div className="page-container">
+              <button onClick={goHome} className="back-link">&larr;</button>
+              <h2>Auto-Tailor from CV</h2>
+              <MasterCVPage 
+                jobDescription={jobDescriptionText}
+                onGenerationSuccess={handleMasterCVSuccess}
+                onNavigateProfile={() => setView('profile')}
+              />
+            </div>
+        );
+
+      case 'analysis_results':
+        return (
+          <div className="page-container">
+            <button onClick={goHome} className="back-link">&larr;</button>
+            
+            {status === 'error' && <p className="error-message">{error}</p>}
+            
+            {/* Loading State */}
+            {(status.startsWith('analyzing') || status === 'scraping') && (
+               <div style={{textAlign: 'center', padding: '2rem'}}>
+                  <Spinner />
+                  <p>Analyzing Resume...</p>
+               </div>
+            )}
+
+            {/* Results */}
+            {analysisResult && (status === 'complete' || status.startsWith('analyzing')) && (
+              <AnalysisDisplay 
+                result={analysisResult}
+                initialResumeText={resumeText}
+                initialJobDescriptionText={jobDescriptionText}
+                // Pass the handler to switch to editor view
+                onTailoringSuccess={handleStandardTailoringSuccess}
+              />
+            )}
+          </div>
+        );
+
+      case 'editor':
+        return (
+          <div className="page-container">
+             {/* Smart Back Button: Goes back to wherever we came from */}
+             <button onClick={() => setView(previousView)} className="back-link">&larr;</button>
+             <h2>Review & Compile</h2>
+             {tailoredContent && (
+               <ResumeEditor 
+                 content={tailoredContent} 
+                 onBack={() => setView(previousView)} 
+               />
+             )}
+          </div>
+        );  
+
+      default:
+        return <div>Page not found</div>;
+    }
+  };
+
   return (
     <main>
+      {/* Shared Header */}
       <div className="top-bar">
-        {view === 'profile' && <button onClick={handleBackFromProfile} className="back-button">&larr; </button>}
         <button 
           onClick={() => document.getElementById('resume-analyzer-overlay-root')?.remove()} 
           className="close-button"
-          style={{ border: 'none', fontSize: '1.2rem', padding: '0 0.5rem', marginLeft: 'auto' }}
+          style={{ border: 'none', fontSize: '1.2rem', padding: '0 0.5rem', marginLeft: 'auto', background: 'transparent', color: '#fff', cursor: 'pointer' }}
         >
           &times;
         </button>
       </div>
-      <header className="app-header">
-        <div className="user-info">
-          <p>Welcome,</p>
-          <span onClick={handleProfileClick} 
-            style={{ cursor: 'pointer', textDecoration: 'underline' }}
-            title="Edit Profile"
-          >
-            {session.user.user_metadata.first_name || session.user.email}
-          </span>
-        </div>
-        <button onClick={handleLogout} className="logout-button">Sign Out</button>
-      </header>
-
-      {view === 'profile' ? (
-        <Profile/>
-      ) : (
-        <>
-            <Tabs tabs={tabs} />
-
-            <hr style={{ margin: '1rem 0' }} />
-
-            <section className="analysis-section">
-                <h3>Analyze Against Job Posting</h3>
-                <button 
-                    onClick={handleAnalyzeClick} 
-                    disabled={isProcessingAnalysis || !resumeText.trim()} 
-                    className="analyze-button"
-                    >
-                    {isProcessingAnalysis ? 'Analyzing...' : 'Analyze Current Page'}
-                </button>
-            </section>
-
-            {status === 'scraping' && <Spinner />}
-            
-            {status === 'error' && <p className="error-message">Error: {error}</p>}
-            
-            {/* Render the AnalysisDisplay as soon as analysis starts (after scraping) */}
-            {isProcessingAnalysis && analysisResult && (
-                <AnalysisDisplay 
-                result={analysisResult}
-                initialResumeText={resumeText}
-                initialJobDescriptionText={jobDescriptionText}
-                />
-            )}
-            
-            {/* Also render it when the process is complete */}
-            {status === 'complete' && analysisResult && (
-                <AnalysisDisplay 
-                result={analysisResult as AnalysisResult} // We can assert the full type here
-                initialResumeText={resumeText}
-                initialJobDescriptionText={jobDescriptionText}
-                />
-            )}
-        </>
+      
+      {view !== 'profile' && (
+        <header className="app-header">
+            <div className="user-info">
+            <p>Welcome,</p>
+            <span onClick={handleProfileClick} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                {session.user.user_metadata.first_name || session.user.email}
+            </span>
+            </div>
+            <button onClick={handleLogout} className="logout-button">Sign Out</button>
+        </header>
       )}
+
+      {renderContent()}
     </main>
   );
-}
+};

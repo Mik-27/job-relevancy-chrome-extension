@@ -2,38 +2,44 @@ import React, { useState } from 'react';
 import { AnalysisResult, TailoredResumeSchema } from '../types';
 import { Spinner } from './ui/Spinner';
 import { generateTailoredContent, generateCoverLetter } from '../api/resumeApi';
-import { ResumeEditor } from './editor/ResumeEditor';
+// import { ResumeEditor } from './editor/ResumeEditor';
 
 // Define the two views within this component
-type DisplayView = 'results' | 'editor';
+// type DisplayView = 'results' | 'editor';
 
 interface AnalysisDisplayProps {
   // It receives the result, which can be partial while loading
   result: Partial<AnalysisResult>;
   initialResumeText: string;
   initialJobDescriptionText: string;
+  onTailoringSuccess: (content: TailoredResumeSchema) => void;
 }
 
 export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ 
   result, 
   initialResumeText, 
-  initialJobDescriptionText 
+  initialJobDescriptionText,
+  onTailoringSuccess
 }) => {
   // --- All state is now managed locally ---
-  const [view, setView] = useState<DisplayView>('results');
+//   const [view, setView] = useState<DisplayView>('results');
   const [isGeneratingEditor, setIsGeneratingEditor] = useState(false);
   const [isGeneratingCL, setIsGeneratingCL] = useState(false);
   const [error, setError] = useState('');
+
+//   const [coverLetterText, setCoverLetterText] = useState<string | null>(null);
   
-  const [tailoredContent, setTailoredContent] = useState<TailoredResumeSchema | null>(null);
+//   const [tailoredContent, setTailoredContent] = useState<TailoredResumeSchema | null>(null);
 
   const handleGoToEditorClick = async () => {
     setIsGeneratingEditor(true);
     setError('');
     try {
+      // 1. Call API to get JSON content
       const content = await generateTailoredContent(initialResumeText, initialJobDescriptionText);
-      setTailoredContent(content);
-      setView('editor');
+      
+      // 2. Pass content up to MainApp to switch views
+      onTailoringSuccess(content); 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate AI content.");
     } finally {
@@ -62,14 +68,14 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   };
 
   // If the view is 'editor', render the ResumeEditor
-  if (view === 'editor' && tailoredContent) {
-    return (
-      <ResumeEditor 
-        content={tailoredContent}
-        onBack={() => setView('results')}
-      />
-    );
-  }
+//   if (view === 'editor' && tailoredContent) {
+//     return (
+//       <ResumeEditor 
+//         content={tailoredContent}
+//         onBack={() => setView('results')}
+//       />
+//     );
+//   }
 
   // Otherwise, render the main analysis results
   return (
@@ -104,6 +110,7 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
             {isGeneratingEditor ? <Spinner size="small" /> : 'Tailor with AI Editor'}
           </button>
         </div>
+
         <div className="cover-letter-section">
           <button 
             className="analyze-button secondary"

@@ -59,3 +59,57 @@ async def get_tailored_content_as_json(resume: str, job_description: str) -> dic
         "job_description": job_description
     })
     return result.model_dump()
+
+
+# Generate tailored content from CV
+selection_prompt_template = """
+You are tasked with constructing a targeted resume JSON object based on a provided <MASTER_CV> and a <JOB_DESCRIPTION>.
+
+### CORE DIRECTIVES (MUST FOLLOW):
+1.  **IMMUTABILITY:** Do NOT rewrite, rephrase, or summarize any bullet points. You must copy the text of the selected bullet points EXACTLY as they appear in the Master CV.
+2.  **SELECTION:** Select only the projects and experience entries that are most relevant to the <JOB_DESCRIPTION>. You do not need to include every job if it is not relevant, but do not leave gaps in employment history if possible.
+3.  **GRANULARITY:** Inside each selected Job/Project, select only the specific bullet points that align with the keywords and requirements of the <JOB_DESCRIPTION>. Discard irrelevant bullet points.
+4.  **METADATA:** Do NOT change Dates, Locations, Company Names, Job Titles, or Degree Titles. Copy them exactly.
+5.  **SKILLS:** Filter the list of skills from the Master CV. Include only those that appear in or are relevant to the <JOB_DESCRIPTION>. Do not invent skills not present in the Master CV.
+6.  **STATIC SECTIONS:** Copy the Education and Achievements/Certifications sections exactly as they are, without filtering.
+
+Dos:
+- Do prioritize bullet points that contain hard skills mentioned in the JD (e.g., if JD asks for "Python", pick the bullet point mentioning Python over the one mentioning Excel).
+- Do maintain the reverse-chronological order of the Master CV.
+- Do limit the number of bullet points per role to the top 3-5 most relevant ones to keep the resume concise.
+Don'ts:
+- Don't fix grammatical errors if found (unless explicitly asked). The goal is exact extraction to ensure truthfulness.
+- Don't combine two bullet points into one.
+- Don't hallucinate metrics. If the CV says "Improved performance", do not change it to "Improved performance by 20%" just because the JD likes metrics.
+
+### OUTPUT FORMAT:
+Return a single valid JSON object matching the following structure. Do not include markdown formatting or conversational text.
+
+{format_instructions}
+
+<MASTER_CV>
+{cv_text}
+</MASTER_CV>
+
+<JOB_DESCRIPTION>
+{job_description}
+</JOB_DESCRIPTION>
+"""
+
+selection_prompt = PromptTemplate(
+    template=selection_prompt_template,
+    input_variables=["cv_text", "job_description"],
+    partial_variables={"format_instructions": parser.get_format_instructions()},
+)
+
+selection_chain = selection_prompt | llm | parser
+
+async def select_content_from_cv(cv_text: str, job_description: str) -> dict:
+    """
+    Invokes the selection chain to extract relevant content without rewriting.
+    """
+    result = await selection_chain.ainvoke({
+        "cv_text": cv_text,
+        "job_description": job_description
+    })
+    return result.model_dump()

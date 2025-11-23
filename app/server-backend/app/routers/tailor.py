@@ -9,6 +9,7 @@ from .. import database
 
 # Import the high-level service that orchestrates the tailoring process
 from ..services.llm import tailoring_service as llm_tailor_service
+from ..services import gcs_service, pdf_service
 from ..services import tailoring_service, resume_service
 from ..security import get_current_user_id
 
@@ -36,6 +37,51 @@ async def generate_tailored_content_endpoint(request: AnalyzeRequest, user_id: s
     except Exception as e:
         print(f"Error in /generate-content endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate AI content: {e}")
+
+
+# --- NEW: Endpoint for generating from Master CV ---
+@router.post("/generate-from-cv", response_model=TailoredContentSchema)
+async def generate_from_master_cv_endpoint(
+    # We accept a simple object with just the JD text
+    request: AnalyzeRequest, # We can reuse this, treating resumeText as empty or ignored
+    current_user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Generates resume content by selecting relevant sections from the user's 
+    uploaded Master CV based on the provided Job Description.
+    """
+    if not request.jobDescriptionText:
+        raise HTTPException(status_code=400, detail="Job Description cannot be empty.")
+
+    # 1. Get User Profile to find the CV URL
+    user_profile = resume_service.get_user_profile_by_id(db, current_user_id)
+    if not user_profile or not user_profile.cv_url:
+        raise HTTPException(status_code=404, detail="Master CV not found. Please upload one in your Profile.")
+
+    try:
+        # 2. Download the PDF from GCS
+        # The cv_url in DB is the internal path (e.g., "public/user/cv/master.pdf")
+        cv_path = user_profile.cv_url
+        pdf_bytes = gcs_service.download_file_as_bytes(cv_path)
+
+        # 3. Extract Text from PDF
+        cv_text = pdf_service.extract_text_from_pdf_bytes(pdf_bytes)
+
+        if not cv_text or len(cv_text) < 50:
+             raise HTTPException(status_code=400, detail="Could not extract text from Master CV.")
+
+        # 4. Call the LLM with the CV text and JD
+        tailored_content = await llm_tailor_service.select_content_from_cv(
+            cv_text=cv_text,
+            job_description=request.jobDescriptionText
+        )
+        
+        return tailored_content
+
+    except Exception as e:
+        print(f"Error in generate-from-cv: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process Master CV: {e}")
 
 
 @router.post("/compile-pdf", response_class=FileResponse)

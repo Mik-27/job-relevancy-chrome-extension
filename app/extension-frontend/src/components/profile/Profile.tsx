@@ -4,8 +4,11 @@ import { getUserProfile, updateUserProfile, uploadUserCV } from '../../api/resum
 import { Spinner } from '../ui/Spinner';
 import './Profile.css';
 
+interface ProfileProps {
+  onBack: () => void;
+}
 
-export const Profile = () => {
+export const Profile: React.FC<ProfileProps> = ({ onBack }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,12 +63,12 @@ export const Profile = () => {
   };
 
   if (loading) return <div className="profile-container"><Spinner /></div>;
-  if (!profile) return <div className="profile-container">Error loading profile.</div>;
+  if (!profile) return <div className="profile-container">Error loading profile. <button onClick={onBack}>Go Back</button></div>;
 
   return (
     <div className="profile-container">
       <div className="profile-header">
-        {/* <button onClick={onBack} className="back-button">&larr; Back</button> */}
+        <button onClick={onBack} className="back-button">&larr;</button>
         <h2>My Profile</h2>
       </div>
 
