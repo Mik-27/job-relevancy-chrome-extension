@@ -43,7 +43,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({ content, onBack }) =
 
   return (
     <div className="editor-container">
-      <button onClick={onBack}>&larr; Back to Analysis</button>
+      <button className='back-to-analysis-button' onClick={onBack}>&larr; Back to Analysis</button>
       
       <div className="editor-section">
         <h4>Summary (Objective)</h4>

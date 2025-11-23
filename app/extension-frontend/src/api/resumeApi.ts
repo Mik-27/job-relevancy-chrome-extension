@@ -204,7 +204,7 @@ export const generateTailoredContent = async (resumeText: string, jobDescription
 export const generateFromMasterCV = async (jobDescriptionText: string): Promise<TailoredContent> => {
   const response = await authFetch(`${API_BASE_URL}/tailor/generate-from-cv`, {
     method: 'POST',
-    body: JSON.stringify({ jobDescriptionText }), // We only need to send the JD
+    body: JSON.stringify({ jobDescriptionText, resumeText: '' }), // We only need to send the JD
   });
 
   if (!response.ok) {
