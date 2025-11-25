@@ -1,0 +1,48 @@
+.contacts-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.contact-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.contact-row input {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background-color: #333;
+  color: #eee;
+  min-width: 0; /* Prevents overflow in flex container */
+}
+
+.remove-row-btn {
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+.remove-row-btn:hover { color: #ff4d4d; }
+
+.add-row-btn {
+  background: none;
+  border: 1px dashed #555;
+  color: #a0a0a0;
+  padding: 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.add-row-btn:hover {
+  border-color: #1a6aff;
+  color: #1a6aff;
+}

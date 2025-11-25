@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
-import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema, TailoredContent, CoverLetterResponse } from "../types";
+import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema, TailoredContent, CoverLetterResponse, Contact } from "../types";
 import { UserProfile } from '../types';
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
@@ -271,4 +271,17 @@ export const compileCoverLetterPdf = async (coverLetterText: string): Promise<Bl
     throw new Error(error.detail || "Failed to compile Cover Letter PDF.");
   }
   return response.blob();
+};
+
+
+// NEW: Trigger n8n workflow
+export const triggerColdOutreach = async (contacts: Contact[]): Promise<void> => {
+  const response = await authFetch(`${API_BASE_URL}/outreach/trigger`, {
+    method: 'POST',
+    body: JSON.stringify({ contacts }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to start outreach workflow.");
+  }
 };

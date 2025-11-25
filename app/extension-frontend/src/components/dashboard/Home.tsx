@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaFileUpload, FaList, FaPaste, FaMagic } from 'react-icons/fa';
+import { FaFileUpload, FaList, FaPaste, FaMagic, FaEnvelope } from 'react-icons/fa';
 import './Home.css';
 
 interface HomeProps {
@@ -41,6 +41,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, userName }) => {
           <div className="card-icon"><FaMagic /></div>
           <div className="card-title">Auto-Tailor</div>
           <div className="card-desc">Generate from Master CV</div>
+        </div>
+
+        {/* --- NEW CARD --- */}
+        <div className="action-card" onClick={() => onNavigate('cold_email')}>
+          <div className="card-icon"><FaEnvelope /></div>
+          <div className="card-title">Cold Outreach</div>
+          <div className="card-desc">Auto-draft emails via n8n</div>
         </div>
       </div>
     </div>

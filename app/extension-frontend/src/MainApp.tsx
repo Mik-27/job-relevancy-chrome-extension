@@ -8,6 +8,7 @@ import { PasteResumePage } from './components/pages/PasteResumePage';
 import { MasterCVPage } from './components/pages/MasterCVPage';
 import { UploadResumeTab } from './components/resume-tabs/UploadResumeTab';
 import { ChooseResumeTab } from './components/resume-tabs/ChooseResumeTab';
+import { ColdEmailPage } from './components/pages/ColdEmailPage';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
 import { Profile } from './components/profile/Profile';
 import { getAnalysisScore, getAnalysisSuggestions } from './api/resumeApi';
@@ -16,7 +17,7 @@ import { supabase } from './lib/supabaseClient';
 import { ResumeEditor } from './components/editor/ResumeEditor';
 
 // NEW: Expanded View Types
-type AppView = 'home' | 'profile' | 'choose_resume' | 'upload_resume' | 'paste_text' | 'master_cv' | 'analysis_results' | 'editor';
+type AppView = 'home' | 'profile' | 'choose_resume' | 'upload_resume' | 'paste_text' | 'master_cv' | 'analysis_results' | 'editor' | 'cold_email';
 
 type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'generating_content' | 'complete' | 'error';
 
@@ -242,7 +243,10 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
                />
              )}
           </div>
-        );  
+        );
+
+      case 'cold_email':
+        return <ColdEmailPage onBack={goHome} />;
 
       default:
         return <div>Page not found</div>;

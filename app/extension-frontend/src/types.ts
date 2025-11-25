@@ -147,3 +147,10 @@ export interface TailoredResumeSchema extends TailoredContent {
 export interface CoverLetterResponse {
   cover_letter_text: string;
 }
+
+// Type for outreach contact
+export interface Contact {
+  name: string;
+  email: string;
+  company: string;
+}
