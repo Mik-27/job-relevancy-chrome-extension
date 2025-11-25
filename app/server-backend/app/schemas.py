@@ -125,3 +125,13 @@ class TailoredContentSchema(BaseModel):
 # Schema for the Cover Letter Generation ---
 class CoverLetterSchema(BaseModel):
     cover_letter_text: str = Field(description="The full, complete text of the generated cover letter, formatted with paragraphs and line breaks.")
+    
+    
+# --- NEW: Outreach Schemas ---
+class ContactSchema(BaseModel):
+    name: str
+    email: str
+    company: Optional[str] = None # Helpful for research
+
+class OutreachRequestSchema(BaseModel):
+    contacts: List[ContactSchema]

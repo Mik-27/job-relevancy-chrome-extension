@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     BUCKET_NAME: str
     GOOGLE_APPLICATION_CREDENTIALS: str
     
-    # Google AI Settings
-    # GOOGLE_API_KEY: str
+    # N8N Webhook URL
+    N8N_WEBHOOK_URL: str = ""
 
 # Create a single, importable instance of the settings
 settings = Settings()
