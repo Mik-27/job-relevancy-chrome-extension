@@ -19,7 +19,9 @@ class Settings(BaseSettings):
     GOOGLE_APPLICATION_CREDENTIALS: str
     
     # N8N Webhook URL
+    N8N_WEBHOOK_SECRET: str = ""
     N8N_WEBHOOK_URL: str = ""
+    N8N_WEBHOOK_TEST_URL: str = ""
 
 # Create a single, importable instance of the settings
 settings = Settings()

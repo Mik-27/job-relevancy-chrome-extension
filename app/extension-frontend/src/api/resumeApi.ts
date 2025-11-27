@@ -276,9 +276,19 @@ export const compileCoverLetterPdf = async (coverLetterText: string): Promise<Bl
 
 // NEW: Trigger n8n workflow
 export const triggerColdOutreach = async (contacts: Contact[]): Promise<void> => {
+  // 1. Create a FormData object
+  const formData = new FormData();
+
+  // 2. Stringify the contacts object and append it to the form
+  // The key 'contacts_json' MUST match the variable name in your Python endpoint
+  formData.append('contacts_json', JSON.stringify({ contacts }));
+
+  // 3. Send the formData
+  // Note: authFetch will detect FormData and automatically let the browser 
+  // set the Content-Type to multipart/form-data with the correct boundary.
   const response = await authFetch(`${API_BASE_URL}/outreach/trigger`, {
     method: 'POST',
-    body: JSON.stringify({ contacts }),
+    body: formData,
   });
 
   if (!response.ok) {
