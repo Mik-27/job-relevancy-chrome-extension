@@ -1,21 +1,35 @@
 import React, { useState } from 'react';
 import { triggerColdOutreach } from '../../api/resumeApi';
-import { Contact } from '../../types';
 import { Spinner } from '../ui/Spinner';
-import { FaPlus, FaTrash } from 'react-icons/fa';
-import './ColdEmailPage.css'; // We'll create this css
+import { FaPlus, FaTrash, FaFileUpload, FaKeyboard } from 'react-icons/fa';
+import './ColdEmailPage.css';
 
 interface ColdEmailPageProps {
   onBack: () => void;
 }
 
+type InputMode = 'manual' | 'upload';
+
+export interface Contact {
+  name: string;
+  email: string;
+  company: string;
+}
+
 export const ColdEmailPage: React.FC<ColdEmailPageProps> = ({ onBack }) => {
-  // Initialize with one empty row
+  const [mode, setMode] = useState<InputMode>('manual');
+  
+  // Manual Mode State
   const [contacts, setContacts] = useState<Contact[]>([{ name: '', email: '', company: '' }]);
+  
+  // Upload Mode State
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
   const [isSending, setIsSending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  // --- Handlers for Manual Mode ---
   const handleInputChange = (index: number, field: keyof Contact, value: string) => {
     const newContacts = [...contacts];
     newContacts[index][field] = value;
@@ -28,27 +42,40 @@ export const ColdEmailPage: React.FC<ColdEmailPageProps> = ({ onBack }) => {
 
   const removeRow = (index: number) => {
     if (contacts.length > 1) {
-      const newContacts = contacts.filter((_, i) => i !== index);
-      setContacts(newContacts);
+      setContacts(contacts.filter((_, i) => i !== index));
     }
   };
 
-  const handleSubmit = async () => {
-    // Basic validation
-    const validContacts = contacts.filter(c => c.name && c.email && c.company);
-    if (validContacts.length === 0) {
-      setError("Please add at least one complete contact.");
-      return;
+  // --- Handler for File Mode ---
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+      setError('');
     }
+  };
 
+  // --- Main Submit ---
+  const handleSubmit = async () => {
     setIsSending(true);
     setError('');
+
     try {
-      await triggerColdOutreach(validContacts);
+      if (mode === 'manual') {
+        const validContacts = contacts.filter(c => c.name && c.email && c.company);
+        if (validContacts.length === 0) throw new Error("Please add at least one complete contact.");
+        
+        await triggerColdOutreach({ contacts: validContacts });
+        setContacts([{ name: '', email: '', company: '' }]); // Reset
+      } else {
+        if (!selectedFile) throw new Error("Please select a file.");
+        
+        await triggerColdOutreach({ file: selectedFile });
+        setSelectedFile(null); // Reset
+      }
+
       setSuccess(true);
-      setContacts([{ name: '', email: '', company: '' }]); // Reset form
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Workflow failed.");
+      setError(err instanceof Error ? err.message : "Failed to start workflow.");
     } finally {
       setIsSending(false);
     }
@@ -56,12 +83,10 @@ export const ColdEmailPage: React.FC<ColdEmailPageProps> = ({ onBack }) => {
 
   if (success) {
     return (
-      <div className="page-content" style={{ textAlign: 'center', padding: '2rem' }}>
+      <div className="page-content success-view">
         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚀</div>
         <h3>Workflow Started!</h3>
-        <p style={{ color: '#a0a0a0' }}>
-          Your contacts have been sent to the AI agent. Check your email drafts folder in a few minutes.
-        </p>
+        <p>The AI Agent is now researching and drafting emails.</p>
         <button className="analyze-button" onClick={() => { setSuccess(false); onBack(); }}>
           Back to Dashboard
         </button>
@@ -73,40 +98,66 @@ export const ColdEmailPage: React.FC<ColdEmailPageProps> = ({ onBack }) => {
     <div className="page-container">
       <button onClick={onBack} className="back-link">&larr; Back to Dashboard</button>
       <h2>Cold Email Outreach</h2>
-      <p style={{ color: '#a0a0a0', fontSize: '0.9rem', marginBottom: '1rem' }}>
-        Enter contacts below. Our AI agent will research them and draft personalized emails for you.
-      </p>
 
-      <div className="contacts-form">
-        {contacts.map((contact, index) => (
-          <div key={index} className="contact-row">
-            <input 
-              placeholder="Name" 
-              value={contact.name} 
-              onChange={(e) => handleInputChange(index, 'name', e.target.value)} 
-            />
-            <input 
-              placeholder="Company" 
-              value={contact.company} 
-              onChange={(e) => handleInputChange(index, 'company', e.target.value)} 
-            />
-            <input 
-              placeholder="Email" 
-              value={contact.email} 
-              onChange={(e) => handleInputChange(index, 'email', e.target.value)} 
-            />
-            {contacts.length > 1 && (
-              <button className="remove-row-btn" onClick={() => removeRow(index)}>
-                <FaTrash />
-              </button>
-            )}
-          </div>
-        ))}
-        
-        <button className="add-row-btn" onClick={addRow}>
-          <FaPlus /> Add Contact
+      {/* --- Toggle Switch --- */}
+      <div className="mode-toggle">
+        <button 
+          className={`toggle-btn ${mode === 'manual' ? 'active' : ''}`}
+          onClick={() => setMode('manual')}
+        >
+          <FaKeyboard /> Manual Entry
+        </button>
+        <button 
+          className={`toggle-btn ${mode === 'upload' ? 'active' : ''}`}
+          onClick={() => setMode('upload')}
+        >
+          <FaFileUpload /> Upload Excel
         </button>
       </div>
+
+      {mode === 'manual' ? (
+        <div className="contacts-form">
+          <p className="helper-text">Enter contacts individually.</p>
+          {contacts.map((contact, index) => (
+            <div key={index} className="contact-row">
+              <input 
+                placeholder="Name" 
+                value={contact.name} 
+                onChange={(e) => handleInputChange(index, 'name', e.target.value)} 
+              />
+              <input 
+                placeholder="Company" 
+                value={contact.company} 
+                onChange={(e) => handleInputChange(index, 'company', e.target.value)} 
+              />
+              <input 
+                placeholder="Email" 
+                value={contact.email} 
+                onChange={(e) => handleInputChange(index, 'email', e.target.value)} 
+              />
+              {contacts.length > 1 && (
+                <button className="remove-row-btn" onClick={() => removeRow(index)}>
+                  <FaTrash />
+                </button>
+              )}
+            </div>
+          ))}
+          <button className="add-row-btn" onClick={addRow}>
+            <FaPlus /> Add Contact
+          </button>
+        </div>
+      ) : (
+        <div className="upload-section">
+          <p className="helper-text">
+            Upload an Excel (.xlsx) or CSV file. <br/>
+            <strong>Required columns:</strong> Name, Email, Company.
+          </p>
+          <div className="file-drop-area">
+            <input type="file" accept=".xlsx, .csv" onChange={handleFileChange} />
+          </div>
+          {selectedFile && <p className="file-name">Selected: {selectedFile.name}</p>}
+        </div>
+      )}
 
       {error && <p className="error-message">{error}</p>}
 
@@ -114,7 +165,7 @@ export const ColdEmailPage: React.FC<ColdEmailPageProps> = ({ onBack }) => {
         <button 
           className="analyze-button" 
           onClick={handleSubmit}
-          disabled={isSending}
+          disabled={isSending || (mode === 'upload' && !selectedFile)}
         >
           {isSending ? <Spinner size="small" /> : 'Start AI Agent'}
         </button>

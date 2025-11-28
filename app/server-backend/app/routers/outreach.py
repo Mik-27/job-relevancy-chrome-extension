@@ -5,9 +5,8 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..security import get_current_user_id
+from ..security import get_current_user_id, validate_token_and_get_user_id
 from .. import database
-# Import services to handle DB, GCS, and PDF parsing
 from ..services import resume_service, gcs_service, pdf_service 
 
 router = APIRouter(prefix="/outreach", tags=["Outreach"])
@@ -16,7 +15,7 @@ router = APIRouter(prefix="/outreach", tags=["Outreach"])
 async def trigger_cold_outreach(
     file: Optional[UploadFile] = File(None),
     contacts_json: Optional[str] = Form(None),
-    user_id: str = Depends(get_current_user_id),
+    token: str = Form(...),
     db: Session = Depends(database.get_db) # Need DB access
 ):
     """
@@ -24,6 +23,12 @@ async def trigger_cold_outreach(
     Fetches the user's Master CV context.
     Forwards everything to n8n.
     """
+    
+    # Validate the token to get the user_id
+    user_id = validate_token_and_get_user_id(token)
+    
+    if not file and not contacts_json:
+        raise HTTPException(status_code=400, detail="Must provide either a file or a list of contacts.")
     
     if not file and not contacts_json:
         raise HTTPException(status_code=400, detail="Must provide either a file or a list of contacts.")
