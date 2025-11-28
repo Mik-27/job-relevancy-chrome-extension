@@ -14,7 +14,8 @@ import uploadResumeStyles from './components/resume-tabs/UploadResumeTab.css?inl
 import editorStyles from './components/editor/ResumeEditor.css?inline';
 import coverLetterStyles from './components/CoverLetterDisplay.css?inline';
 import userProfileStyles from './components/profile/Profile.css?inline';
-import homeStyles from './components/dashboard/Home.css?inline'; 
+import homeStyles from './components/dashboard/Home.css?inline';
+import coldEMailStyles from './components/pages/ColdEmailPage.css?inline';
 
 const ROOT_ID = 'resume-analyzer-overlay-root';
 
@@ -67,6 +68,7 @@ export function mountOverlay() {
     ${coverLetterStyles}
     ${userProfileStyles}
     ${homeStyles}
+    ${coldEMailStyles}
     /* ... add other style variables here ... */
 
     /* 3. Style the React Root to look like a solid window */
