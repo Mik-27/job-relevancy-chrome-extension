@@ -121,7 +121,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
         });
       });
       
-      alert(`Successfully autofilled ${fillResponse.count} fields!`);
+    //   alert(`Successfully autofilled ${fillResponse.count} fields!`);
       setStatus('complete');
       setAutofillCount(fillResponse.count);
 

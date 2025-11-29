@@ -41,7 +41,9 @@ async def generate_responses(
             job_description=request.job_description or ""
         )
         
-        return schemas.AutofillResponse(mappings=mappings)
+        clean_mappings = {k: v for k, v in mappings.items() if v is not None}
+        
+        return schemas.AutofillResponse(mappings=clean_mappings)
 
     except Exception as e:
         print(f"Autofill Error: {e}")
