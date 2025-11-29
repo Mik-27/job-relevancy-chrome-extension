@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import type { Session } from '@supabase/supabase-js';
-import { AnalysisResult, TailoredResumeSchema } from './types';
+import { AnalysisResult, ApplyAutofillResponse, RelayApplyMessage, RelayScanMessage, ScanPageResponse, TailoredResumeSchema } from './types';
 import { Home } from './components/dashboard/Home';
 // We reuse the existing tab components as "Pages" for now
 import { PasteResumePage } from './components/pages/PasteResumePage';
@@ -11,7 +11,7 @@ import { ChooseResumeTab } from './components/resume-tabs/ChooseResumeTab';
 import { ColdEmailPage } from './components/pages/ColdEmailPage';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
 import { Profile } from './components/profile/Profile';
-import { getAnalysisScore, getAnalysisSuggestions } from './api/resumeApi';
+import { generateAutofillResponses, getAnalysisScore, getAnalysisSuggestions } from './api/resumeApi';
 import { Spinner } from './components/ui/Spinner';
 import { supabase } from './lib/supabaseClient';
 import { ResumeEditor } from './components/editor/ResumeEditor';
@@ -19,7 +19,7 @@ import { ResumeEditor } from './components/editor/ResumeEditor';
 // NEW: Expanded View Types
 type AppView = 'home' | 'profile' | 'choose_resume' | 'upload_resume' | 'paste_text' | 'master_cv' | 'analysis_results' | 'editor' | 'cold_email';
 
-type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'generating_content' | 'complete' | 'error';
+type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'autofilling' | 'generating_content' | 'complete' | 'error';
 
 export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
   const [resumeText, setResumeText] = useState('');
@@ -56,6 +56,73 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+  };
+
+  const handleAutofillClick = async () => {
+    console.log("Starting Autofill...");
+    setStatus('scraping'); // Show generic spinner or create a new status 'autofilling'
+    setError('');
+
+    try {
+      if (!jobDescriptionText) {
+        throw new Error("Job description not loaded.");
+      }
+
+      // --- CHANGED: Send message to Background Relay instead of chrome.tabs ---
+      // We wrap this in a Promise to handle the callback style of runtime.sendMessage
+      const scanResponse = await new Promise<ScanPageResponse>((resolve, reject) => {
+        const message: RelayScanMessage = { type: "RELAY_SCAN_PAGE" };
+
+        chrome.runtime.sendMessage(message, (response: ScanPageResponse) => {
+          if (chrome.runtime.lastError) {
+            return reject(new Error(chrome.runtime.lastError.message));
+          }
+          // Handle explicit errors returned from background/content script
+          if (response && response.error) {
+            return reject(new Error(response.error));
+          }
+          resolve(response);
+        });
+      });
+      
+      console.log("Scan response:", scanResponse);
+
+      if (!scanResponse || !scanResponse.fields || scanResponse.fields.length === 0) {
+        throw new Error("No fillable personal response questions found.");
+      }
+
+      setStatus('analyzing_suggestions');
+
+      // 3. Call Backend (Unchanged)
+      const { mappings } = await generateAutofillResponses(scanResponse.fields, jobDescriptionText);
+
+      // 4. Apply Changes (Via Relay)
+      // --- CHANGED: Send message to Background Relay ---
+      const fillResponse = await new Promise<ApplyAutofillResponse>((resolve, reject) => {
+        const message: RelayApplyMessage = { 
+          type: "RELAY_APPLY_AUTOFILL", 
+          mappings: mappings 
+        };
+        
+        chrome.runtime.sendMessage(message, (response: ApplyAutofillResponse) => {
+           if (chrome.runtime.lastError) {
+             return reject(new Error(chrome.runtime.lastError.message));
+           }
+           if (response && response.error) {
+             return reject(new Error(response.error));
+           }
+           resolve(response);
+        });
+      });
+      
+      alert(`Successfully autofilled ${fillResponse.count} fields!`);
+      setStatus('idle');
+
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Autofill failed.");
+      setStatus('error');
+    }
   };
 
   // --- Navigation Helpers ---
@@ -143,11 +210,23 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
     startAnalysis(text); // Auto-start analysis on selection
   };
 
+  // --- NEW: Navigation Interceptor ---
+  // This function decides if we switch views OR run an action
+  const handleNavigation = (destination: string) => {
+    console.log(`Navigating to: ${destination}`);
+    if (destination === 'autofill_action') {
+      handleAutofillClick();
+    } else {
+      // It's a view change
+      setView(destination as AppView);
+    }
+  };
+
   // --- Render Logic based on View ---
   const renderContent = () => {
     switch (view) {
       case 'home':
-        return <Home onNavigate={(v) => setView(v as AppView)} userName={session.user.user_metadata.first_name || 'User'} />;
+        return <Home onNavigate={handleNavigation} userName={session.user.user_metadata.first_name || 'User'} />;
       
       case 'profile':
         return <Profile onBack={goHome} />;

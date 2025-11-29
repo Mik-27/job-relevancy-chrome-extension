@@ -43,11 +43,18 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, userName }) => {
           <div className="card-desc">Generate from Master CV</div>
         </div>
 
-        {/* --- NEW CARD --- */}
+        {/* --- Cold Email Workflow --- */}
         <div className="action-card" onClick={() => onNavigate('cold_email')}>
           <div className="card-icon"><FaEnvelope /></div>
           <div className="card-title">Cold Outreach</div>
           <div className="card-desc">Auto-draft emails via n8n</div>
+        </div>
+
+        {/* --- AUTOFILL --- */}
+        <div className="action-card" onClick={() => onNavigate('autofill_action')}> {/* Pass handler from props */}
+          <div className="card-icon"><FaMagic /></div>
+          <div className="card-title">Autofill Application</div>
+          <div className="card-desc">Fill form using your profile</div>
         </div>
       </div>
     </div>

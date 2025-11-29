@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
-import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema, TailoredContent, CoverLetterResponse, Contact } from "../types";
+import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema, TailoredContent, CoverLetterResponse, Contact, FormField } from "../types";
 import { UserProfile } from '../types';
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
@@ -309,4 +309,14 @@ export const triggerColdOutreach = async (payload: { contacts?: Contact[], file?
     const errorData = await response.json().catch(() => ({ detail: "Request failed" }));
     throw new Error(errorData.detail || "Failed to start outreach workflow.");
   }
+};
+
+
+export const generateAutofillResponses = async (fields: FormField[], jobDescription: string) => {
+  const response = await authFetch(`${API_BASE_URL}/autofill/generate-responses`, {
+    method: 'POST',
+    body: JSON.stringify({ fields, job_description: jobDescription }),
+  });
+  if (!response.ok) throw new Error("Failed to generate autofill responses");
+  return response.json(); // Returns { mappings: { ... } }
 };

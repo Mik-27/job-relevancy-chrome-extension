@@ -18,7 +18,36 @@ chrome.action.onClicked.addListener((tab) => {
  * This script's sole responsibility is to inject the content script,
  * get the page text, and send it back.
  */
-chrome.runtime.onMessage.addListener((request: ExtensionMessage, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request: ExtensionMessage, sender, sendResponse) => {
+  
+  // 1. Handle "Scan Page" Request from Overlay
+  if (request.type === "RELAY_SCAN_PAGE") {
+    // We need to find the active tab to send the message to
+    // Note: sender.tab.id is usually the tab where the overlay is running
+    const tabId = sender.tab?.id;
+    
+    if (tabId) {
+      chrome.tabs.sendMessage(tabId, { type: "scanPageForAutofill" })
+        .then(response => sendResponse(response))
+        .catch(err => sendResponse({ error: err.message }));
+      return true; // Keep channel open for async response
+    }
+  }
+
+  // 2. Handle "Apply Autofill" Request from Overlay
+  if (request.type === "RELAY_APPLY_AUTOFILL") {
+    const tabId = sender.tab?.id;
+    if (tabId) {
+      chrome.tabs.sendMessage(tabId, { 
+        type: "applyAutofill", 
+        mappings: request.mappings 
+      })
+      .then(response => sendResponse(response))
+      .catch(err => sendResponse({ error: err.message }));
+      return true; 
+    }
+  }
+  
   // Check if the message is the one we're expecting
   if (request.type === "getJobDescription") {
     

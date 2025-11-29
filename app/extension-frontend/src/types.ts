@@ -77,6 +77,46 @@ export interface SuggestionsResponse {
   suggestions: string[];
 }
 
+// Message: Overlay -> Background (Request to scan for autofill)
+export interface ScanPageForAutofillMessage {
+  type: "scanPageForAutofill";
+  error: string;
+}
+
+// Message: Overlay -> Background (Request to apply autofill)
+export interface ApplyAutofillMessage {
+  type: "applyAutofill";
+  mappings: Record<string, string>;
+}
+
+// Message: Overlay -> Background (Request to scan)
+export interface RelayScanMessage {
+  type: "RELAY_SCAN_PAGE";
+}
+
+// Message: Overlay -> Background (Request to apply)
+export interface RelayApplyMessage {
+  type: "RELAY_APPLY_AUTOFILL";
+  mappings: Record<string, string>;
+}
+
+// --- RESPONSES ---
+
+// Response expected from the Scan action
+export interface ScanPageResponse {
+  type: "scanPageForAutofillResponse";
+  fields: FormField[];
+  error?: string;
+}
+
+// Response expected from the Fill action
+export interface ApplyAutofillResponse {
+  type: "applyAutofillResponse";
+  success: boolean;
+  count: number;
+  error?: string;
+}
+
 // --- A Comprehensive Union Type for ALL Messages ---
 // This is the type that all our onMessage listeners will use.
 export type ExtensionMessage =
@@ -84,7 +124,13 @@ export type ExtensionMessage =
   | ScrapeTextMessage
   | ShowCoverLetterModalMessage
   | AnalysisCompleteMessage
-  | AnalysisErrorMessage;
+  | AnalysisErrorMessage
+  | ScanPageForAutofillMessage
+  | ScanPageResponse
+  | ApplyAutofillMessage
+  | ApplyAutofillResponse
+  | RelayScanMessage
+  | RelayApplyMessage;
 
 // --- Responses Sent VIA sendResponse Callback ---
 
@@ -153,4 +199,11 @@ export interface Contact {
   name: string;
   email: string;
   company: string;
+}
+
+export interface FormField {
+  id: string;
+  label: string;
+  type: string;
+  options?: string[];
 }

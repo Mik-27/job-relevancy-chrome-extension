@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 # NEW: Schema for updating profile (all fields optional)
 class UserUpdateSchema(BaseModel):
@@ -135,3 +135,21 @@ class ContactSchema(BaseModel):
 
 class OutreachRequestSchema(BaseModel):
     contacts: List[ContactSchema]
+    
+    
+# Represents a single field on the webpage
+class FormField(BaseModel):
+    id: str
+    label: str
+    type: str # text, email, select, radio, etc.
+    options: Optional[List[str]] = None # For dropdowns/radios
+
+# Request payload
+class AutofillRequest(BaseModel):
+    fields: List[FormField]
+    job_description: Optional[str] = None # Helpful for "Why do you want this job?"
+
+# Response payload
+class AutofillResponse(BaseModel):
+    # A dictionary mapping field_id -> answer
+    mappings: Dict[str, str]
