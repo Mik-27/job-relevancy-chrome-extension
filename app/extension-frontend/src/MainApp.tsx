@@ -15,9 +15,11 @@ import { generateAutofillResponses, getAnalysisScore, getAnalysisSuggestions } f
 import { Spinner } from './components/ui/Spinner';
 import { supabase } from './lib/supabaseClient';
 import { ResumeEditor } from './components/editor/ResumeEditor';
+import { AutofillProgressPage } from './components/pages/AutofillProgressPage';
+
 
 // NEW: Expanded View Types
-type AppView = 'home' | 'profile' | 'choose_resume' | 'upload_resume' | 'paste_text' | 'master_cv' | 'analysis_results' | 'editor' | 'cold_email';
+type AppView = 'home' | 'profile' | 'choose_resume' | 'upload_resume' | 'paste_text' | 'master_cv' | 'analysis_results' | 'editor' | 'cold_email' | 'autofill_progress';
 
 type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'autofilling' | 'generating_content' | 'complete' | 'error';
 
@@ -34,6 +36,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
   const [analysisResult, setAnalysisResult] = useState<Partial<AnalysisResult> | null>(null);
   const [tailoredContent, setTailoredContent] = useState<TailoredResumeSchema | null>(null);
+  const [autofillCount, setAutofillCount] = useState<number | null>(null);
 
   const [status, setStatus] = useState<AppStatus>('idle');
   const [error, setError] = useState('');
@@ -60,6 +63,8 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
   const handleAutofillClick = async () => {
     console.log("Starting Autofill...");
+    setView('autofill_progress');
+    setAutofillCount(null);
     setStatus('scraping'); // Show generic spinner or create a new status 'autofilling'
     setError('');
 
@@ -96,6 +101,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
       // 3. Call Backend (Unchanged)
       const { mappings } = await generateAutofillResponses(scanResponse.fields, jobDescriptionText);
 
+      setStatus('autofilling');
       // 4. Apply Changes (Via Relay)
       // --- CHANGED: Send message to Background Relay ---
       const fillResponse = await new Promise<ApplyAutofillResponse>((resolve, reject) => {
@@ -116,7 +122,8 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
       });
       
       alert(`Successfully autofilled ${fillResponse.count} fields!`);
-      setStatus('idle');
+      setStatus('complete');
+      setAutofillCount(fillResponse.count);
 
     } catch (err) {
       console.error(err);
@@ -326,6 +333,17 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
       case 'cold_email':
         return <ColdEmailPage onBack={goHome} />;
+
+      // NEW: Case for the progress page
+      case 'autofill_progress':
+        return (
+          <AutofillProgressPage 
+            status={status}
+            count={autofillCount}
+            error={error}
+            onBack={goHome}
+          />
+        );
 
       default:
         return <div>Page not found</div>;
