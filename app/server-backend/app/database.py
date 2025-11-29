@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import Boolean, create_engine, Column, Integer, String, Text, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
 from .config import settings
@@ -40,6 +41,20 @@ class User(Base):
     location = Column(String)
     github_profile = Column(String, nullable=True)
     cv_url = Column(String, nullable=True)
+    
+
+# ORM Model for the 'outreach_history' table
+class OutreachHistory(Base):
+    __tablename__ = "outreach_history"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, nullable=False, index=True)
+    prospect_name = Column(String)
+    prospect_email = Column(String)
+    company_name = Column(String)
+    status = Column(String, default="processing")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
 
 # Dependency to get a DB session in our API endpoints
 def get_db():

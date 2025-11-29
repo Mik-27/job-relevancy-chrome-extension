@@ -1,18 +1,148 @@
 import json
+import io
 import httpx
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
-from typing import Optional
+import uuid
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, BackgroundTasks
+import pandas as pd
+from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..security import get_current_user_id, validate_token_and_get_user_id
+from ..security import validate_token_and_get_user_id
 from .. import database
-from ..services import resume_service, gcs_service, pdf_service 
+from ..services import resume_service, gcs_service, pdf_service
+from ..database import OutreachHistory
 
 router = APIRouter(prefix="/outreach", tags=["Outreach"])
 
+
+def normalize_dataframe(df: pd.DataFrame) -> List[Dict[str, Any]]:
+    """
+    Helper to convert DataFrame to list of dicts and normalize keys.
+    Expects columns: name, email, company.
+    """
+    # 1. Fill NaN with empty strings
+    df = df.fillna("")
+    
+    # 2. Lowercase headers to ensure matching (Name -> name)
+    df.columns = [c.lower().strip() for c in df.columns]
+    
+    # 3. Convert to list of dicts
+    records = df.to_dict(orient='records')
+    
+    # 4. Validate/Filter keys
+    normalized = []
+    for r in records:
+        # Only keep rows that have at least an email or name
+        if r.get('name') or r.get('email'):
+            normalized.append({
+                "name": r.get('name', ''),
+                "email": r.get('email', ''),
+                "company": r.get('company', '')
+            })
+    return normalized
+
+
+async def process_outreach_background(
+    user_id: str,
+    file_bytes: Optional[bytes],
+    file_filename: Optional[str],
+    contacts_json: Optional[str],
+    db: Session
+):
+    print(f"Background: Processing outreach for {user_id}")
+    
+    # 1. PARSE INPUTS
+    final_contacts_list = []
+    try:
+        if file_bytes:
+            # Determine format based on filename or try both
+            if file_filename and file_filename.endswith('.csv'):
+                df = pd.read_csv(io.BytesIO(file_bytes))
+            else:
+                df = pd.read_excel(io.BytesIO(file_bytes))
+            final_contacts_list = normalize_dataframe(df)
+        
+        elif contacts_json:
+            parsed = json.loads(contacts_json)
+            # Handle { "contacts": [...] } vs [...]
+            final_contacts_list = parsed.get('contacts', parsed) if isinstance(parsed, dict) else parsed
+
+    except Exception as e:
+        print(f"Background Error: Parsing failed - {e}")
+        return
+
+    if not final_contacts_list:
+        print("Background Error: No contacts found.")
+        return
+
+    # 2. LOG TO DATABASE & PREPARE N8N PAYLOAD
+    contacts_for_n8n = []
+    
+    try:
+        for contact in final_contacts_list:
+            # Create a unique ID for this specific outreach attempt
+            record_id = str(uuid.uuid4())
+            
+            # Log to DB
+            db_record = OutreachHistory(
+                id=record_id,
+                user_id=user_id,
+                prospect_name=contact.get('name'),
+                prospect_email=contact.get('email'),
+                company_name=contact.get('company'),
+                status="queued"
+            )
+            db.add(db_record)
+            
+            # Add record_id to the contact object sent to n8n
+            # This allows n8n to update the status of THIS specific row later
+            n8n_contact = contact.copy()
+            n8n_contact['record_id'] = record_id
+            contacts_for_n8n.append(n8n_contact)
+            
+        db.commit()
+    except Exception as e:
+        print(f"Background Error: DB Logging failed - {e}")
+        return
+
+    # 3. FETCH USER CONTEXT (MASTER CV)
+    user_context = ""
+    try:
+        user_profile = resume_service.get_user_profile_by_id(db, user_id)
+        if user_profile and user_profile.cv_url:
+            clean_path = user_profile.cv_url.replace(f"https://storage.googleapis.com/{settings.BUCKET_NAME}/", "")
+            pdf_bytes = gcs_service.download_file_as_bytes(clean_path)
+            cv_text = pdf_service.extract_text_from_pdf_bytes(pdf_bytes)
+            user_context = cv_text if cv_text else f"Name: {user_profile.first_name} {user_profile.last_name}"
+        elif user_profile:
+             user_context = f"Name: {user_profile.first_name} {user_profile.last_name}"
+    except Exception as e:
+        print(f"Background Error: Context fetch failed - {e}")
+        user_context = "User profile unavailable."
+
+    # 4. SEND TO N8N
+    n8n_url = settings.N8N_WEBHOOK_TEST_URL
+    headers = {"X-API-KEY": settings.N8N_WEBHOOK_SECRET}
+    
+    payload = {
+        "user_id": user_id,
+        "user_context": user_context,
+        "contacts": contacts_for_n8n # Clean list with record_ids
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            # We send pure JSON now, simplified!
+            await client.post(n8n_url, json=payload, headers=headers, timeout=60.0)
+            print("Background: Successfully sent payload to n8n.")
+        except Exception as e:
+            print(f"Background Error: Sending to n8n failed - {e}")
+
+
 @router.post("/trigger")
 async def trigger_cold_outreach(
+    background_tasks: BackgroundTasks,
     file: Optional[UploadFile] = File(None),
     contacts_json: Optional[str] = Form(None),
     token: str = Form(...),
@@ -29,71 +159,21 @@ async def trigger_cold_outreach(
     
     if not file and not contacts_json:
         raise HTTPException(status_code=400, detail="Must provide either a file or a list of contacts.")
-    
-    if not file and not contacts_json:
-        raise HTTPException(status_code=400, detail="Must provide either a file or a list of contacts.")
 
     n8n_url = settings.N8N_WEBHOOK_TEST_URL
     
-    # --- NEW: Fetch User Context (Master CV) ---
-    user_context = ""
-    try:
-        # 1. Get profile
-        user_profile = resume_service.get_user_profile_by_id(db, user_id)
-        
-        if user_profile and user_profile.cv_url:
-            # 2. Clean the GCS path (remove domain if present)
-            clean_path = user_profile.cv_url.replace(f"https://storage.googleapis.com/{settings.BUCKET_NAME}/", "")
-            
-            # 3. Download PDF bytes
-            pdf_bytes = gcs_service.download_file_as_bytes(clean_path)
-            
-            # 4. Extract text
-            cv_text = pdf_service.extract_text_from_pdf_bytes(pdf_bytes)
-            
-            if cv_text:
-                user_context = cv_text
-            else:
-                # Fallback if PDF is empty/unreadable
-                user_context = f"Name: {user_profile.first_name} {user_profile.last_name}\nLinkedIn: {user_profile.linkedin_profile}"
-        
-        elif user_profile:
-             # Fallback if no CV uploaded
-             user_context = f"Name: {user_profile.first_name} {user_profile.last_name}\nLinkedIn: {user_profile.linkedin_profile}"
-             
-    except Exception as e:
-        print(f"Error fetching user context: {e}")
-        # Don't fail the whole request, just send minimal context
-        user_context = "User profile unavailable."
+    # Read file bytes immediately (UploadFile is closed after request ends)
+    file_bytes = await file.read() if file else None
+    file_name = file.filename if file else None
 
-    # --- Prepare Payload ---
-    files = {}
-    data = {
-        "user_id": user_id,
-        "user_context": user_context # Sending the full resume text
-    }
+    # Offload to background task
+    background_tasks.add_task(
+        process_outreach_background,
+        user_id,
+        file_bytes,
+        file_name,
+        contacts_json,
+        db
+    )
 
-    if file:
-        file_content = await file.read()
-        files["data"] = (file.filename, file_content, file.content_type)
-
-    if contacts_json:
-        try:
-            json.loads(contacts_json) 
-            data["contacts_json"] = contacts_json # Matches your frontend key
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid JSON format in contacts list.")
-
-    headers = {
-        "X-API-KEY": settings.N8N_WEBHOOK_SECRET
-    }
-
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(n8n_url, data=data, files=files, headers=headers, timeout=30.0) # Increased timeout for file operations
-            response.raise_for_status()
-        except Exception as e:
-            print(f"Failed to call n8n: {e}")
-            raise HTTPException(status_code=502, detail="Failed to trigger automation workflow.")
-
-    return {"message": "Outreach workflow started successfully"}
+    return {"message": "Outreach started. Emails are being drafted in the background."}
