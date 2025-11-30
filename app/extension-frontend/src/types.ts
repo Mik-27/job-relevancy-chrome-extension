@@ -199,6 +199,7 @@ export interface Contact {
   name: string;
   email: string;
   company: string;
+  job_link?: string;
 }
 
 export interface FormField {

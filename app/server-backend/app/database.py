@@ -52,6 +52,7 @@ class OutreachHistory(Base):
     prospect_name = Column(String)
     prospect_email = Column(String)
     company_name = Column(String)
+    job_link = Column(String, nullable=True) 
     status = Column(String, default="processing")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 

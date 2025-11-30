@@ -30,6 +30,9 @@ def normalize_dataframe(df: pd.DataFrame) -> List[Dict[str, Any]]:
     # 3. Convert to list of dicts
     records = df.to_dict(orient='records')
     
+    # Extract job link if present
+    job_link = r.get('job link') or r.get('job url') or r.get('url') or r.get('link')
+    
     # 4. Validate/Filter keys
     normalized = []
     for r in records:
@@ -38,7 +41,8 @@ def normalize_dataframe(df: pd.DataFrame) -> List[Dict[str, Any]]:
             normalized.append({
                 "name": r.get('name', ''),
                 "email": r.get('email', ''),
-                "company": r.get('company', '')
+                "company": r.get('company', ''),
+                "job_link": str(job_link).strip() if job_link else None
             })
     return normalized
 
@@ -91,6 +95,7 @@ async def process_outreach_background(
                 prospect_name=contact.get('name'),
                 prospect_email=contact.get('email'),
                 company_name=contact.get('company'),
+                job_link=contact.get('job_link'),
                 status="queued"
             )
             db.add(db_record)

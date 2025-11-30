@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { triggerColdOutreach } from '../../api/resumeApi';
 import { Spinner } from '../ui/Spinner';
 import { FaPlus, FaTrash, FaFileUpload, FaKeyboard } from 'react-icons/fa';
+import { Contact } from '../../types';
 import './ColdEmailPage.css';
 
 interface ColdEmailPageProps {
@@ -9,12 +10,6 @@ interface ColdEmailPageProps {
 }
 
 type InputMode = 'manual' | 'upload';
-
-export interface Contact {
-  name: string;
-  email: string;
-  company: string;
-}
 
 export const ColdEmailPage: React.FC<ColdEmailPageProps> = ({ onBack }) => {
   const [mode, setMode] = useState<InputMode>('manual');
@@ -135,6 +130,11 @@ export const ColdEmailPage: React.FC<ColdEmailPageProps> = ({ onBack }) => {
                 value={contact.email} 
                 onChange={(e) => handleInputChange(index, 'email', e.target.value)} 
               />
+              <input 
+                  placeholder="Job Link (Optional)" 
+                  value={contact.job_link || ''} 
+                  onChange={(e) => handleInputChange(index, 'job_link', e.target.value)} 
+              />
               {contacts.length > 1 && (
                 <button className="remove-row-btn" onClick={() => removeRow(index)}>
                   <FaTrash />
@@ -150,7 +150,8 @@ export const ColdEmailPage: React.FC<ColdEmailPageProps> = ({ onBack }) => {
         <div className="upload-section">
           <p className="helper-text">
             Upload an Excel (.xlsx) or CSV file. <br/>
-            <strong>Required columns:</strong> Name, Email, Company.
+            <strong>Required columns:</strong> Name, Email, Company. <br/>
+            <strong>Optional column:</strong> Job Link.
           </p>
           <div className="file-drop-area">
             <input type="file" accept=".xlsx, .csv" onChange={handleFileChange} />
