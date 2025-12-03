@@ -30,20 +30,21 @@ def normalize_dataframe(df: pd.DataFrame) -> List[Dict[str, Any]]:
     # 3. Convert to list of dicts
     records = df.to_dict(orient='records')
     
-    # Extract job link if present
-    job_link = r.get('job link') or r.get('job url') or r.get('url') or r.get('link')
-    
     # 4. Validate/Filter keys
     normalized = []
     for r in records:
+        # --- NEW: Extract job link (Must be INSIDE the loop) ---
+        job_link = r.get('job link') or r.get('job url') or r.get('url') or r.get('link')
+        
         # Only keep rows that have at least an email or name
         if r.get('name') or r.get('email'):
             normalized.append({
-                "name": r.get('name', ''),
-                "email": r.get('email', ''),
-                "company": r.get('company', ''),
-                "job_link": str(job_link).strip() if job_link else None
+                "name": r.get('name', '').strip(),
+                "email": r.get('email', '').strip(),
+                "company": r.get('company', '').strip(),
+                "job_link": str(job_link).strip() if job_link else ""
             })
+            
     return normalized
 
 
@@ -59,15 +60,19 @@ async def process_outreach_background(
     # 1. PARSE INPUTS
     final_contacts_list = []
     try:
+        print("Background: Parsing inputs...")
         if file_bytes:
             # Determine format based on filename or try both
             if file_filename and file_filename.endswith('.csv'):
+                print("Background: Detected CSV file.")
                 df = pd.read_csv(io.BytesIO(file_bytes))
             else:
+                print("Background: Detected Excel file.")
                 df = pd.read_excel(io.BytesIO(file_bytes))
             final_contacts_list = normalize_dataframe(df)
         
         elif contacts_json:
+            print("Background: Parsing JSON contacts.")
             parsed = json.loads(contacts_json)
             # Handle { "contacts": [...] } vs [...]
             final_contacts_list = parsed.get('contacts', parsed) if isinstance(parsed, dict) else parsed
@@ -127,7 +132,7 @@ async def process_outreach_background(
         user_context = "User profile unavailable."
 
     # 4. SEND TO N8N
-    n8n_url = settings.N8N_WEBHOOK_TEST_URL
+    n8n_url = settings.N8N_WEBHOOK_URL
     headers = {"X-API-KEY": settings.N8N_WEBHOOK_SECRET}
     
     payload = {
@@ -165,7 +170,7 @@ async def trigger_cold_outreach(
     if not file and not contacts_json:
         raise HTTPException(status_code=400, detail="Must provide either a file or a list of contacts.")
 
-    n8n_url = settings.N8N_WEBHOOK_TEST_URL
+    n8n_url = settings.N8N_WEBHOOK_URL
     
     # Read file bytes immediately (UploadFile is closed after request ends)
     file_bytes = await file.read() if file else None
