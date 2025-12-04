@@ -39,4 +39,22 @@ export const updateUserProfile = async (data: UserProfile) => {
   return response.json();
 };
 
-// ... You can add listResumes, etc. here later
+// --- NEW: Upload User CV Function ---
+export const uploadUserCV = async (file: File): Promise<UserProfile> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  // Note: authFetch automatically handles the Authorization header.
+  // It detects FormData and correctly lets the browser set the Content-Type boundary.
+  const response = await authFetch(`${API_BASE_URL}/users/me/cv`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: "Upload failed" }));
+    throw new Error(err.detail || "Failed to upload CV");
+  }
+  
+  return response.json();
+};
