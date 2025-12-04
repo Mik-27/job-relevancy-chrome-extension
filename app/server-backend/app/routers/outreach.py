@@ -8,10 +8,11 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..security import validate_token_and_get_user_id
+from ..security import get_current_user_id, validate_token_and_get_user_id
 from .. import database
 from ..services import resume_service, gcs_service, pdf_service
 from ..database import OutreachHistory
+from ..schemas import OutreachHistorySchema
 
 router = APIRouter(prefix="/outreach", tags=["Outreach"])
 
@@ -187,3 +188,18 @@ async def trigger_cold_outreach(
     )
 
     return {"message": "Outreach started. Emails are being drafted in the background."}
+
+@router.get("/history", response_model=List[OutreachHistorySchema])
+def get_outreach_history(
+    user_id: str = Depends(get_current_user_id), # Use the validator directly or via Depends
+    db: Session = Depends(database.get_db)
+):
+    
+    """Fetch outreach history for the current user."""
+    history = db.query(database.OutreachHistory)\
+        .filter(database.OutreachHistory.user_id == user_id)\
+        .order_by(database.OutreachHistory.created_at.desc())\
+        .all()
+        
+    print(f"Fetched {len(history)} outreach records for user {user_id}")
+    return history

@@ -37,8 +37,11 @@ export default function DashboardLayout({
           <Link href="/dashboard/profile" className={linkClass('/dashboard/profile')}>
             My Profile
           </Link>
-          <Link href="/dashboard/tracker" className={linkClass('/dashboard/tracker')}>
+          {/* <Link href="/dashboard/tracker" className={linkClass('/dashboard/tracker')}>
             App Tracker
+          </Link> */}
+          <Link href="/dashboard/outreach" className={linkClass('/dashboard/outreach')}>
+            Cold Outreach
           </Link>
         </nav>
 

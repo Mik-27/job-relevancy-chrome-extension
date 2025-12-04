@@ -1,3 +1,5 @@
+from datetime import datetime
+from uuid import UUID
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
 
@@ -135,6 +137,19 @@ class ContactSchema(BaseModel):
 
 class OutreachRequestSchema(BaseModel):
     contacts: List[ContactSchema]
+
+# --- NEW: Outreach History Schema ---
+class OutreachHistorySchema(BaseModel):
+    id: UUID
+    prospect_name: str
+    prospect_email: str = None
+    company_name: str = None
+    job_link: Optional[str] = None
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
     
     
 # Represents a single field on the webpage

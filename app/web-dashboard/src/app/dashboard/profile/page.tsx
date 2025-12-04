@@ -57,6 +57,7 @@ export default function ProfilePage() {
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
     } catch (err) {
       setMessage({ type: 'error', text: 'Failed to save changes.' });
+      console.error(err);
     } finally {
       setSaving(false);
     }

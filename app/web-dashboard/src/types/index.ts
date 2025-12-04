@@ -8,3 +8,13 @@ export interface UserProfile {
   location: string;
   cv_url?: string;
 }
+
+export interface OutreachRecord {
+  id: string;
+  prospect_name: string;
+  prospect_email?: string;
+  company_name?: string;
+  job_link?: string;
+  status: string;
+  created_at: string;
+}
