@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getOutreachHistory } from '@/lib/api';
 import { OutreachRecord } from '@/types';
-import { FaSearch, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaSearch, FaExternalLinkAlt, FaEnvelopeOpenText } from 'react-icons/fa';
 
 export default function OutreachPage() {
   const [records, setRecords] = useState<OutreachRecord[]>([]);
@@ -39,6 +39,31 @@ export default function OutreachPage() {
     r.prospect_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // --- NEW: Helper to generate Gmail URL ---
+  const getGmailDraftUrl = (record: OutreachRecord): string | null => {
+    if (!record.draft_metadata) return null;
+
+    // Handle case where metadata might be wrapped in an array (based on your input)
+    // or just an object.
+    let data: OutreachRecord['draft_metadata'] = record.draft_metadata;
+    if (typeof data === 'string') {
+    try {
+        data = JSON.parse(data);
+    } catch (e) {
+        console.error('Failed to parse draft_metadata:', e);
+        return null;
+    }
+    }
+
+    // Extract message ID
+    const messageId = data?.message?.id;
+    if (messageId) {
+      // Construct the specific link to open this draft
+      return `https://mail.google.com/mail/u/0/#drafts?compose=${messageId}`;
+    }
+    return null;
+  };
 
   if (loading) return <div className="p-8 text-muted animate-pulse">Loading outreach history...</div>;
   if (error) return <div className="p-8 text-error">{error}</div>;
@@ -85,9 +110,10 @@ export default function OutreachPage() {
                 </tr>
               ) : (
                 filteredRecords.map((record) => (
-                  <tr key={record.id} className="hover:bg-secondary/30 transition-colors">
+
+                    <tr key={record.id} className="hover:bg-secondary/30 transition-colors">
                     <td className="p-4">
-                      <div className="font-medium text-foreground">{record.prospect_name}</div>
+                      <div className="font-medium text-foreground">record.prospect_name</div>
                       <div className="text-xs text-muted">{record.prospect_email}</div>
                     </td>
                     <td className="p-4 text-foreground">
@@ -101,7 +127,22 @@ export default function OutreachPage() {
                     <td className="p-4 text-muted">
                       {new Date(record.created_at).toLocaleDateString()}
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-right flex justify-end gap-2">
+                      {/* --- NEW: Open Draft Button --- */}
+                      
+                      {getGmailDraftUrl(record) && (
+                        <a 
+                          href={getGmailDraftUrl(record)!} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded transition"
+                          title="Open Draft in Gmail"
+                        >
+                          <FaEnvelopeOpenText />
+                        </a>
+                      )}
+
+                      {/* Existing Job Link Button */}
                       {record.job_link && (
                         <a 
                           href={record.job_link} 

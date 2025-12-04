@@ -17,4 +17,11 @@ export interface OutreachRecord {
   job_link?: string;
   status: string;
   created_at: string;
+  draft_metadata?: {
+    id: string;
+    message?: {
+      id: string;
+      threadId: string;
+    };
+  };
 }

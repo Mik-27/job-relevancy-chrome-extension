@@ -1,6 +1,7 @@
 import uuid
 from sqlalchemy import Boolean, create_engine, Column, Integer, String, Text, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.dialects.postgresql import JSONB
 from .config import settings
 import datetime
 
@@ -55,6 +56,7 @@ class OutreachHistory(Base):
     job_link = Column(String, nullable=True) 
     status = Column(String, default="processing")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    draft_metadata = Column(JSONB, nullable=True) 
 
 
 # Dependency to get a DB session in our API endpoints

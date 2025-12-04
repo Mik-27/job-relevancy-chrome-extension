@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 from pydantic import BaseModel, Field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 # NEW: Schema for updating profile (all fields optional)
 class UserUpdateSchema(BaseModel):
@@ -147,6 +147,7 @@ class OutreachHistorySchema(BaseModel):
     job_link: Optional[str] = None
     status: str
     created_at: datetime
+    draft_metadata: Optional[Any] = None 
 
     class Config:
         from_attributes = True
