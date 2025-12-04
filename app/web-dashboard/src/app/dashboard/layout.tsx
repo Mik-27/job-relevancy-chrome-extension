@@ -1,6 +1,7 @@
 'use client';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link'; // Use Next.js Link for better performance
 
 export default function DashboardLayout({
   children,
@@ -8,29 +9,51 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter();
+  const pathname = usePathname(); // To check active link
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
   };
 
+  // Helper for active link styling
+  const linkClass = (path: string) => 
+    `block p-2 rounded-lg transition-colors ${
+      pathname === path 
+        ? 'bg-primary text-white font-medium' 
+        : 'text-muted hover:bg-secondary hover:text-white'
+    }`;
+
   return (
-    <div className="flex h-screen bg-gray-950 text-gray-100">
+    <div className="flex h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 border-r border-gray-800 p-4 flex flex-col">
-        <h2 className="text-xl font-bold mb-8 text-blue-400">Resume HQ</h2>
+      <aside className="w-64 bg-[#1e1e1e] border-r border-border p-4 flex flex-col">
+        <h2 className="text-xl font-bold mb-8 text-white tracking-tight">Resume Analyzer HQ</h2>
+        
         <nav className="flex-1 space-y-2">
-          <a href="/dashboard" className="block p-2 rounded hover:bg-gray-800">Overview</a>
-          <a href="/dashboard/profile" className="block p-2 rounded hover:bg-gray-800">My Profile</a>
-          <a href="/dashboard/tracker" className="block p-2 rounded hover:bg-gray-800">App Tracker</a>
+          <Link href="/dashboard" className={linkClass('/dashboard')}>
+            Overview
+          </Link>
+          <Link href="/dashboard/profile" className={linkClass('/dashboard/profile')}>
+            My Profile
+          </Link>
+          <Link href="/dashboard/tracker" className={linkClass('/dashboard/tracker')}>
+            App Tracker
+          </Link>
         </nav>
-        <button onClick={handleLogout} className="text-left p-2 text-gray-400 hover:text-white">
-          Sign Out
-        </button>
+
+        <div className="pt-4 border-t border-border">
+          <button 
+            onClick={handleLogout} 
+            className="w-full text-left p-2 text-muted hover:text-error hover:bg-[#3a1d1d] rounded-lg transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8">
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto p-8 bg-background">
         {children}
       </main>
     </div>

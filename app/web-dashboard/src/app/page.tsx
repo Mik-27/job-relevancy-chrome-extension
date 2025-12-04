@@ -28,7 +28,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-white p-4">
-      <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-xl border border-gray-700">
+      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-xl border border-border">
         <h1 className="text-2xl font-bold text-center">Resume Analyzer HQ</h1>
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
