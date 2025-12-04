@@ -15,6 +15,8 @@ from ..database import OutreachHistory
 
 router = APIRouter(prefix="/outreach", tags=["Outreach"])
 
+# TODO: N8N LinkedIn scraper optimizations
+# TODO: N8N Generic scraper optimizations
 
 def normalize_dataframe(df: pd.DataFrame) -> List[Dict[str, Any]]:
     """
@@ -132,13 +134,13 @@ async def process_outreach_background(
         user_context = "User profile unavailable."
 
     # 4. SEND TO N8N
-    n8n_url = settings.N8N_WEBHOOK_URL
+    n8n_url = settings.N8N_WEBHOOK_TEST_URL
     headers = {"X-API-KEY": settings.N8N_WEBHOOK_SECRET}
     
     payload = {
         "user_id": user_id,
         "user_context": user_context,
-        "contacts": contacts_for_n8n # Clean list with record_ids
+        "contacts": contacts_for_n8n
     }
 
     async with httpx.AsyncClient() as client:
@@ -169,8 +171,6 @@ async def trigger_cold_outreach(
     
     if not file and not contacts_json:
         raise HTTPException(status_code=400, detail="Must provide either a file or a list of contacts.")
-
-    n8n_url = settings.N8N_WEBHOOK_URL
     
     # Read file bytes immediately (UploadFile is closed after request ends)
     file_bytes = await file.read() if file else None
