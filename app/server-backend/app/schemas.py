@@ -148,6 +148,7 @@ class OutreachHistorySchema(BaseModel):
     status: str
     created_at: datetime
     draft_metadata: Optional[Any] = None 
+    sent_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

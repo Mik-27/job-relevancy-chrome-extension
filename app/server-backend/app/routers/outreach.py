@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import io
 import httpx
@@ -135,7 +136,7 @@ async def process_outreach_background(
         user_context = "User profile unavailable."
 
     # 4. SEND TO N8N
-    n8n_url = settings.N8N_WEBHOOK_TEST_URL
+    n8n_url = settings.N8N_WEBHOOK_URL
     headers = {"X-API-KEY": settings.N8N_WEBHOOK_SECRET}
     
     payload = {
@@ -203,3 +204,25 @@ def get_outreach_history(
         
     print(f"Fetched {len(history)} outreach records for user {user_id}")
     return history
+
+@router.patch("/{record_id}/sent", response_model=OutreachHistorySchema)
+def mark_outreach_as_sent(
+    record_id: str,
+    user_id: str = Depends(validate_token_and_get_user_id), # Or get_current_user_id
+    db: Session = Depends(database.get_db)
+):
+    """Updates status to 'sent' and records the timestamp."""
+    record = db.query(OutreachHistory).filter(
+        OutreachHistory.id == record_id,
+        OutreachHistory.user_id == user_id
+    ).first()
+
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    record.status = "sent"
+    record.sent_at = datetime.now(database.timezone.utc)
+    
+    db.commit()
+    db.refresh(record)
+    return record

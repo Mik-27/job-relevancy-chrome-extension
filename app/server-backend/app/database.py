@@ -57,6 +57,7 @@ class OutreachHistory(Base):
     status = Column(String, default="processing")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     draft_metadata = Column(JSONB, nullable=True) 
+    sent_at = Column(DateTime, nullable=True)
 
 
 # Dependency to get a DB session in our API endpoints
