@@ -65,3 +65,12 @@ export const getOutreachHistory = async (): Promise<OutreachRecord[]> => {
   if (!response.ok) throw new Error("Failed to fetch outreach history");
   return response.json();
 };
+
+// NEW: Function to mark as sent
+export const markOutreachAsSent = async (recordId: string): Promise<OutreachRecord> => {
+  const response = await authFetch(`${API_BASE_URL}/outreach/${recordId}/sent`, {
+    method: 'PATCH',
+  });
+  if (!response.ok) throw new Error("Failed to update status");
+  return response.json();
+};

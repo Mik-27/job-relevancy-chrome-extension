@@ -24,4 +24,5 @@ export interface OutreachRecord {
       threadId: string;
     };
   };
+  sent_at?: string;
 }

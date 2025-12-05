@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getOutreachHistory } from '@/lib/api';
+import { getOutreachHistory, markOutreachAsSent } from '@/lib/api';
 import { OutreachRecord } from '@/types';
-import { FaSearch, FaExternalLinkAlt, FaEnvelopeOpenText } from 'react-icons/fa';
+import { FaSearch, FaExternalLinkAlt, FaEnvelopeOpenText, FaCheck } from 'react-icons/fa';
 
 export default function OutreachPage() {
   const [records, setRecords] = useState<OutreachRecord[]>([]);
@@ -21,6 +21,8 @@ export default function OutreachPage() {
   // Status Badge Helper
   const getStatusStyle = (status: string) => {
     switch (status.toLowerCase()) {
+      case 'sent':
+        return 'bg-blue-400/10 text-blue-400 border-blue-400/20';
       case 'drafted':
       case 'complete':
         return 'bg-success/10 text-success border-success/20';
@@ -65,6 +67,22 @@ export default function OutreachPage() {
     return null;
   };
 
+  // --- NEW: Handler for marking as sent ---
+  const handleMarkSent = async (id: string) => {
+    // Optimistic update or simple reload? Let's do a quick local state update
+    try {
+      await markOutreachAsSent(id);
+      
+      // Update local state to reflect change immediately
+      setRecords(prevRecords => prevRecords.map(r => 
+        r.id === id ? { ...r, status: 'sent', sent_at: new Date().toISOString() } : r
+      ));
+    } catch (err) {
+      console.error("Failed to mark as sent", err);
+      alert("Failed to update status");
+    }
+  };
+
   if (loading) return <div className="p-8 text-muted animate-pulse">Loading outreach history...</div>;
   if (error) return <div className="p-8 text-error">{error}</div>;
 
@@ -97,8 +115,9 @@ export default function OutreachPage() {
                 <th className="p-4 font-semibold text-muted">Prospect</th>
                 <th className="p-4 font-semibold text-muted">Company</th>
                 <th className="p-4 font-semibold text-muted">Status</th>
-                <th className="p-4 font-semibold text-muted">Date</th>
-                <th className="p-4 font-semibold text-muted text-right">Actions</th>
+                <th className="p-4 font-semibold text-muted">Date Drafted</th>
+                <th className="p-4 font-semibold text-muted">Date Sent</th>
+                <th className="p-4 font-semibold text-muted text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -127,8 +146,21 @@ export default function OutreachPage() {
                     <td className="p-4 text-muted">
                       {new Date(record.created_at).toLocaleDateString()}
                     </td>
-                    <td className="p-4 text-right flex justify-end gap-2">
-                      {/* --- NEW: Open Draft Button --- */}
+                    <td className="p-4 text-muted">
+                      {record.sent_at ? new Date(record.sent_at).toLocaleDateString() : ''}
+                    </td>
+                    <td className="p-4 text-right flex justify-center gap-2">
+                      {/* --- Mark as Sent Button --- */}
+                      {/* Only show if status is 'drafted' or 'complete', not if already 'sent' */}
+                      {record.status !== 'sent' && (record.status === 'drafted' || record.status === 'complete') && (
+                        <button
+                          onClick={() => handleMarkSent(record.id)}
+                          className="inline-flex items-center justify-center p-2 text-success hover:text-white hover:bg-success/20 rounded transition"
+                          title="Mark as Sent"
+                        >
+                          <FaCheck />
+                        </button>
+                      )}
                       
                       {getGmailDraftUrl(record) && (
                         <a 
