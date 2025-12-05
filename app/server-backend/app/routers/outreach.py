@@ -13,7 +13,7 @@ from ..security import get_current_user_id, validate_token_and_get_user_id
 from .. import database
 from ..services import resume_service, gcs_service, pdf_service
 from ..database import OutreachHistory
-from ..schemas import OutreachHistorySchema
+from ..schemas import OutreachHistorySchema, PaginatedOutreachHistory
 
 router = APIRouter(prefix="/outreach", tags=["Outreach"])
 
@@ -190,20 +190,54 @@ async def trigger_cold_outreach(
 
     return {"message": "Outreach started. Emails are being drafted in the background."}
 
-@router.get("/history", response_model=List[OutreachHistorySchema])
+# --- UPDATED: GET Endpoint with Pagination & Search ---
+@router.get("/history", response_model=PaginatedOutreachHistory)
 def get_outreach_history(
-    user_id: str = Depends(get_current_user_id), # Use the validator directly or via Depends
+    page: int = 1,
+    limit: int = 15,
+    search: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id),
     db: Session = Depends(database.get_db)
 ):
+    """
+    Fetch paginated and filtered outreach history.
+    """
+    # 1. Base Query
+    query = db.query(OutreachHistory).filter(OutreachHistory.user_id == user_id)
+
+    # 2. Apply Search Filter (if provided)
+    if search:
+        search_term = f"%{search}%"
+        # Search in Prospect Name OR Company Name
+        query = query.filter(
+            or_(
+                OutreachHistory.prospect_name.ilike(search_term),
+                OutreachHistory.company_name.ilike(search_term)
+            )
+        )
+
+    # 3. Get Total Count (for pagination UI)
+    total_records = query.count()
+
+    # 4. Apply Sorting and Pagination
+    # Calculate offset
+    offset = (page - 1) * limit
     
-    """Fetch outreach history for the current user."""
-    history = db.query(database.OutreachHistory)\
-        .filter(database.OutreachHistory.user_id == user_id)\
-        .order_by(database.OutreachHistory.created_at.desc())\
-        .all()
-        
-    print(f"Fetched {len(history)} outreach records for user {user_id}")
-    return history
+    records = query.order_by(OutreachHistory.created_at.desc())\
+                   .offset(offset)\
+                   .limit(limit)\
+                   .all()
+
+    # 5. Calculate Total Pages
+    total_pages = (total_records + limit - 1) // limit
+
+    return {
+        "items": records,
+        "total": total_records,
+        "page": page,
+        "size": limit,
+        "pages": total_pages
+    }
 
 
 @router.patch("/{record_id}/sent", response_model=OutreachHistorySchema)

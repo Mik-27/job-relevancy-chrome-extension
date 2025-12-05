@@ -152,6 +152,14 @@ class OutreachHistorySchema(BaseModel):
 
     class Config:
         from_attributes = True
+        
+# --- NEW: Paginated Response Wrapper ---
+class PaginatedOutreachHistory(BaseModel):
+    items: List[OutreachHistorySchema]
+    total: int
+    page: int
+    size: int
+    pages: int
     
     
 # Represents a single field on the webpage
