@@ -113,7 +113,7 @@ export default function OutreachPage() {
 
                     <tr key={record.id} className="hover:bg-secondary/30 transition-colors">
                     <td className="p-4">
-                      <div className="font-medium text-foreground">record.prospect_name</div>
+                      <div className="font-medium text-foreground">{record.prospect_name}</div>
                       <div className="text-xs text-muted">{record.prospect_email}</div>
                     </td>
                     <td className="p-4 text-foreground">

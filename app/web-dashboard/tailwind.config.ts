@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Main Background (#242424) - Use as 'bg-background'
-        background: "#242424",
+        // Main Background (#1e1e1e) - Use as 'bg-background'
+        background: "#1e1e1e",
         
         // Main Text (rgba(255, 255, 255, 0.87)) - Use as 'text-foreground'
         foreground: "rgba(255, 255, 255, 0.87)",
