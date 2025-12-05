@@ -1,4 +1,4 @@
-import { OutreachRecord, UserProfile } from '@/types';
+import { OutreachRecord, PaginatedResponse, UserProfile } from '@/types';
 import { supabase } from './supabaseClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -59,9 +59,25 @@ export const uploadUserCV = async (file: File): Promise<UserProfile> => {
   return response.json();
 };
 
-// --- Outreach Tracker Functions --- 
-export const getOutreachHistory = async (): Promise<OutreachRecord[]> => {
-  const response = await authFetch(`${API_BASE_URL}/outreach/history`);
+// UPDATED: Function accepts params
+export const getOutreachHistory = async (
+  page: number = 1, 
+  limit: number = 15, 
+  search: string = ''
+): Promise<PaginatedResponse<OutreachRecord>> => {
+  
+  // Build query params
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  if (search) {
+    params.append('search', search);
+  }
+
+  const response = await authFetch(`${API_BASE_URL}/outreach/history?${params.toString()}`);
+  
   if (!response.ok) throw new Error("Failed to fetch outreach history");
   return response.json();
 };

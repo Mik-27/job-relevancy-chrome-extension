@@ -26,3 +26,12 @@ export interface OutreachRecord {
   };
   sent_at?: string;
 }
+
+// NEW: Response interface matching backend schema
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}

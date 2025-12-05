@@ -13,10 +13,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Fetch real data for the outreach stats
-    getOutreachHistory()
+    getOutreachHistory(1, 5)
       .then((data) => {
-        setOutreachCount(data.length);
-        setRecentOutreach(data.slice(0, 5)); // Get top 5 recent
+        setOutreachCount(data.total);
+        setRecentOutreach(data.items); // Get top 5 recent
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));

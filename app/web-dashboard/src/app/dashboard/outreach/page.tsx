@@ -1,22 +1,55 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getOutreachHistory, markOutreachAsSent } from '@/lib/api';
 import { OutreachRecord } from '@/types';
-import { FaSearch, FaExternalLinkAlt, FaEnvelopeOpenText, FaCheck } from 'react-icons/fa';
+import { FaSearch, FaExternalLinkAlt, FaEnvelopeOpenText, FaCheck, FaChevronRight, FaChevronLeft } from 'react-icons/fa';
 
 export default function OutreachPage() {
   const [records, setRecords] = useState<OutreachRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  
+  // --- Pagination & Search State ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [searchTerm, setSearchTerm] = useState(''); // Immediate value for input
+  const [debouncedSearch, setDebouncedSearch] = useState(''); // Value for API call
 
   useEffect(() => {
-    getOutreachHistory()
-      .then(setRecords)
-      .catch(() => setError('Failed to load history.'))
-      .finally(() => setLoading(false));
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset to page 1 on new search
+    }, 500); // Wait 500ms after typing stops
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch page 1 if searching, otherwise current page
+      const data = await getOutreachHistory(currentPage, 15, debouncedSearch);
+      setRecords(data.items);
+      setTotalPages(data.pages);
+      setTotalItems(data.total);
+    } catch (err) {
+      setError('Failed to load history.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, debouncedSearch]);
+
+  // Trigger the fetch
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Status Badge Helper
   const getStatusStyle = (status: string) => {
@@ -35,12 +68,6 @@ export default function OutreachPage() {
         return 'bg-secondary text-muted border-border';
     }
   };
-
-  // Simple Search Filter
-  const filteredRecords = records.filter(r => 
-    r.prospect_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   // --- NEW: Helper for Date/Time formatting ---
   const formatDateTime = (dateString: string) => {
@@ -97,28 +124,30 @@ export default function OutreachPage() {
   if (error) return <div className="p-8 text-error">{error}</div>;
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+    <div className="max-w-6xl mx-auto flex flex-col">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Cold Outreach</h1>
-          <p className="text-muted mt-1">Track your AI-generated email drafts.</p>
+          <p className="text-muted mt-1">
+            Showing {records.length} of {totalItems} records
+          </p>
         </div>
         
         {/* Search Bar */}
-        <div className="relative">
+        <div className="relative w-full md:w-72">
           <input 
             type="text" 
             placeholder="Search name or company..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-input border border-border rounded-lg pl-10 pr-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full md:w-64"
+            className="w-full bg-input border border-border rounded-lg pl-10 pr-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
           />
           <FaSearch className="absolute left-3 top-3 text-muted text-xs" />
         </div>
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg">
-        <div className="overflow-x-auto">
+        <div className="flex-1 overflow-y-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-secondary/50 border-b border-border">
               <tr>
@@ -131,14 +160,12 @@ export default function OutreachPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredRecords.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted italic">
-                    No records found. Start a campaign from the extension!
-                  </td>
-                </tr>
+              {loading ? (
+                 <tr><td colSpan={5} className="p-8 text-center text-muted">Loading...</td></tr>
+              ) : records.length === 0 ? (
+                <tr><td colSpan={5} className="p-8 text-center text-muted italic">No records found.</td></tr>
               ) : (
-                filteredRecords.map((record) => (
+                records.map((record) => (
 
                     <tr key={record.id} className="hover:bg-secondary/30 transition-colors">
                     <td className="p-4">
@@ -202,6 +229,28 @@ export default function OutreachPage() {
               )}
             </tbody>
           </table>
+        </div>
+         {/* --- NEW: Pagination Footer --- */}
+        <div className="p-4 border-t border-border bg-secondary/30 flex items-center justify-between flex-shrink-0">
+            <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1 || loading}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+                <FaChevronLeft size={12} /> Previous
+            </button>
+
+            <span className="text-sm text-muted">
+                Page <strong className="text-foreground">{currentPage}</strong> of <strong className="text-foreground">{totalPages}</strong>
+            </span>
+
+            <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages || loading}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+                Next <FaChevronRight size={12} />
+            </button>
         </div>
       </div>
     </div>
