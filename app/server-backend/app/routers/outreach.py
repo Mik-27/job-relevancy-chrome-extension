@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import io
 import httpx
@@ -205,10 +205,11 @@ def get_outreach_history(
     print(f"Fetched {len(history)} outreach records for user {user_id}")
     return history
 
+
 @router.patch("/{record_id}/sent", response_model=OutreachHistorySchema)
 def mark_outreach_as_sent(
     record_id: str,
-    user_id: str = Depends(validate_token_and_get_user_id), # Or get_current_user_id
+    user_id: str = Depends(get_current_user_id),
     db: Session = Depends(database.get_db)
 ):
     """Updates status to 'sent' and records the timestamp."""
@@ -221,7 +222,7 @@ def mark_outreach_as_sent(
         raise HTTPException(status_code=404, detail="Record not found")
 
     record.status = "sent"
-    record.sent_at = datetime.now(database.timezone.utc)
+    record.sent_at = datetime.now(timezone.utc)
     
     db.commit()
     db.refresh(record)
