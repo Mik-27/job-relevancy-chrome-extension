@@ -42,6 +42,16 @@ export default function OutreachPage() {
     r.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // --- NEW: Helper for Date/Time formatting ---
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString(undefined, {
+      month: 'short', 
+      day: 'numeric', 
+      hour: 'numeric', 
+      minute: '2-digit'
+    });
+  };
+
   // --- NEW: Helper to generate Gmail URL ---
   const getGmailDraftUrl = (record: OutreachRecord): string | null => {
     if (!record.draft_metadata) return null;
@@ -117,7 +127,7 @@ export default function OutreachPage() {
                 <th className="p-4 font-semibold text-muted">Status</th>
                 <th className="p-4 font-semibold text-muted">Date Drafted</th>
                 <th className="p-4 font-semibold text-muted">Date Sent</th>
-                <th className="p-4 font-semibold text-muted text-center">Actions</th>
+                <th className="p-4 font-semibold text-muted text-end pr-12">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -144,12 +154,12 @@ export default function OutreachPage() {
                       </span>
                     </td>
                     <td className="p-4 text-muted">
-                      {new Date(record.created_at).toLocaleDateString()}
+                      {formatDateTime(record.created_at)}
                     </td>
                     <td className="p-4 text-muted">
-                      {record.sent_at ? new Date(record.sent_at).toLocaleDateString() : ''}
+                      {record.sent_at ? formatDateTime(record.sent_at) : ''}
                     </td>
-                    <td className="p-4 text-right flex justify-center gap-2">
+                    <td className="p-4 text-right flex justify-end gap-2">
                       {/* --- Mark as Sent Button --- */}
                       {/* Only show if status is 'drafted' or 'complete', not if already 'sent' */}
                       {record.status !== 'sent' && (record.status === 'drafted' || record.status === 'complete') && (
