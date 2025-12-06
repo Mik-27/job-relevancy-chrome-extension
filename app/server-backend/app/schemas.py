@@ -59,6 +59,7 @@ class ResumeBase(BaseModel):
     filename: str
     company: str
     autoscore: bool
+    file_url: Optional[str] = None 
 
     # This tells Pydantic to read the data even if it's an ORM model
     class Config:

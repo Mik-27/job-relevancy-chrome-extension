@@ -4,7 +4,8 @@ from typing import List
 
 from .. import database, schemas
 from ..services import gcs_service, pdf_service, resume_service
-from ..security import get_current_user_id, validate_token_and_get_user_id #
+from ..security import get_current_user_id, validate_token_and_get_user_id
+from ..config import settings
 
 router = APIRouter(
     prefix="/resumes",
@@ -63,8 +64,21 @@ async def upload_resume(
 
 @router.get("/", response_model=List[schemas.ResumeBase])
 def list_resumes(current_user_id: str = Depends(get_current_user_id), db: Session = Depends(database.get_db)):
-    """Retrieves a list of all uploaded resumes (ID and filename)."""
-    return resume_service.get_all_resumes_for_user(db=db, user_id=current_user_id)
+    """Retrieves a list of all uploaded resumes with signed URLs."""
+    resumes = resume_service.get_all_resumes_for_user(db=db, user_id=current_user_id)
+    
+    # Convert ORM objects to Pydantic models and inject Signed URLs
+    results = []
+    for r in resumes:
+        resume_model = schemas.ResumeBase.model_validate(r)
+        if r.storage_path:
+            # Ensure we don't have double domains from old data
+            clean_path = r.storage_path.replace(f"https://storage.googleapis.com/{settings.BUCKET_NAME}/", "")
+            # Generate the secure link
+            resume_model.file_url = gcs_service.generate_signed_url(clean_path)
+        results.append(resume_model)
+        
+    return results
 
 
 @router.get("/{resume_id}/content", response_model=str)

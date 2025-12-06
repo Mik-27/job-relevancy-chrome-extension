@@ -1,4 +1,4 @@
-import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile } from '@/types';
+import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem } from '@/types';
 import { supabase } from './supabaseClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -90,16 +90,6 @@ export const markOutreachAsSent = async (recordId: string): Promise<OutreachReco
   if (!response.ok) throw new Error("Failed to update status");
   return response.json();
 };
-
-
-// Define Resume Interface locally or in types/index.ts
-export interface ResumeItem {
-  id: number;
-  filename: string;
-  company: string;
-  created_at: string;
-  autoscore: boolean;
-}
 
 // --- NEW: Resume Management Functions ---
 

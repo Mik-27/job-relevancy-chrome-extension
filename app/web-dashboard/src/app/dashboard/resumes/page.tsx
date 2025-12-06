@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { listResumes, deleteResume, uploadResume, ResumeItem } from '@/lib/api';
+import { listResumes, deleteResume, uploadResume } from '@/lib/api';
 import { FaFilePdf, FaTrash, FaPlus, FaTimes, FaCloudUploadAlt } from 'react-icons/fa';
+import { ResumeItem } from '@/types';
+import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
 
 export default function MyResumesPage() {
   const [resumes, setResumes] = useState<ResumeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [previewResume, setPreviewResume] = useState<ResumeItem | null>(null);
 
   // Upload State
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -39,6 +42,7 @@ export default function MyResumesPage() {
       setResumes(prev => prev.filter(r => r.id !== id));
     } catch (error) {
       alert("Failed to delete resume");
+      console.error(error);
     }
   };
 
@@ -57,6 +61,7 @@ export default function MyResumesPage() {
       setAutoscore(false);
     } catch (error) {
       alert("Upload failed");
+      console.error(error);
     } finally {
       setIsUploading(false);
     }
@@ -90,8 +95,11 @@ export default function MyResumesPage() {
 
           {/* --- 2. Resume Cards --- */}
           {resumes.map((resume) => (
-            <div key={resume.id} className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between h-48 hover:border-primary/50 transition-all relative group">
-              
+            <div 
+              key={resume.id} 
+              onClick={() => setPreviewResume(resume)}
+              className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between h-48 hover:border-primary transition-all relative group cursor-pointer shadow-sm hover:shadow-md"
+            >  
               {/* Top Section */}
               <div className="flex items-start justify-between">
                 <div className="p-3 bg-red-500/10 text-red-400 rounded-lg">
@@ -115,7 +123,7 @@ export default function MyResumesPage() {
                 <p className="text-xs text-muted truncate mt-1" title={resume.filename}>
                   {resume.filename}
                 </p>
-                {/* <div className="mt-3 flex items-center gap-2">
+                <div className="mt-3 flex items-center gap-2">
                     {resume.autoscore && (
                         <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">
                             Auto-Score
@@ -123,9 +131,9 @@ export default function MyResumesPage() {
                     )}
  
                     <span className="text-[10px] text-muted">
-                        new Date().toLocaleDateString() 
+                        Uploaded: {new Date().toLocaleDateString()} 
                     </span>
-                </div> */}
+                </div>
               </div>
             </div>
           ))}
@@ -200,6 +208,16 @@ export default function MyResumesPage() {
           </div>
         </div>
       )}
+
+      {/* --- NEW: Resume Preview Modal --- */}
+      <FilePreviewModal 
+        isOpen={!!previewResume}
+        onClose={() => setPreviewResume(null)}
+        fileUrl={previewResume?.file_url || null}
+        title={`${previewResume?.company} - ${previewResume?.filename}`}
+        fileName={previewResume?.filename}
+      />
+      
     </div>
   );
 }

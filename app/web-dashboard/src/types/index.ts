@@ -36,6 +36,17 @@ export interface PaginatedResponse<T> {
   pages: number;
 }
 
+
+// Define Resume Interface locally or in types/index.ts
+export interface ResumeItem {
+  id: number;
+  filename: string;
+  company: string;
+  created_at: string;
+  autoscore: boolean;
+  file_url?: string;
+}
+
 export interface UploadResumeResponse {
   filename: string;
   company: string;

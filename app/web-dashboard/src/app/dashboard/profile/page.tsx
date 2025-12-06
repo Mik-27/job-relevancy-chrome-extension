@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { UserProfile } from '@/types';
 import { getUserProfile, updateUserProfile, uploadUserCV } from '@/lib/api';
-import { FaDownload, FaExternalLinkAlt, FaTimes } from 'react-icons/fa';
-import { FilePreviewModal } from '@/app/components/ui/FilePreviewModal';
+import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
