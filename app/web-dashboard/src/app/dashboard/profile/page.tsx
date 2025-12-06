@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { UserProfile } from '@/types';
 import { getUserProfile, updateUserProfile, uploadUserCV } from '@/lib/api';
 import { FaDownload, FaExternalLinkAlt, FaTimes } from 'react-icons/fa';
+import { FilePreviewModal } from '@/app/components/ui/FilePreviewModal';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -200,47 +201,14 @@ export default function ProfilePage() {
       </div>
 
       {/* --- CV PREVIEW MODAL --- */}
-      {showCvModal && profile.cv_url && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowCvModal(false)}>
-          <div 
-            className="bg-card border border-border rounded-xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-border bg-secondary/30 rounded-t-xl">
-              <h3 className="text-lg font-semibold text-foreground">Master CV Preview</h3>
-              <div className="flex items-center gap-2">
-                <a 
-                  href={profile.cv_url} 
-                  download 
-                  className="p-2 text-muted hover:text-white hover:bg-secondary rounded-lg transition"
-                  title="Download Original"
-                >
-                  <FaDownload />
-                </a>
-                 <a 
-                  href={profile.cv_url} 
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-2 text-muted hover:text-white hover:bg-secondary rounded-lg transition"
-                  title="Open in New Tab"
-                >
-                  <FaExternalLinkAlt />
-                </a>
-                <button 
-                  onClick={() => setShowCvModal(false)}
-                  className="p-2 text-muted hover:text-white hover:bg-error/20 hover:text-error rounded-lg transition ml-2"
-                  title="Close"
-                >
-                  <FaTimes size={20} />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 bg-[#1e1e1e] relative rounded-b-lg overflow-hidden">
-               {renderCvContent(profile.cv_url)}
-            </div>
-          </div>
-        </div>
+      {showCvModal && profile.cv_url && (  
+        <FilePreviewModal 
+          isOpen={showCvModal}
+          onClose={() => setShowCvModal(false)}
+          fileUrl={profile?.cv_url || null}
+          title="Master CV Preview"
+          fileName={`Master_CV_${profile?.first_name || 'User'}.pdf`}
+        />
       )}
     </div>
   );
