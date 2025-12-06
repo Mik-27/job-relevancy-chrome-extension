@@ -14,7 +14,8 @@ import {
   FaPaperPlane,
   FaUserCircle,
   FaChevronUp,
-  FaCog
+  FaCog,
+  FaFileAlt
 } from 'react-icons/fa';
 
 export default function DashboardLayout({
@@ -95,6 +96,14 @@ export default function DashboardLayout({
             <div className="text-xl"><FaChartPie /></div>
             <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100'}`}>
               Overview
+            </span>
+          </Link>
+
+          {/* --- NEW LINK --- */}
+          <Link href="/dashboard/resumes" className={linkClass('/dashboard/resumes')} title={isCollapsed ? "My Resumes" : ""}>
+            <div className="text-xl"><FaFileAlt /></div>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100'}`}>
+              My Resumes
             </span>
           </Link>
 

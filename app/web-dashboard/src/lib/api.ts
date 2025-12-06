@@ -1,4 +1,4 @@
-import { OutreachRecord, PaginatedResponse, UserProfile } from '@/types';
+import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile } from '@/types';
 import { supabase } from './supabaseClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -88,5 +88,59 @@ export const markOutreachAsSent = async (recordId: string): Promise<OutreachReco
     method: 'PATCH',
   });
   if (!response.ok) throw new Error("Failed to update status");
+  return response.json();
+};
+
+
+// Define Resume Interface locally or in types/index.ts
+export interface ResumeItem {
+  id: number;
+  filename: string;
+  company: string;
+  created_at: string;
+  autoscore: boolean;
+}
+
+// --- NEW: Resume Management Functions ---
+
+export const listResumes = async (): Promise<ResumeItem[]> => {
+  const response = await authFetch(`${API_BASE_URL}/resumes/`);
+  if (!response.ok) throw new Error("Failed to fetch resumes");
+  return response.json();
+};
+
+export const deleteResume = async (resumeId: number): Promise<void> => {
+  const response = await authFetch(`${API_BASE_URL}/resumes/${resumeId}`, {
+    method: 'DELETE',
+  });
+  if (response.status !== 204 && !response.ok) {
+    throw new Error("Failed to delete resume.");
+  }
+};
+
+export const uploadResume = async (file: File, company: string, autoscore: boolean): Promise<UploadResumeResponse> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("company", company);
+  formData.append("autoscore", String(autoscore));
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error("User is not authenticated.");
+  }
+  
+  // Append the token to the form data under a specific key, like 'token'.
+  formData.append("token", session.access_token);
+
+  // authFetch handles the Authorization header automatically
+  const response = await authFetch(`${API_BASE_URL}/resumes/upload`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || "File upload failed");
+  }
   return response.json();
 };

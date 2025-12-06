@@ -35,3 +35,10 @@ export interface PaginatedResponse<T> {
   size: number;
   pages: number;
 }
+
+export interface UploadResumeResponse {
+  filename: string;
+  company: string;
+  message: string;
+  content: string;
+}
