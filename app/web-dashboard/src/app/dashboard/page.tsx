@@ -25,9 +25,18 @@ export default function DashboardPage() {
   // Helper for status colors (consistent with Outreach Page)
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'drafted': return 'text-green-400 bg-green-400/10 border-green-400/20';
-      case 'queued': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20';
-      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+      case 'sent':
+        return 'bg-blue-400/10 text-blue-400 border-blue-400/40';
+      case 'drafted':
+      case 'complete':
+        return 'bg-success/10 text-success border-success/20';
+      case 'queued':
+      case 'processing':
+        return 'bg-warning/10 text-warning border-warning/20';
+      case 'failed':
+        return 'bg-error/10 text-error border-error/20';
+      default:
+        return 'bg-secondary text-muted border-border';
     }
   };
 
@@ -113,7 +122,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                       <span className={`px-2 py-1 rounded-md text-xs border ${getStatusColor(record.status)}`}>
+                       <span className={`px-2 pt-0.5 pb-1 rounded-xl text-xs border ${getStatusColor(record.status)}`}>
                           {record.status}
                        </span>
                        <span className="text-xs text-muted hidden sm:block">

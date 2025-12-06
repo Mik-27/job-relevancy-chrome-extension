@@ -55,7 +55,7 @@ export default function OutreachPage() {
   const getStatusStyle = (status: string) => {
     switch (status.toLowerCase()) {
       case 'sent':
-        return 'bg-blue-400/10 text-blue-400 border-blue-400/20';
+        return 'bg-blue-400/10 text-blue-400 border-blue-400/40';
       case 'drafted':
       case 'complete':
         return 'bg-success/10 text-success border-success/20';
@@ -176,7 +176,7 @@ export default function OutreachPage() {
                       {record.company_name || '-'}
                     </td>
                     <td className="p-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyle(record.status)}`}>
+                      <span className={`inline-flex items-center px-2.5 pt-0.25 pb-0.5 rounded-full text-xs font-medium border ${getStatusStyle(record.status)}`}>
                         {record.status}
                       </span>
                     </td>
