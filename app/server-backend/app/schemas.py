@@ -69,6 +69,9 @@ class ResumeBase(BaseModel):
 class ResumeListResponse(BaseModel):
     resumes: List[ResumeBase]
     
+class ResumeUpdate(BaseModel):
+    autoscore: Optional[bool] = None
+    
 # --- Sub-models for the new, detailed resume structure ---
 
 class EducationSchema(BaseModel):

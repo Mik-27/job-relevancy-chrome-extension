@@ -99,15 +99,6 @@ export const listResumes = async (): Promise<ResumeItem[]> => {
   return response.json();
 };
 
-export const deleteResume = async (resumeId: number): Promise<void> => {
-  const response = await authFetch(`${API_BASE_URL}/resumes/${resumeId}`, {
-    method: 'DELETE',
-  });
-  if (response.status !== 204 && !response.ok) {
-    throw new Error("Failed to delete resume.");
-  }
-};
-
 export const uploadResume = async (file: File, company: string, autoscore: boolean): Promise<UploadResumeResponse> => {
   const formData = new FormData();
   formData.append("file", file);
@@ -133,4 +124,28 @@ export const uploadResume = async (file: File, company: string, autoscore: boole
     throw new Error(errorData.detail || "File upload failed");
   }
   return response.json();
+};
+
+// NEW: Update resume details
+export const updateResumeAutoscore = async (resumeId: number, autoscore: boolean): Promise<ResumeItem> => {
+  const response = await authFetch(`${API_BASE_URL}/resumes/${resumeId}/autoscore`, {
+    method: 'PATCH',
+    body: JSON.stringify({ autoscore }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to update status.");
+  }
+  
+  return response.json();
+};
+
+export const deleteResume = async (resumeId: number): Promise<void> => {
+  const response = await authFetch(`${API_BASE_URL}/resumes/${resumeId}`, {
+    method: 'DELETE',
+  });
+  if (response.status !== 204 && !response.ok) {
+    throw new Error("Failed to delete resume.");
+  }
 };

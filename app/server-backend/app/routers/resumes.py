@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from .. import database, schemas
+from ..config import settings
 from ..services import gcs_service, pdf_service, resume_service
 from ..security import get_current_user_id, validate_token_and_get_user_id
-from ..config import settings
 
 router = APIRouter(
     prefix="/resumes",
@@ -79,6 +79,38 @@ def list_resumes(current_user_id: str = Depends(get_current_user_id), db: Sessio
         results.append(resume_model)
         
     return results
+
+@router.patch("/{resume_id}/autoscore", response_model=schemas.ResumeBase)
+def update_resume_autoscore_status(
+    resume_id: int,
+    request: schemas.ResumeUpdate,
+    current_user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Updates the autoscore status. Enforces a limit of 3 active resumes.
+    """
+    # 1. Enforce Limit if enabling
+    if request.autoscore:
+        count = resume_service.get_autoscore_count(db, current_user_id)
+        if count >= 3:
+            raise HTTPException(
+                status_code=400, 
+                detail="Autoscore limit reached. You can only enable auto-scoring for 3 resumes."
+            )
+
+    # 2. Update status
+    updated_resume = resume_service.update_resume_autoscore(
+        db=db, 
+        user_id=current_user_id, 
+        resume_id=resume_id, 
+        autoscore=request.autoscore
+    )
+    
+    if not updated_resume:
+        raise HTTPException(status_code=404, detail="Resume not found.")
+        
+    return updated_resume
 
 
 @router.get("/{resume_id}/content", response_model=str)

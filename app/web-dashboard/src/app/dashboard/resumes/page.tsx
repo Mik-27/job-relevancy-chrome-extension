@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { listResumes, deleteResume, uploadResume } from '@/lib/api';
+import { listResumes, deleteResume, uploadResume, updateResumeAutoscore } from '@/lib/api';
 import { FaFilePdf, FaTrash, FaPlus, FaTimes, FaCloudUploadAlt } from 'react-icons/fa';
 import { ResumeItem } from '@/types';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
@@ -32,6 +32,8 @@ export default function MyResumesPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // --- Handlers ---  
 
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering card click if we add one later
@@ -64,6 +66,34 @@ export default function MyResumesPage() {
       console.error(error);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  // --- NEW: Handle Toggle ---
+  const handleToggleAutoscore = async (id: number, currentStatus: boolean, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening the preview modal
+    
+    const newStatus = !currentStatus;
+
+    // Frontend Check: Limit to 3
+    if (newStatus) {
+      const activeCount = resumes.filter(r => r.autoscore).length;
+      if (activeCount >= 3) {
+        alert("Limit Reached: You can only enable auto-scoring for 3 resumes.");
+        return;
+      }
+    }
+
+    try {
+      // Optimistic Update (makes UI feel instant)
+      setResumes(prev => prev.map(r => r.id === id ? { ...r, autoscore: newStatus } : r));
+      
+      // Call API
+      await updateResumeAutoscore(id, newStatus);
+    } catch (error) {
+      // Revert on failure
+      setResumes(prev => prev.map(r => r.id === id ? { ...r, autoscore: currentStatus } : r));
+      alert(error instanceof Error ? error.message : "Failed to update status");
     }
   };
 
@@ -123,16 +153,31 @@ export default function MyResumesPage() {
                 <p className="text-xs text-muted truncate mt-1" title={resume.filename}>
                   {resume.filename}
                 </p>
-                <div className="mt-3 flex items-center gap-2">
-                    {resume.autoscore && (
-                        <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">
-                            Auto-Score
-                        </span>
-                    )}
- 
+                  <div className="mt-3 flex items-center justify-between gap-2">
                     <span className="text-[10px] text-muted">
                         Uploaded: {new Date().toLocaleDateString()} 
                     </span>
+
+                    <div className="flex items-center justify-between">
+                      <span className="mr-2 text-[10px] text-muted">Auto-Score</span>
+                   
+                      {/* Custom Toggle Switch */}
+                      <button
+                        onClick={(e) => handleToggleAutoscore(resume.id, resume.autoscore, e)}
+                        className={`
+                          relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none
+                          ${resume.autoscore ? 'bg-primary' : 'bg-gray-600'}
+                       `}
+                        title="Toggle Auto-Scoring"
+                      >
+                        <span
+                          className={`
+                          inline-block h-3 w-3 transform rounded-full bg-white transition-transform
+                          ${resume.autoscore ? 'translate-x-5' : 'translate-x-1'}
+                          `}
+                        />
+                      </button>
+                  </div>
                 </div>
               </div>
             </div>
