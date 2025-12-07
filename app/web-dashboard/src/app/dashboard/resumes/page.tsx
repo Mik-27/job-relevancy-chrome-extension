@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/context/ToastContext'; 
 import { listResumes, deleteResume, uploadResume, updateResumeAutoscore } from '@/lib/api';
 import { FaFilePdf, FaTrash, FaPlus, FaTimes, FaCloudUploadAlt } from 'react-icons/fa';
 import { ResumeItem } from '@/types';
@@ -17,6 +18,8 @@ export default function MyResumesPage() {
   const [companyName, setCompanyName] = useState('');
   const [autoscore, setAutoscore] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  const toast = useToast(); 
 
   const fetchData = async () => {
     try {
@@ -42,8 +45,9 @@ export default function MyResumesPage() {
     try {
       await deleteResume(id);
       setResumes(prev => prev.filter(r => r.id !== id));
+      toast.success("Resume deleted successfully.");
     } catch (error) {
-      alert("Failed to delete resume");
+      toast.error("Failed to delete resume.");
       console.error(error);
     }
   };
@@ -61,8 +65,9 @@ export default function MyResumesPage() {
       setUploadFile(null);
       setCompanyName('');
       setAutoscore(false);
+      toast.success("Resume uploaded successfully.");
     } catch (error) {
-      alert("Upload failed");
+      toast.error("Failed to upload resume. Please try again.");
       console.error(error);
     } finally {
       setIsUploading(false);
@@ -79,7 +84,7 @@ export default function MyResumesPage() {
     if (newStatus) {
       const activeCount = resumes.filter(r => r.autoscore).length;
       if (activeCount >= 3) {
-        alert("Limit Reached: You can only enable auto-scoring for 3 resumes.");
+        toast.error("Limit Reached: You can only enable auto-scoring for 3 resumes.");
         return;
       }
     }
@@ -93,7 +98,8 @@ export default function MyResumesPage() {
     } catch (error) {
       // Revert on failure
       setResumes(prev => prev.map(r => r.id === id ? { ...r, autoscore: currentStatus } : r));
-      alert(error instanceof Error ? error.message : "Failed to update status");
+      toast.error("Failed to update auto-scoring status.");
+      console.error(error);
     }
   };
 

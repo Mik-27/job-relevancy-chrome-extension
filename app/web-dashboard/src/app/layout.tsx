@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import "./globals.css"; // <--- THIS IMPORT IS CRITICAL
+import { ToastProvider } from "@/context/ToastContext"; 
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Resume Analyzer HQ",
@@ -13,7 +14,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {/* Wrap everything inside the body */}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </body>
     </html>
   );
 }
