@@ -6,28 +6,27 @@ import { Application } from '@/types';
 import { getApplications, updateApplicationStatus, createApplication, deleteApplication } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
 import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh } from 'react-icons/fa';
-import App from 'next/app';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 // Define columns/statuses
 const STATUSES = {
-  saved: { id: 'saved', title: 'Saved', color: 'border-l-4 border-gray-500', badge: 'bg-gray-500/10 text-gray-400 border-gray-500/20' },
-  applied: { id: 'applied', title: 'Applied', color: 'border-l-4 border-blue-500', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  interviewing: { id: 'interviewing', title: 'Interviewing', color: 'border-l-4 border-yellow-500', badge: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
-  offer: { id: 'offer', title: 'Offer', color: 'border-l-4 border-green-500', badge: 'bg-green-500/10 text-green-400 border-green-500/20' },
-  rejected: { id: 'rejected', title: 'Rejected', color: 'border-l-4 border-red-500', badge: 'bg-red-500/10 text-red-400 border-red-500/20' },
+  saved: { id: 'saved', title: 'Saved', color: 'border-l-4 border-gray-500 rounded-l-lg', badge: 'bg-gray-500/10 text-gray-400 border-gray-500/20' },
+  applied: { id: 'applied', title: 'Applied', color: 'border-l-4 border-blue-500 rounded-l-lg', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  interviewing: { id: 'interviewing', title: 'Interviewing', color: 'border-l-4 border-yellow-500 rounded-l-lg', badge: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
+  offer: { id: 'offer', title: 'Offer', color: 'border-l-4 border-green-500 rounded-l-lg', badge: 'bg-green-500/10 text-green-400 border-green-500/20' },
+  rejected: { id: 'rejected', title: 'Rejected', color: 'border-l-4 border-red-500 rounded-l-lg', badge: 'bg-red-500/10 text-red-400 border-red-500/20' },
 };
 
 export default function TrackerPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // --- NEW: View State ---
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
-  
-  const toast = useToast();
-  
   const [isAdding, setIsAdding] = useState(false);
   const [newApp, setNewApp] = useState({ company_name: '', job_title: '', job_url: '' });
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const toast = useToast();
 
   useEffect(() => {
     getApplications()
@@ -56,7 +55,7 @@ export default function TrackerPage() {
     // 2. API Call
     try {
       await updateApplicationStatus(id, newStatus);
-      toast.success(`Moved to ${STATUSES[newStatus as keyof typeof STATUSES].title}`);
+      toast.success(`Status changed to ${STATUSES[newStatus as keyof typeof STATUSES].title}`);
     } catch (err) {
       toast.error("Failed to update status");
       console.error(err);
@@ -80,15 +79,26 @@ export default function TrackerPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if(!confirm("Delete this application?")) return;
+  const handleDeleteClick = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setItemToDelete(id); // Set the ID, which opens the modal
+  };
+
+  // 4. NEW: ACTUAL DELETE LOGIC
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    
+    setIsDeleting(true);
     try {
-        await deleteApplication(id);
-        setApplications(prev => prev.filter(a => a.id !== id));
-        toast.success("Deleted");
+        await deleteApplication(itemToDelete);
+        setApplications(prev => prev.filter(a => a.id !== itemToDelete));
+        toast.success("Application deleted");
+        setItemToDelete(null); // Close modal on success
     } catch(err) {
-        toast.error("Failed to delete");
+        toast.error("Failed to delete application");
         console.error(err);
+    } finally {
+        setIsDeleting(false);
     }
   };
 
@@ -218,7 +228,7 @@ export default function TrackerPage() {
                                                 <FaExternalLinkAlt size={10} />
                                             </a>
                                         )}
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(app.id); }} className="text-muted hover:text-error transition opacity-0 group-hover:opacity-100">
+                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteClick(app.id); }} className="text-muted hover:text-error transition opacity-0 group-hover:opacity-100">
                                             <FaTrash size={10} />
                                         </button>
                                     </div>
@@ -281,7 +291,7 @@ export default function TrackerPage() {
                                                 <FaExternalLinkAlt />
                                             </a>
                                         )}
-                                        <button onClick={() => handleDelete(app.id)} className="text-muted hover:text-error transition" title="Delete">
+                                        <button onClick={() => handleDeleteClick(app.id)} className="text-muted hover:text-error transition" title="Delete">
                                             <FaTrash />
                                         </button>
                                     </td>
@@ -293,7 +303,16 @@ export default function TrackerPage() {
             </div>
         </div>
       )}
-
+      <ConfirmModal 
+         isOpen={!!itemToDelete}
+         onClose={() => setItemToDelete(null)}
+         onConfirm={confirmDelete}
+         title="Delete Application"
+         message="Are you sure you want to remove this application from your tracker? This action cannot be undone."
+         confirmText="Delete Application"
+         isDanger={true}
+         isLoading={isDeleting}
+       />
     </div>
   );
 }
