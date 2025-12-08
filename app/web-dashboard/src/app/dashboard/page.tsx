@@ -1,25 +1,65 @@
 'use client';
 
 import { useState, useEffect, ReactNode } from 'react';
-import { getOutreachHistory } from '@/lib/api';
+import { getOutreachHistory, getApplications } from '@/lib/api';
 import { OutreachRecord } from '@/types';
-import { FaPaperPlane, FaFileAlt, FaBriefcase, FaArrowRight, FaPlus, FaSearch } from 'react-icons/fa';
+import { FaPaperPlane, FaCalendarDay, FaBriefcase, FaArrowRight, FaPlus, FaSearch } from 'react-icons/fa';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const [outreachCount, setOutreachCount] = useState(0);
   const [recentOutreach, setRecentOutreach] = useState<OutreachRecord[]>([]);
+  const [appStats, setAppStats] = useState({ total: 0, today: 0, month: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch real data for the outreach stats
-    getOutreachHistory(1, 5)
-      .then((data) => {
-        setOutreachCount(data.total);
-        setRecentOutreach(data.items); // Get top 5 recent
-      })
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+    const fetchDashboardData = async () => {
+      try {
+        // 1. Fetch Outreach Data
+        const outreachData = await getOutreachHistory(1, 5);
+        setOutreachCount(outreachData.total);
+        setRecentOutreach(outreachData.items);
+
+        // 2. Fetch Application Data for Stats
+        const apps = await getApplications();
+        
+        // --- Calculate Stats ---
+        const now = new Date();
+        const todayStr = now.toDateString(); // e.g., "Mon Dec 08 2025"
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        let todayCount = 0;
+        let monthCount = 0;
+
+        apps.forEach(app => {
+          const appDate = new Date(app.created_at);
+          
+          // Check Today
+          if (appDate.toDateString() === todayStr) {
+            todayCount++;
+          }
+
+          // Check Month
+          if (appDate.getMonth() === currentMonth && appDate.getFullYear() === currentYear) {
+            monthCount++;
+          }
+        });
+
+        setAppStats({
+          total: apps.length,
+          today: todayCount,
+          month: monthCount
+        });
+
+      } catch (err) {
+        console.error("Failed to load dashboard data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
 
   // Helper for status colors (consistent with Outreach Page)
@@ -63,22 +103,32 @@ export default function DashboardPage() {
         {/* Card 1: Applications (Placeholder data for now) */}
         <MetricCard 
           title="Total Applications"
-          value="12" 
-          subtext="+2 this week"
+          value={loading ? "..." : appStats.total.toString()} 
+          subtext="Lifetime applications"
           icon={<FaBriefcase />}
           color="text-blue-400"
           bg="bg-blue-400/10"
         />
 
-        {/* Card 2: Resumes Tailored (Placeholder data for now) */}
-        <MetricCard 
-          title="Resumes Tailored"
-          value="24" 
-          subtext="Last tailored 2 hours ago"
-          icon={<FaFileAlt />}
-          color="text-purple-400"
-          bg="bg-purple-400/10"
-        />
+        {/* Card 2: Application Velocity (New Real Data) */}
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm hover:border-primary/50 transition-colors flex flex-col justify-between">
+          <div className="flex justify-between items-start">
+             <div>
+                <p className="text-sm font-medium text-muted">Activity</p>
+                <div className="flex items-baseline gap-2 mt-2">
+                   <h3 className="text-3xl font-bold text-foreground">{loading ? "..." : appStats.today}</h3>
+                   <span className="text-sm text-muted">today</span>
+                </div>
+             </div>
+             <div className="p-3 rounded-lg bg-purple-400/10 text-purple-400">
+                <FaCalendarDay />
+             </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-sm">
+             <span className="text-muted">This Month:</span>
+             <span className="font-bold text-foreground">{loading ? "..." : appStats.month}</span>
+          </div>
+        </div>
 
         {/* Card 3: Cold Outreach (Real Data) */}
         <MetricCard 

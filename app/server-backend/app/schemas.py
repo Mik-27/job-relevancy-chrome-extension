@@ -192,6 +192,7 @@ class ApplicationBase(BaseModel):
     salary_range: Optional[str] = None
     status: Optional[str] = "saved"
     notes: Optional[str] = None
+    on_board: Optional[bool] = False
 
 class ApplicationCreate(ApplicationBase):
     pass
@@ -203,6 +204,7 @@ class ApplicationUpdate(BaseModel):
     salary_range: Optional[str] = None
     status: Optional[str] = None
     notes: Optional[str] = None
+    on_board: Optional[bool] = None
 
 class ApplicationResponse(ApplicationBase):
     id: UUID

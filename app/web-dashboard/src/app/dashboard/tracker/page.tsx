@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Application } from '@/types';
-import { getApplications, updateApplicationStatus, createApplication, deleteApplication } from '@/lib/api';
+import { getApplications, updateApplicationStatus, createApplication, deleteApplication, toggleApplicationBoardStatus } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
-import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack } from 'react-icons/fa';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 // Define columns/statuses
@@ -20,7 +20,7 @@ const STATUSES = {
 export default function TrackerPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
+  const [viewMode, setViewMode] = useState<'board' | 'list'>('list');
   const [isAdding, setIsAdding] = useState(false);
   const [newApp, setNewApp] = useState({ company_name: '', job_title: '', job_url: '' });
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
@@ -79,6 +79,27 @@ export default function TrackerPage() {
     }
   };
 
+  const handleToggleBoard = async (id: string, currentStatus: boolean, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
+    // Optimistic Update
+    setApplications(prev => prev.map(app => 
+      app.id === id ? { ...app, on_board: !currentStatus } : app
+    ));
+
+    try {
+      await toggleApplicationBoardStatus(id, !currentStatus);
+      toast.success(!currentStatus ? "Added to Kanban Board" : "Removed from Kanban Board");
+    } catch (err) {
+      toast.error("Failed to update");
+      console.error(err);
+      // Revert on fail
+      setApplications(prev => prev.map(app => 
+        app.id === id ? { ...app, on_board: currentStatus } : app
+      ));
+    }
+  };
+
   const handleDeleteClick = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setItemToDelete(id); // Set the ID, which opens the modal
@@ -102,7 +123,10 @@ export default function TrackerPage() {
     }
   };
 
-  const getAppsByStatus = (status: string) => applications.filter(a => a.status === status);
+  // --- Filter for Board View ---
+  // Only show apps where on_board is TRUE
+  const getBoardAppsByStatus = (status: string) => 
+    applications.filter(a => a.status === status && a.on_board);
 
   if (loading) return <div className="p-8 text-muted">Loading...</div>;
 
@@ -188,7 +212,7 @@ export default function TrackerPage() {
                 <div className={`p-4 border-b border-border/50 font-semibold text-foreground flex justify-between items-center ${column.color}`}>
                     {column.title}
                     <span className="text-xs bg-secondary px-2 py-1 rounded-full text-muted">
-                    {getAppsByStatus(columnId).length}
+                    {getBoardAppsByStatus(columnId).length}
                     </span>
                 </div>
 
@@ -201,7 +225,7 @@ export default function TrackerPage() {
                         snapshot.isDraggingOver ? 'bg-secondary/20' : ''
                         }`}
                     >
-                        {getAppsByStatus(columnId).map((app, index) => (
+                        {getBoardAppsByStatus(columnId).map((app, index) => (
                         <Draggable key={app.id} draggableId={app.id} index={index}>
                             {(provided, snapshot) => (
                             <div
@@ -215,6 +239,14 @@ export default function TrackerPage() {
                                 `}
                                 style={provided.draggableProps.style}
                             >
+                                {/* --- NEW: Quick Unpin Button on Card --- */}
+                                <button 
+                                  onClick={(e) => handleToggleBoard(app.id, true, e)}
+                                  className="absolute top-2 right-2 text-primary opacity-0 group-hover:opacity-100 hover:text-muted transition"
+                                  title="Remove from Board (Keep in List)"
+                                >
+                                  <FaThumbtack size={10} />
+                                </button>
                                 <h4 className="font-bold text-foreground text-sm">{app.company_name}</h4>
                                 <p className="text-xs text-muted mt-1">{app.job_title}</p>
                                 
@@ -291,6 +323,14 @@ export default function TrackerPage() {
                                                 <FaExternalLinkAlt />
                                             </a>
                                         )}
+                                        {/* --- NEW: Pin/Unpin Button --- */}
+                                        <button 
+                                          onClick={(e) => handleToggleBoard(app.id, app.on_board, e)} 
+                                          className={`transition p-2 rounded ${app.on_board ? 'text-primary hover:bg-primary/10' : 'text-muted hover:text-foreground hover:bg-secondary'}`} 
+                                          title={app.on_board ? "Remove from Board" : "Add to Board"}
+                                        >
+                                            <FaThumbtack />
+                                        </button>
                                         <button onClick={() => handleDeleteClick(app.id)} className="text-muted hover:text-error transition" title="Delete">
                                             <FaTrash />
                                         </button>

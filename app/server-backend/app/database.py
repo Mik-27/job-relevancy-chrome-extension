@@ -75,6 +75,7 @@ class Application(Base):
     referred_by = Column(String, nullable=True)
     status = Column(String, default="saved")
     notes = Column(Text, nullable=True)
+    on_board = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     updated_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
 

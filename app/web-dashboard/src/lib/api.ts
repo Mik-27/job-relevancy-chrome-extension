@@ -178,6 +178,15 @@ export const updateApplicationStatus = async (id: string, status: string): Promi
   return response.json();
 };
 
+export const toggleApplicationBoardStatus = async (id: string, on_board: boolean): Promise<Application> => {
+  const response = await authFetch(`${API_BASE_URL}/applications/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ on_board }),
+  });
+  if (!response.ok) throw new Error("Failed to update board status");
+  return response.json();
+};
+
 export const deleteApplication = async (id: string): Promise<void> => {
     const response = await authFetch(`${API_BASE_URL}/applications/${id}`, { method: 'DELETE' });
     if (response.status !== 204) throw new Error("Failed to delete");

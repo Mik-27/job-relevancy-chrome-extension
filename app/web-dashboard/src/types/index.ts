@@ -64,5 +64,7 @@ export interface Application {
   status: 'saved' | 'applied' | 'interviewing' | 'offer' | 'rejected';
   referred_by?: string;
   notes?: string;
+  on_board: boolean;
+  created_at: string;
   updated_at: string;
 }
