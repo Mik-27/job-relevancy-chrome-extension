@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Application } from '@/types';
 import { getApplications, updateApplicationStatus, createApplication, deleteApplication, toggleApplicationBoardStatus } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
-import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack, FaSearch } from 'react-icons/fa';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 // Define columns/statuses
@@ -22,9 +22,10 @@ export default function TrackerPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'board' | 'list'>('list');
   const [isAdding, setIsAdding] = useState(false);
-  const [newApp, setNewApp] = useState({ company_name: '', job_title: '', job_url: '' });
+  const [newApp, setNewApp] = useState({ company_name: '', job_title: '', job_url: '', job_id: '', referred_by: '' });
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const toast = useToast();
 
@@ -34,6 +35,18 @@ export default function TrackerPage() {
       .catch(() => toast.error("Failed to load tracker"))
       .finally(() => setLoading(false));
   }, []);
+
+  // --- FILTERING LOGIC ---
+  const filteredApplications = useMemo(() => {
+    if (!searchTerm) return applications;
+    const lowerTerm = searchTerm.toLowerCase();
+    
+    return applications.filter(app => 
+      app.company_name.toLowerCase().includes(lowerTerm) ||
+      app.job_title.toLowerCase().includes(lowerTerm) ||
+      (app.job_id && app.job_id.toLowerCase().includes(lowerTerm))
+    );
+  }, [applications, searchTerm]);
 
   // --- Kanban Logic ---
   const onDragEnd = async (result: DropResult) => {
@@ -63,6 +76,7 @@ export default function TrackerPage() {
     }
   };
 
+  // --- UPDATED ADD HANDLER ---
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if(!newApp.company_name || !newApp.job_title) return;
@@ -71,7 +85,7 @@ export default function TrackerPage() {
       const created = await createApplication({ ...newApp, status: 'saved' });
       setApplications([created, ...applications]);
       setIsAdding(false);
-      setNewApp({ company_name: '', job_title: '', job_url: '' });
+      setNewApp({ company_name: '', job_title: '', job_url: '', job_id: '', referred_by: '' });
       toast.success("Job added!");
     } catch (err) {
       toast.error("Failed to add job");
@@ -114,7 +128,7 @@ export default function TrackerPage() {
         await deleteApplication(itemToDelete);
         setApplications(prev => prev.filter(a => a.id !== itemToDelete));
         toast.success("Application deleted");
-        setItemToDelete(null); // Close modal on success
+        setItemToDelete(null);
     } catch(err) {
         toast.error("Failed to delete application");
         console.error(err);
@@ -138,7 +152,19 @@ export default function TrackerPage() {
           <p className="text-muted text-sm mt-1">Manage your job pipeline</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* --- NEW: SEARCH BAR --- */}
+            <div className="relative flex-1 md:w-64">
+                <input 
+                    type="text" 
+                    placeholder="Search company, role, ID..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-input border border-border rounded-lg pl-10 pr-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <FaSearch className="absolute left-3 top-3 text-muted text-xs" />
+            </div>
+            
             {/* --- NEW: View Toggle --- */}
             <div className="flex bg-card border border-border rounded-lg p-1">
                 <button 
@@ -187,6 +213,14 @@ export default function TrackerPage() {
                 required
             />
           </div>
+          <div>
+                <label className="text-xs text-muted block mb-1">Job ID</label>
+                <input className="w-full bg-input border border-border rounded p-2 text-foreground" value={newApp.job_id} onChange={e => setNewApp({...newApp, job_id: e.target.value})} />
+             </div>
+             <div>
+                <label className="text-xs text-muted block mb-1">Referred By</label>
+                <input className="w-full bg-input border border-border rounded p-2 text-foreground" value={newApp.referred_by} onChange={e => setNewApp({...newApp, referred_by: e.target.value})} />
+             </div>
           <div className="flex-1 w-full">
             <label className="text-xs text-muted block mb-1">URL (Optional)</label>
             <input 
@@ -286,6 +320,8 @@ export default function TrackerPage() {
                         <tr>
                             <th className="p-4 font-semibold text-muted">Company</th>
                             <th className="p-4 font-semibold text-muted">Role</th>
+                            <th className="p-4 font-semibold text-muted">Job ID</th>
+                            <th className="p-4 font-semibold text-muted">Referred By</th>
                             <th className="p-4 font-semibold text-muted">Status</th>
                             <th className="p-4 font-semibold text-muted">Last Updated</th>
                             <th className="p-4 font-semibold text-muted text-right">Actions</th>
@@ -299,6 +335,8 @@ export default function TrackerPage() {
                                 <tr key={app.id} className="hover:bg-secondary/30 transition-colors">
                                     <td className="p-4 font-medium text-foreground">{app.company_name}</td>
                                     <td className="p-4 text-muted">{app.job_title}</td>
+                                    <td className="p-4 text-xs text-muted font-mono">{app.job_id || '-'}</td>
+                                    <td className="p-4 text-xs text-muted">{app.referred_by || '-'}</td>
                                     
                                     {/* Editable Status Column */}
                                     <td className="p-4">

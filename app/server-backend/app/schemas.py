@@ -189,9 +189,11 @@ class ApplicationBase(BaseModel):
     company_name: str
     job_title: str
     job_url: Optional[str] = None
+    job_id: Optional[str] = None
     salary_range: Optional[str] = None
     status: Optional[str] = "saved"
     notes: Optional[str] = None
+    referred_by: Optional[str] = None
     on_board: Optional[bool] = False
 
 class ApplicationCreate(ApplicationBase):
@@ -201,9 +203,11 @@ class ApplicationUpdate(BaseModel):
     company_name: Optional[str] = None
     job_title: Optional[str] = None
     job_url: Optional[str] = None
+    job_id: Optional[str] = None
     salary_range: Optional[str] = None
     status: Optional[str] = None
     notes: Optional[str] = None
+    referred_by: Optional[str] = None
     on_board: Optional[bool] = None
 
 class ApplicationResponse(ApplicationBase):
