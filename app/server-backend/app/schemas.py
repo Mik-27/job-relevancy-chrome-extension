@@ -176,9 +176,38 @@ class FormField(BaseModel):
 # Request payload
 class AutofillRequest(BaseModel):
     fields: List[FormField]
-    job_description: Optional[str] = None # Helpful for "Why do you want this job?"
+    job_description: Optional[str] = None
 
 # Response payload
 class AutofillResponse(BaseModel):
     # A dictionary mapping field_id -> answer
     mappings: Dict[str, str]
+    
+    
+# --- Application Tracker Schemas ---
+class ApplicationBase(BaseModel):
+    company_name: str
+    job_title: str
+    job_url: Optional[str] = None
+    salary_range: Optional[str] = None
+    status: Optional[str] = "saved"
+    notes: Optional[str] = None
+
+class ApplicationCreate(ApplicationBase):
+    pass
+
+class ApplicationUpdate(BaseModel):
+    company_name: Optional[str] = None
+    job_title: Optional[str] = None
+    job_url: Optional[str] = None
+    salary_range: Optional[str] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+class ApplicationResponse(ApplicationBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

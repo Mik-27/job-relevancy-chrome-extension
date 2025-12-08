@@ -14,6 +14,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Base class for our ORM models
 Base = declarative_base()
 
+
 # ORM Model for the 'resumes' table
 class Resume(Base):
     __tablename__ = "resumes"
@@ -25,8 +26,9 @@ class Resume(Base):
     company = Column(String, index=True, default="General")
     storage_path = Column(String, unique=True, nullable=False)
     content = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     autoscore = Column(Boolean, default=False, nullable=False)
+
 
 # ORM Model for the 'users' table
 class User(Base):
@@ -55,9 +57,26 @@ class OutreachHistory(Base):
     company_name = Column(String)
     job_link = Column(String, nullable=True) 
     status = Column(String, default="processing")
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     draft_metadata = Column(JSONB, nullable=True) 
     sent_at = Column(DateTime, nullable=True)
+    
+
+class Application(Base):
+    __tablename__ = "applications_history"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, nullable=False, index=True)
+    company_name = Column(String)
+    job_title = Column(String)
+    job_url = Column(String, nullable=True)
+    job_id = Column(String, nullable=True)
+    salary_range = Column(String, nullable=True)
+    referred_by = Column(String, nullable=True)
+    status = Column(String, default="saved")
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
 
 
 # Dependency to get a DB session in our API endpoints

@@ -1,4 +1,4 @@
-import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem } from '@/types';
+import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application } from '@/types';
 import { supabase } from './supabaseClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -148,4 +148,37 @@ export const deleteResume = async (resumeId: number): Promise<void> => {
   if (response.status !== 204 && !response.ok) {
     throw new Error("Failed to delete resume.");
   }
+};
+
+
+// --- Application Tracker Functions ---
+
+export const getApplications = async (): Promise<Application[]> => {
+  const response = await authFetch(`${API_BASE_URL}/applications/`);
+  if (!response.ok) throw new Error("Failed to fetch applications");
+  return response.json();
+};
+
+export const createApplication = async (data: Partial<Application>): Promise<Application> => {
+  const response = await authFetch(`${API_BASE_URL}/applications/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  console.log("Create Application Response:", response);
+  if (!response.ok) throw new Error("Failed to create application");
+  return response.json();
+};
+
+export const updateApplicationStatus = async (id: string, status: string): Promise<Application> => {
+  const response = await authFetch(`${API_BASE_URL}/applications/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) throw new Error("Failed to update status");
+  return response.json();
+};
+
+export const deleteApplication = async (id: string): Promise<void> => {
+    const response = await authFetch(`${API_BASE_URL}/applications/${id}`, { method: 'DELETE' });
+    if (response.status !== 204) throw new Error("Failed to delete");
 };

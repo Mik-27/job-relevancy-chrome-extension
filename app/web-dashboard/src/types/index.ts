@@ -53,3 +53,16 @@ export interface UploadResumeResponse {
   message: string;
   content: string;
 }
+
+export interface Application {
+  id: string;
+  company_name: string;
+  job_title: string;
+  job_url?: string;
+  job_id?: string;
+  salary_range?: string;
+  status: 'saved' | 'applied' | 'interviewing' | 'offer' | 'rejected';
+  referred_by?: string;
+  notes?: string;
+  updated_at: string;
+}
