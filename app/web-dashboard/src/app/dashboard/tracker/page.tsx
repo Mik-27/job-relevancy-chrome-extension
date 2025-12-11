@@ -5,7 +5,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { Application } from '@/types';
 import { getApplications, updateApplicationStatus, createApplication, deleteApplication, toggleApplicationBoardStatus } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
-import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack, FaSearch, FaBan } from 'react-icons/fa';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 // Define columns/statuses
@@ -140,7 +140,7 @@ export default function TrackerPage() {
   // --- Filter for Board View ---
   // Only show apps where on_board is TRUE
   const getBoardAppsByStatus = (status: string) => 
-    applications.filter(a => a.status === status && a.on_board);
+    filteredApplications.filter(a => a.status === status && a.on_board);
 
   if (loading) return <div className="p-8 text-muted">Loading...</div>;
 
@@ -187,7 +187,7 @@ export default function TrackerPage() {
               onClick={() => setIsAdding(!isAdding)}
               className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
             >
-              {!isAdding ? <><FaPlus /> Add Job</> : "Cancel"}
+              {!isAdding ? <><FaPlus /> Add Job</> : <><FaBan /> Cancel</>}
             </button>
         </div>
       </div>
@@ -328,10 +328,10 @@ export default function TrackerPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                        {applications.length === 0 ? (
-                            <tr><td colSpan={5} className="p-8 text-center text-muted italic">No applications found. Add one above!</td></tr>
+                        {filteredApplications.length === 0 ? (
+                            <tr><td colSpan={7} className="p-8 text-center text-muted italic">No applications found. Add one above!</td></tr>
                         ) : (
-                            applications.map((app) => (
+                            filteredApplications.map((app) => (
                                 <tr key={app.id} className="hover:bg-secondary/30 transition-colors">
                                     <td className="p-4 font-medium text-foreground">{app.company_name}</td>
                                     <td className="p-4 text-muted">{app.job_title}</td>
