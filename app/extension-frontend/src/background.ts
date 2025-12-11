@@ -83,4 +83,27 @@ chrome.runtime.onMessage.addListener((request: ExtensionMessage, sender, sendRes
     // Return true to indicate that sendResponse will be called asynchronously
     return true; 
   }
+
+  // --- NEW: Relay for Cover Letter Modal ---
+  if (request.type === "showCoverLetterModal") {
+    // The message comes from the Overlay (which has a sender.tab)
+    const tabId = sender.tab?.id;
+    
+    if (tabId) {
+      console.log("Relaying Cover Letter Modal request to tab:", tabId);
+      
+      // Forward the message to the content script in the same tab
+      chrome.tabs.sendMessage(tabId, {
+        type: "showCoverLetterModal",
+        text: request.text
+      })
+      .then(() => sendResponse({ success: true }))
+      .catch((err) => {
+         console.error("Failed to show modal:", err);
+         sendResponse({ error: err.message });
+      });
+      
+      return true; // Async response
+    }
+  }
 });

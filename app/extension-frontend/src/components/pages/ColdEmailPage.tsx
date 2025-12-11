@@ -3,7 +3,7 @@ import { triggerColdOutreach } from '../../api/resumeApi';
 import { Spinner } from '../ui/Spinner';
 import { FaPlus, FaTrash, FaFileUpload, FaKeyboard } from 'react-icons/fa';
 import { Contact } from '../../types';
-import './ColdEmailPage.css';
+import './css/ColdEmailPage.css';
 
 interface ColdEmailPageProps {
   onBack: () => void;

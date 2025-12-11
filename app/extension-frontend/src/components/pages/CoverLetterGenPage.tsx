@@ -3,6 +3,7 @@ import { getUserProfile, generateCoverLetterFromProfile } from '../../api/resume
 import { UserProfile } from '../../types';
 import { Spinner } from '../ui/Spinner';
 import { FaFileSignature } from 'react-icons/fa';
+import './css/CoverLetterGenPage.css';
 
 interface CoverLetterGenPageProps {
   jobDescription: string;
@@ -37,14 +38,19 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
       // A. Call Backend
       const response = await generateCoverLetterFromProfile(jobDescription);
 
-      // B. Send message to content script to show the modal (Detached)
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab && tab.id) {
-        chrome.tabs.sendMessage(tab.id, {
+      // B. Send message to Background (Relay)
+      // We do NOT use chrome.tabs here anymore.
+      await new Promise<void>((resolve, reject) => {
+        chrome.runtime.sendMessage({
           type: "showCoverLetterModal",
           text: response.cover_letter_text,
+        }, (res) => {
+          if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
+          if (res && res.error) return reject(new Error(res.error));
+          resolve();
         });
-      }
+      });
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed.");
     } finally {
@@ -72,9 +78,9 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
 
   return (
     <div className="page-content">
-      <div className="info-box" style={{ backgroundColor: '#2a3a5c', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #1a6aff' }}>
-        <h4 style={{ margin: '0 0 0.5rem 0', color: '#64ffda' }}>Cover Letter Generator</h4>
-        <p style={{ margin: 0, fontSize: '0.9rem' }}>
+      <div className="info-box">
+        <h4>Cover Letter Generator</h4>
+        <p>
           We will use your <strong>Master CV</strong> and the current page's job description to write a tailored cover letter.
         </p>
       </div>
@@ -83,21 +89,22 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
         <p className="error-message">Warning: No Job Description found on this page.</p>
       )}
 
+      {isGenerating && (
+        <p className="loading-message sub-text">
+          Analyzing CV and writing letter...
+        </p>
+      )}
+
+      {error && <p className="error-message" style={{ marginTop: '1rem' }}>{error}</p>}
+
       <button 
-        className="analyze-button" 
+        className="generate-cl-button" 
         onClick={handleGenerate}
         disabled={isGenerating || !jobDescription}
       >
         {isGenerating ? <Spinner size="small" /> : 'Generate Cover Letter'}
       </button>
       
-      {isGenerating && (
-        <p className="loading-message sub-text">
-          Analyzing CV and writing letter...
-        </p>
-      )}
-      
-      {error && <p className="error-message" style={{ marginTop: '1rem' }}>{error}</p>}
     </div>
   );
 };

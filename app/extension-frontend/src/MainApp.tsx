@@ -324,7 +324,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
       case 'cover_letter_gen':
         return (
             <div className="page-container">
-              <button onClick={goHome} className="back-link">&larr; Back to Dashboard</button>
+              <button onClick={goHome} className="back-link">&larr;</button>
               <h2>Cover Letter</h2>
               <CoverLetterGenPage 
                 jobDescription={jobDescriptionText}

@@ -205,7 +205,7 @@ chrome.runtime.onMessage.addListener(
       modalInjector.then(module => {
         module.injectCoverLetterModal(request.text);
       });
-      sendResponse({ success: true }); // Acknowledge the message
+      sendResponse({ success: true });
       return true;
     }
 
