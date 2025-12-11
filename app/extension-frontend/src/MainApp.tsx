@@ -16,10 +16,11 @@ import { generateAutofillResponses, getAnalysisScore, getAnalysisSuggestions, lo
 import { supabase } from './lib/supabaseClient';
 import { ResumeEditor } from './components/editor/ResumeEditor';
 import { AutofillProgressPage } from './components/pages/AutofillProgressPage';
+import { CoverLetterGenPage } from './components/pages/CoverLetterGenPage';
 
 
 // NEW: Expanded View Types
-type AppView = 'home' | 'profile' | 'choose_resume' | 'upload_resume' | 'paste_text' | 'master_cv' | 'analysis_results' | 'editor' | 'cold_email' | 'autofill_progress';
+type AppView = 'home' | 'profile' | 'choose_resume' | 'upload_resume' | 'paste_text' | 'master_cv' | 'analysis_results' | 'cover_letter_gen' | 'editor' | 'cold_email' | 'autofill_progress';
 
 type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'autofilling' | 'generating_content' | 'complete' | 'error';
 
@@ -315,6 +316,18 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
               <MasterCVPage 
                 jobDescription={jobDescriptionText}
                 onGenerationSuccess={handleMasterCVSuccess}
+                onNavigateProfile={() => setView('profile')}
+              />
+            </div>
+        );
+
+      case 'cover_letter_gen':
+        return (
+            <div className="page-container">
+              <button onClick={goHome} className="back-link">&larr; Back to Dashboard</button>
+              <h2>Cover Letter</h2>
+              <CoverLetterGenPage 
+                jobDescription={jobDescriptionText}
                 onNavigateProfile={() => setView('profile')}
               />
             </div>

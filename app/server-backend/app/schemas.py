@@ -133,6 +133,9 @@ class CoverLetterSchema(BaseModel):
     cover_letter_text: str = Field(description="The full, complete text of the generated cover letter, formatted with paragraphs and line breaks.")
     
     
+class JobDescriptionRequest(BaseModel):
+    job_description: str = Field(description="The full text of the job description extracted from the job posting.")
+    
 # --- NEW: Outreach Schemas ---
 class ContactSchema(BaseModel):
     name: str
@@ -180,7 +183,7 @@ class AutofillRequest(BaseModel):
 
 # Response payload
 class AutofillResponse(BaseModel):
-    # A dictionary mapping field_id -> answer
+    # field_id -> answer
     mappings: Dict[str, str]
     
     

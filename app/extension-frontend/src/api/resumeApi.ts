@@ -260,6 +260,20 @@ export const generateCoverLetter = async (resumeText: string, jobDescriptionText
   return response.json();
 };
 
+// NEW: Generate Cover Letter from Master CV
+export const generateCoverLetterFromProfile = async (jobDescription: string): Promise<CoverLetterResponse> => {
+  const response = await authFetch(`${API_BASE_URL}/cover-letter/generate-from-profile`, {
+    method: 'POST',
+    body: JSON.stringify({ job_description: jobDescription }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to generate cover letter.");
+  }
+  return response.json();
+};
+
 // NEW: Function to compile the cover letter PDF
 export const compileCoverLetterPdf = async (coverLetterText: string): Promise<Blob> => {
   const response = await authFetch(`${API_BASE_URL}/cover-letter/compile-pdf`, {

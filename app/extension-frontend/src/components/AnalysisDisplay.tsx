@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AnalysisResult, TailoredResumeSchema } from '../types';
 import { Spinner } from './ui/Spinner';
-import { generateTailoredContent, generateCoverLetter } from '../api/resumeApi';
+import { generateTailoredContent } from '../api/resumeApi';
 
 interface AnalysisDisplayProps {
   // It receives the result, which can be partial while loading
@@ -19,7 +19,7 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
 }) => {
   // --- All state is now managed locally ---
   const [isGeneratingEditor, setIsGeneratingEditor] = useState(false);
-  const [isGeneratingCL, setIsGeneratingCL] = useState(false);
+//   const [isGeneratingCL, setIsGeneratingCL] = useState(false);
   const [error, setError] = useState('');
 
   const handleGoToEditorClick = async () => {
@@ -38,25 +38,25 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
     }
   };
 
-  const handleGenerateCLClick = async () => {
-    setIsGeneratingCL(true);
-    setError('');
-    try {
-      const response = await generateCoverLetter(initialResumeText, initialJobDescriptionText);
-      // Send message to content script to show the modal
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab && tab.id) {
-        chrome.tabs.sendMessage(tab.id, {
-          type: "showCoverLetterModal",
-          text: response.cover_letter_text,
-        });
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate cover letter.");
-    } finally {
-      setIsGeneratingCL(false);
-    }
-  };
+//   const handleGenerateCLClick = async () => {
+//     setIsGeneratingCL(true);
+//     setError('');
+//     try {
+//       const response = await generateCoverLetter(initialResumeText, initialJobDescriptionText);
+//       // Send message to content script to show the modal
+//       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+//       if (tab && tab.id) {
+//         chrome.tabs.sendMessage(tab.id, {
+//           type: "showCoverLetterModal",
+//           text: response.cover_letter_text,
+//         });
+//       }
+//     } catch (err) {
+//       setError(err instanceof Error ? err.message : "Failed to generate cover letter.");
+//     } finally {
+//       setIsGeneratingCL(false);
+//     }
+//   };
   
 
   // Otherwise, render the main analysis results
@@ -93,7 +93,7 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
           </button>
         </div>
 
-        <div className="cover-letter-section">
+        {/* <div className="cover-letter-section">
           <button 
             className="analyze-button secondary"
             onClick={handleGenerateCLClick}
@@ -101,7 +101,7 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
           >
             {isGeneratingCL ? <Spinner size="small" /> : 'Generate Cover Letter'}
           </button>
-        </div>
+        </div> */}
         
         {error && <p className="error-message" style={{ marginTop: '1rem' }}>{error}</p>}
       </section>

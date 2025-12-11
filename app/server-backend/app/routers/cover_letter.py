@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
 from requests import Session
-from ..schemas import AnalyzeRequest, CoverLetterSchema
+from ..schemas import AnalyzeRequest, CoverLetterSchema, JobDescriptionRequest
 from ..services.llm import cover_letter_service
 from ..security import get_current_user_id
 from .. import database
 from ..services import resume_service, tailoring_service
+from ..config import settings
 
 router = APIRouter(
     prefix="/cover-letter",
@@ -64,3 +65,49 @@ async def compile_cover_letter_pdf_endpoint(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to compile Cover Letter PDF: {e}")
+    
+    
+# ... imports
+# Ensure you import necessary services
+from ..services import resume_service, gcs_service, pdf_service
+
+# ... existing endpoints
+
+# --- NEW: Generate from Master CV ---
+@router.post("/generate-from-profile", response_model=CoverLetterSchema)
+async def generate_cover_letter_from_profile(
+    request: JobDescriptionRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Generates a cover letter using the user's uploaded Master CV and the provided JD.
+    """
+    if not request.job_description:
+        raise HTTPException(status_code=400, detail="Job Description cannot be empty.")
+
+    # 1. Fetch User Profile & CV
+    user_profile = resume_service.get_user_profile_by_id(db, user_id)
+    if not user_profile or not user_profile.cv_url:
+        raise HTTPException(status_code=404, detail="Master CV not found. Please upload one in your Profile.")
+
+    try:
+        # 2. Get CV Text
+        clean_path = user_profile.cv_url.replace(f"https://storage.googleapis.com/{settings.BUCKET_NAME}/", "")
+        pdf_bytes = gcs_service.download_file_as_bytes(clean_path)
+        cv_text = pdf_service.extract_text_from_pdf_bytes(pdf_bytes)
+
+        if not cv_text:
+             raise HTTPException(status_code=400, detail="Could not extract text from Master CV.")
+
+        # 3. Call LLM
+        cover_letter = await cover_letter_service.generate_cover_letter_text(
+            resume=cv_text,
+            job_description=request.job_description
+        )
+        
+        return CoverLetterSchema(cover_letter_text=cover_letter)
+
+    except Exception as e:
+        print(f"Cover Letter Generation Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate cover letter: {e}")
