@@ -11,9 +11,9 @@ export default defineConfig({
         // Define the entry points for your extension
         // popup: resolve(__dirname, 'index.html'),
         background: resolve(__dirname, 'src/background.ts'),
-        content: resolve(__dirname, 'src/content.ts'),
         // modal: resolve(__dirname, 'src/modal.tsx'), 
         overlay: resolve(__dirname, 'src/overlay.tsx'),
+        content: resolve(__dirname, 'src/content.ts'),
       },
       output: {
         // Configure the output file names

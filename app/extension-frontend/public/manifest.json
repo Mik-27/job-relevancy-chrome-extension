@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Resume Analyzer",
-    "version": "0.2.2",
+    "version": "0.2.5",
     "description": "Analyzes your resume against job descriptions using AI.",
     "permissions": ["scripting", "activeTab", "storage"],
     "host_permissions": ["http://127.0.0.1:8000/*"],
@@ -15,13 +15,18 @@
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
-            "js": ["src/overlay.js", "src/content.js"],
+            "js": ["overlay-loader.js", "content-loader.js"],
             "run_at": "document_end"
         }
     ],
     "web_accessible_resources": [
         {
-            "resources": ["assets/*", "src/*"],
+            "resources": [
+                "assets/*",
+                "src/overlay.js",
+                "src/content.js",
+                "src/modal.js"
+            ],
             "matches": ["<all_urls>"]
         }
     ],

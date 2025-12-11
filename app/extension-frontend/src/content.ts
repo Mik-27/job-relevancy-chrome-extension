@@ -1,4 +1,10 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import { ExtensionMessage } from "./types";
+import { CoverLetterDisplay } from './components/CoverLetterDisplay';
+import coverLetterStyles from './components/CoverLetterDisplay.css?inline';
+import spinnerStyles from './components/ui/Spinner.css?inline';
+import appStyles from './App.css?inline';  
 
 // // Debug function to save scraped text to a temporary file
 // function saveScrapedTextToFile(text: string) {
@@ -84,7 +90,7 @@ import { ExtensionMessage } from "./types";
 // }
 
 
-const modalInjector = import(chrome.runtime.getURL('src/modal.js'));
+// const modalInjector = import(chrome.runtime.getURL('src/modal.js'));
 
 // --- NEW: Helper to identify if a field is a "Personal Response" question ---
 function isPersonalResponseField(element: HTMLElement, label: string): boolean {
@@ -190,6 +196,66 @@ function setNativeValue(element: HTMLInputElement | HTMLTextAreaElement | HTMLSe
 }
 
 
+// --- NEW: INJECT COVER LETTER MODAL (Shadow DOM) ---
+
+const MODAL_ROOT_ID = 'resume-analyzer-cl-modal';
+
+function injectCoverLetterModal(text: string) {
+  // Prevent duplicate modals
+  if (document.getElementById(MODAL_ROOT_ID)) return;
+
+  // 1. Host
+  const host = document.createElement('div');
+  host.id = MODAL_ROOT_ID;
+  host.style.position = 'fixed';
+  host.style.top = '0';
+  host.style.left = '0';
+  host.style.width = '100vw';
+  host.style.height = '100vh';
+  host.style.zIndex = '2147483647';
+  host.style.pointerEvents = 'none'; // Let clicks pass through background initially
+  document.body.appendChild(host);
+
+  // 2. Shadow
+  const shadow = host.attachShadow({ mode: 'open' });
+
+  // 3. Styles
+  const styleTag = document.createElement('style');
+  styleTag.textContent = `
+    * { box-sizing: border-box; }
+    /* Reset pointer events for the modal content itself */
+    .modal-overlay { pointer-events: auto; }
+    
+    ${appStyles} 
+    ${coverLetterStyles}
+    ${spinnerStyles}
+
+    /* Fix font inheritance inside Shadow DOM */
+    div { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  `;
+  shadow.appendChild(styleTag);
+
+  // 4. Mount React
+  const rootDiv = document.createElement('div');
+  shadow.appendChild(rootDiv);
+  const root = ReactDOM.createRoot(rootDiv);
+
+  const handleClose = () => {
+    root.unmount();
+    host.remove();
+  };
+
+  root.render(
+    React.createElement(
+      React.StrictMode,
+      null,
+      React.createElement(CoverLetterDisplay, { initialText: text, onClose: handleClose })
+    )
+  );
+}
+
+
+
 chrome.runtime.onMessage.addListener(
   (request: ExtensionMessage, _sender: chrome.runtime.MessageSender, sendResponse) => {
     
@@ -200,16 +266,14 @@ chrome.runtime.onMessage.addListener(
       return true;
     }
 
-    // --- NEW: Handle the request to show the cover letter modal ---
+    // --- Handle the request to show the cover letter modal ---
     if (request.type === "showCoverLetterModal") {
-      modalInjector.then(module => {
-        module.injectCoverLetterModal(request.text);
-      });
+      injectCoverLetterModal(request.text);
       sendResponse({ success: true });
       return true;
     }
 
-    // --- SCAN FORM (UPDATED FILTERING) ---
+    // --- SCAN FORM - AUTOFILL ---
     if (request.type === "scanPageForAutofill") {
       // Only look for text inputs and textareas. Ignore selects/radios/checkboxes for now based on your request.
       const inputs = Array.from(document.querySelectorAll('input[type="text"], textarea')) as HTMLElement[];
