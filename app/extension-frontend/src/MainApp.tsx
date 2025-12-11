@@ -201,6 +201,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
       // We do this AFTER updating the UI so the user sees results immediately.
       // We don't await this (or we await it but it's fast because of background tasks).
       const jobUrl = window.location.href;
+      const resumeSnapshot = source === 'choose'? null : textToAnalyze; // Only snapshot non-chosen resumes
       logAnalysisEvent(
         jd, 
         jobUrl,
@@ -208,7 +209,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
         suggestionsResponse.suggestions,
         source,
         id,
-        textToAnalyze
+        resumeSnapshot
       );
 
     } catch (err) {

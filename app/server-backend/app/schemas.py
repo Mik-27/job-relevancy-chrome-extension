@@ -227,4 +227,4 @@ class LogAnalysisRequest(BaseModel):
     suggestions: List[str]
     resume_source: str
     resume_id: Optional[int] = None
-    resume_text: str = ''
+    resume_text: Optional[str] = None

@@ -330,7 +330,7 @@ export const logAnalysisEvent = async (
   suggestions: string[],
   resumeSource: string,
   resumeId: number | null,
-  resumeText: string
+  resumeText: string | null,
 ): Promise<void> => {
   // Fire and forget - we don't return anything or wait strictly for response
   console.log("Logging analysis event:", { jobDescription, jobUrl, score, suggestions, resumeSource, resumeId });
