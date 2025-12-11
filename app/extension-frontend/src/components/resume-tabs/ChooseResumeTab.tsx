@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { FaTrash } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaCalculator, FaTrash } from 'react-icons/fa';
 import { listResumes, getResumeContent, deleteResume, getAnalysisScore } from '../../api/resumeApi';
 import { ResumeWithScore } from '../../types';
 import { Spinner } from '../ui/Spinner';
@@ -15,9 +15,7 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
   const [resumes, setResumes] = useState<ResumeWithScore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedResumeId, setSelectedResumeId] = useState<number | null>(null);
-
-  // We use a ref to track if the auto-scoring has already been initiated.
-  const scoringInitiated = useRef(false);
+  const [isScoring, setIsScoring] = useState(false);
 
   useEffect(() => {
     const fetchResumes = async () => {
@@ -34,52 +32,61 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
     fetchResumes();
   }, []);
 
-    // --- NEW: Effect 2: Trigger auto-scoring when data is ready ---
-  useEffect(() => {
-    // Only run if we have a job description and the initial resume list has loaded
-    if (jobDescriptionText && !isLoading && !scoringInitiated.current && resumes.length > 0) {
-
-      // Mark that we are starting the scoring process.
-      scoringInitiated.current = true;
-      
-      const fetchScores = async () => {
-        // Find the resumes that match our hardcoded list
-        const resumesToScore = resumes.filter(r => r.autoscore).slice(0, 3);
-
-        // If there are no target resumes, do nothing.
-        if (resumesToScore.length === 0) return;
-
-        // Set their status to 'loading' to show the spinner
-        setResumes(current => current.map(r => 
-          resumesToScore.some(rts => rts.id === r.id) ? { ...r, score: 'loading' } : r
-        ));
-
-        // Create a promise for each API call
-        const scorePromises = resumesToScore.map(async resume => {
-          try {
-            const content = await getResumeContent(resume.id);
-            const scoreResponse = await getAnalysisScore(content, jobDescriptionText);
-            return { id: resume.id, score: scoreResponse.relevancyScore };
-          } catch (error) {
-            console.error(`Failed to get score for resume ${resume.id}:`, error);
-            return { id: resume.id, score: undefined }; // Mark as failed
-          }
-        });
-
-        // Wait for all API calls to complete
-        const results = await Promise.all(scorePromises);
-
-        // Update the state with the new scores
-        setResumes(current => current.map(r => {
-          const result = results.find(res => res.id === r.id);
-          return result ? { ...r, score: result.score } : r;
-        }));
-      };
-
-      fetchScores();
+  // --- NEW: Manual Handler for Scoring ---
+  const handleAutoScore = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent bubbling
+    
+    if (!jobDescriptionText) {
+      alert("Job description not loaded yet. Please wait or reload.");
+      return;
     }
-    // This effect depends on the job description and the initial resume list
-  }, [jobDescriptionText, isLoading, resumes]); 
+
+    // 1. Identify resumes to score
+    // (Resumes with autoscore=true, limit to top 3)
+    const resumesToScore = resumes.filter(r => r.autoscore).slice(0, 3);
+
+    if (resumesToScore.length === 0) {
+      alert("No resumes have auto-scoring enabled.");
+      return;
+    }
+
+    setIsScoring(true);
+
+    // 2. Set their status to 'loading' immediately (Optimistic UI)
+    setResumes(current => current.map(r => 
+      resumesToScore.some(rts => rts.id === r.id) ? { ...r, score: 'loading' } : r
+    ));
+
+    try {
+      // 3. Create promises for scoring
+      const scorePromises = resumesToScore.map(async resume => {
+        try {
+          // We must fetch content first to score it
+          const content = await getResumeContent(resume.id);
+          const scoreResponse = await getAnalysisScore(content, jobDescriptionText);
+          return { id: resume.id, score: scoreResponse.relevancyScore };
+        } catch (error) {
+          console.error(`Failed to get score for resume ${resume.id}:`, error);
+          return { id: resume.id, score: undefined }; // Mark as failed/undefined
+        }
+      });
+
+      // 4. Wait for results
+      const results = await Promise.all(scorePromises);
+
+      // 5. Update state with actual scores
+      setResumes(current => current.map(r => {
+        const result = results.find(res => res.id === r.id);
+        // If we have a result, use it. Otherwise keep existing state (or reset to undefined)
+        return result ? { ...r, score: result.score } : r;
+      }));
+
+    } catch (error) {
+      console.error("Batch scoring failed", error);
+    } finally {
+      setIsScoring(false);
+    }
+  };
 
   // Helper function to determine the CSS class for the score ---
   const getScoreColorClass = (score: number | undefined): string => {
@@ -130,7 +137,19 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
 
   return (
     <div>
-      <p>Choose one of your previously uploaded resumes.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <p style={{ margin: 0 }}>Select a resume to analyze:</p>
+        
+        {/* --- NEW: Scoring Button --- */}
+        <button 
+          className="autoscore-button"
+          onClick={handleAutoScore}
+          disabled={isScoring || !jobDescriptionText}
+          title="Calculate relevancy for enabled resumes"
+        >
+          {isScoring ? <Spinner size="small" /> : <><FaCalculator style={{marginRight: '6px'}}/> Check Scores</>}
+        </button>
+      </div>
       <ul className="resume-list">
         {resumes.map(resume => (
           // CHANGED: onClick handler is now on the <li> element
