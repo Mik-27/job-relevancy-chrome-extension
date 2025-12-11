@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { uploadResume } from '../../api/resumeApi';
 
 interface UploadResumeTabProps {
-  onUploadSuccess: (parsedText: string) => void;
+  onUploadSuccess: (parsedText: string, id: number) => void;
 }
 
 export const UploadResumeTab: React.FC<UploadResumeTabProps> = ({ onUploadSuccess }) => {
@@ -34,7 +34,7 @@ export const UploadResumeTab: React.FC<UploadResumeTabProps> = ({ onUploadSucces
     try {
       const result = await uploadResume(selectedFile, companyName || "General", enableAutoscore);
       setSuccessMessage(`✅ Resume for ${companyName || "General"} uploaded successfully!`);
-      onUploadSuccess(result.content); // Notify parent to refetch the list of resumes
+      onUploadSuccess(result.content, result.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {

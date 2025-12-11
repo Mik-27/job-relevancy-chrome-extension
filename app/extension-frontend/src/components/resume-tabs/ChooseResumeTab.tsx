@@ -6,7 +6,7 @@ import { Spinner } from '../ui/Spinner';
 import './ChooseResumeTab.css';
 
 interface ChooseResumeTabProps {
-  setSelectedResumeText: (text: string) => void;
+  setSelectedResumeText: (text: string, id: number) => void;
   jobDescriptionText: string;
 }
 
@@ -103,7 +103,7 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
 
     try {
       const content = await getResumeContent(resume.id);
-      setSelectedResumeText(content);
+      setSelectedResumeText(content, resume.id);
       setSelectedResumeId(resume.id);
     } catch (error) {
       alert("Failed to load resume content.");
@@ -124,7 +124,7 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
       setResumes(currentResumes => currentResumes.filter(r => r.id !== resumeId));
       if (selectedResumeId === resumeId) {
         setSelectedResumeId(null);
-        setSelectedResumeText('');
+        setSelectedResumeText('', 0);
       }
     } catch (error) {
       console.error("Failed to delete resume:", error);

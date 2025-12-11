@@ -40,7 +40,7 @@ async def upload_resume(
         await gcs_service.upload_file_to_gcs(file, destination_path)
 
         # Create a new resume record in the database
-        resume_service.create_resume_entry(
+        new_resume = resume_service.create_resume_entry(
             db=db,
             user_id=current_user_id,
             filename=file.filename,
@@ -51,6 +51,7 @@ async def upload_resume(
         )
 
         return {
+            "id": new_resume.id,
             "filename": file.filename, 
             "company": company,
             "content": extracted_text, 

@@ -142,12 +142,14 @@ export interface Resume {
 }
 
 export interface UploadResponse {
+  id: number;
   filename: string;
   company: string;
   message: string;
   content: string;
 }
 
+export type ResumeSource = 'paste' | 'upload' | 'choose';
 
 export interface TailoredContent {
   summary: string;

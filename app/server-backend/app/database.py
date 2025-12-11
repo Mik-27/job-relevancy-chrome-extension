@@ -80,6 +80,27 @@ class Application(Base):
     updated_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
 
 
+class AnalysisLog(Base):
+    __tablename__ = "analysis_logs"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, nullable=False, index=True)
+    job_description = Column(Text, nullable=True)
+    
+    # Fields extracted by LLM
+    job_role = Column(String, nullable=True)
+    job_external_id = Column(String, nullable=True)
+    company_name = Column(String, nullable=True)
+    
+    resume_source = Column(String) 
+    resume_id = Column(Integer, nullable=True)
+    resume_snapshot = Column(Text, nullable=True)
+    
+    relevancy_score = Column(Integer)
+    suggestions = Column(JSONB) # Stores the list of strings
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+    
+
 # Dependency to get a DB session in our API endpoints
 def get_db():
     db = SessionLocal()

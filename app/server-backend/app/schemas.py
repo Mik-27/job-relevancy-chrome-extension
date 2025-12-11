@@ -217,3 +217,14 @@ class ApplicationResponse(ApplicationBase):
 
     class Config:
         from_attributes = True
+        
+        
+# --- NEW: Logging Schema ---
+class LogAnalysisRequest(BaseModel):
+    job_description: str
+    job_url: str
+    relevancy_score: int
+    suggestions: List[str]
+    resume_source: str
+    resume_id: Optional[int] = None
+    resume_text: str = ''

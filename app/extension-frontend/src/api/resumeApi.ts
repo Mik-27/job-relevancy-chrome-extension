@@ -318,5 +318,32 @@ export const generateAutofillResponses = async (fields: FormField[], jobDescript
     body: JSON.stringify({ fields, job_description: jobDescription }),
   });
   if (!response.ok) throw new Error("Failed to generate autofill responses");
-  return response.json(); // Returns { mappings: { ... } }
+  return response.json();
+};
+
+
+// Logging for analysis events
+export const logAnalysisEvent = async (
+  jobDescription: string, 
+  jobUrl: string,
+  score: number, 
+  suggestions: string[],
+  resumeSource: string,
+  resumeId: number | null,
+  resumeText: string
+): Promise<void> => {
+  // Fire and forget - we don't return anything or wait strictly for response
+  console.log("Logging analysis event:", { jobDescription, jobUrl, score, suggestions, resumeSource, resumeId });
+  authFetch(`${API_BASE_URL}/analyze/log`, {
+    method: 'POST',
+    body: JSON.stringify({ 
+      job_description: jobDescription,
+      job_url: jobUrl, 
+      relevancy_score: score, 
+      suggestions: suggestions,
+      resume_source: resumeSource,
+      resume_id: resumeId,
+      resume_text: resumeText
+    }),
+  }).catch(err => console.error("Logging failed silently:", err));
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import type { Session } from '@supabase/supabase-js';
-import { AnalysisResult, ApplyAutofillResponse, RelayApplyMessage, RelayScanMessage, ScanPageResponse, TailoredResumeSchema } from './types';
+import { AnalysisResult, ApplyAutofillResponse, RelayApplyMessage, RelayScanMessage, ResumeSource, ScanPageResponse, TailoredResumeSchema } from './types';
 import { Home } from './components/dashboard/Home';
 // We reuse the existing tab components as "Pages" for now
 import { PasteResumePage } from './components/pages/PasteResumePage';
@@ -11,7 +11,7 @@ import { ChooseResumeTab } from './components/resume-tabs/ChooseResumeTab';
 import { ColdEmailPage } from './components/pages/ColdEmailPage';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
 import { Profile } from './components/profile/Profile';
-import { generateAutofillResponses, getAnalysisScore, getAnalysisSuggestions } from './api/resumeApi';
+import { generateAutofillResponses, getAnalysisScore, getAnalysisSuggestions, logAnalysisEvent } from './api/resumeApi';
 // import { Spinner } from './components/ui/Spinner';
 import { supabase } from './lib/supabaseClient';
 import { ResumeEditor } from './components/editor/ResumeEditor';
@@ -40,6 +40,10 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
   const [status, setStatus] = useState<AppStatus>('idle');
   const [error, setError] = useState('');
+
+  // --- Tracking Source ---
+  const [resumeSource, setResumeSource] = useState<ResumeSource>('paste'); // Default
+  const [currentResumeId, setCurrentResumeId] = useState<number | null>(null);
 
   // Initial Scrape Logic (Unchanged)
   useEffect(() => {
@@ -103,7 +107,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
       setStatus('autofilling');
       // 4. Apply Changes (Via Relay)
-      // --- CHANGED: Send message to Background Relay ---
+      // --- Send message to Background Relay ---
       const fillResponse = await new Promise<ApplyAutofillResponse>((resolve, reject) => {
         const message: RelayApplyMessage = { 
           type: "RELAY_APPLY_AUTOFILL", 
@@ -158,7 +162,10 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
   };
 
   // Core Analysis Logic
-  const startAnalysis = async (textToAnalyze: string) => {
+  const startAnalysis = async (textToAnalyze: string, activeSource?: ResumeSource, activeId?: number) => {
+    const source = activeSource || resumeSource;
+    const id = activeId !== undefined ? activeId : currentResumeId;
+    
     if (!textToAnalyze.trim()) {
       alert("Resume content is empty.");
       return;
@@ -186,9 +193,23 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
       setAnalysisResult({
         relevancyScore: scoreResponse.relevancyScore,
-        suggestions: suggestionsResponse.suggestions
+        suggestions: suggestionsResponse.suggestions,
       });
       setStatus('complete');
+
+      // --- NEW: Log the event ---
+      // We do this AFTER updating the UI so the user sees results immediately.
+      // We don't await this (or we await it but it's fast because of background tasks).
+      const jobUrl = window.location.href;
+      logAnalysisEvent(
+        jd, 
+        jobUrl,
+        scoreResponse.relevancyScore, 
+        suggestionsResponse.suggestions,
+        source,
+        id,
+        textToAnalyze
+      );
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
@@ -200,23 +221,29 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
   // --- Logic Adapters ---
 
   // When a resume is uploaded successfully
-  const handleUploadSuccess = useCallback((parsedText: string) => {
+  const handleUploadSuccess = useCallback((parsedText: string, resumeId: number) => {
     setResumeText(parsedText);
     setUploadVersion(v => v + 1);
+    setResumeSource('upload');
+    setCurrentResumeId(resumeId);
+
     // After upload, ask user if they want to analyze immediately
     if(window.confirm("Upload successful! Analyze this resume now?")) {
         setPreviousView('upload_resume');
-        startAnalysis(parsedText);
+        startAnalysis(parsedText, 'upload', resumeId);
     } else {
         goHome();
     }
   }, []);
 
   // When a resume is selected from the list
-  const handleResumeSelection = (text: string) => {
+  const handleResumeSelection = (text: string, resumeId: number) => {
     setResumeText(text);
     setPreviousView('choose_resume');
-    startAnalysis(text);
+    if (resumeId !== 0) {
+      setCurrentResumeId(resumeId);
+    }
+    startAnalysis(text, 'choose', resumeId);
   };
 
   // This function decides if we switch views OR run an action
@@ -255,7 +282,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
             <ChooseResumeTab 
               key={uploadVersion} 
               // When user clicks "Select", we now trigger analysis immediately
-              setSelectedResumeText={handleResumeSelection} 
+              setSelectedResumeText={handleResumeSelection}
               jobDescriptionText={jobDescriptionText} 
             />
           </div>
@@ -270,6 +297,8 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
             <PasteResumePage 
               onAnalyze={(text) => {
                 setResumeText(text); // Update state
+                setResumeSource('paste'); // Update source
+                setCurrentResumeId(null); // Reset current resume ID
                 startAnalysis(text); // Trigger analysis
               }}
               isAnalyzing={status.startsWith('analyzing')}
