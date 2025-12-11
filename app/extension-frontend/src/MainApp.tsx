@@ -205,6 +205,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
     setUploadVersion(v => v + 1);
     // After upload, ask user if they want to analyze immediately
     if(window.confirm("Upload successful! Analyze this resume now?")) {
+        setPreviousView('upload_resume');
         startAnalysis(parsedText);
     } else {
         goHome();
@@ -214,10 +215,10 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
   // When a resume is selected from the list
   const handleResumeSelection = (text: string) => {
     setResumeText(text);
-    startAnalysis(text); // Auto-start analysis on selection
+    setPreviousView('choose_resume');
+    startAnalysis(text);
   };
 
-  // --- NEW: Navigation Interceptor ---
   // This function decides if we switch views OR run an action
   const handleNavigation = (destination: string) => {
     console.log(`Navigating to: ${destination}`);
@@ -292,7 +293,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
       case 'analysis_results':
         return (
           <div className="page-container">
-            <button onClick={goHome} className="back-link">&larr;</button>
+            <button onClick={() => setView(previousView)} className="back-link">&larr;</button>
             
             {status === 'error' && <p className="error-message">{error}</p>}
             

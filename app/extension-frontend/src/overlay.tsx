@@ -33,7 +33,8 @@ export function mountOverlay() {
   host.style.right = '20px';
   host.style.zIndex = '2147483647'; // Max Z-Index to stay on top
   host.style.width = '400px';
-  host.style.height = 'auto';
+  host.style.height = '100%';
+  host.style.minHeight = '600px';
   host.style.maxHeight = '90vh';
   host.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
   host.style.borderRadius = '12px';
@@ -69,12 +70,12 @@ export function mountOverlay() {
     ${userProfileStyles}
     ${homeStyles}
     ${coldEMailStyles}
-    /* ... add other style variables here ... */
 
     /* 3. Style the React Root to look like a solid window */
     #react-root {
       width: 100%;
       height: 100%;
+      min-height: 600px;
       max-height: 95vh;
       background-color: #1e1e1e; /* Dark background color */
       color: #ffffff;
