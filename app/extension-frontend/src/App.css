@@ -180,10 +180,7 @@ header p {
 }
 
 .results-section {
-  margin-top: 1.5rem;
   text-align: left;
-  border-top: 1px solid #555;
-  padding-top: 1rem;
 }
 
 .score-container {

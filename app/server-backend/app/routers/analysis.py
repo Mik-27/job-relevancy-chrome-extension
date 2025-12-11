@@ -16,6 +16,7 @@ async def get_score_endpoint(request: AnalyzeRequest, user_id: str = Depends(get
     if not request.resumeText or not request.jobDescriptionText:
         raise HTTPException(status_code=400, detail="Resume and JD cannot be empty.")
 
+    print("job description text:", request.jobDescriptionText)
     try:
         score = await analysis_service.get_relevancy_score(
             resume=request.resumeText,
@@ -35,6 +36,7 @@ async def get_suggestions_endpoint(request: AnalyzeRequest, user_id: str = Depen
         raise HTTPException(status_code=400, detail="Resume and JD cannot be empty.")
 
     try:
+        print("job description text:", request.jobDescriptionText)
         suggestions = await analysis_service.get_suggestions(
             resume=request.resumeText,
             job_description=request.jobDescriptionText

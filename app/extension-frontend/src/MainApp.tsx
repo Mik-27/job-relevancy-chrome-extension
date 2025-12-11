@@ -12,7 +12,7 @@ import { ColdEmailPage } from './components/pages/ColdEmailPage';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
 import { Profile } from './components/profile/Profile';
 import { generateAutofillResponses, getAnalysisScore, getAnalysisSuggestions } from './api/resumeApi';
-import { Spinner } from './components/ui/Spinner';
+// import { Spinner } from './components/ui/Spinner';
 import { supabase } from './lib/supabaseClient';
 import { ResumeEditor } from './components/editor/ResumeEditor';
 import { AutofillProgressPage } from './components/pages/AutofillProgressPage';
@@ -296,13 +296,13 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
             
             {status === 'error' && <p className="error-message">{error}</p>}
             
-            {/* Loading State */}
+            {/* Loading State
             {(status.startsWith('analyzing') || status === 'scraping') && (
                <div style={{textAlign: 'center', padding: '2rem'}}>
                   <Spinner />
                   <p>Analyzing Resume...</p>
                </div>
-            )}
+            )} */}
 
             {/* Results */}
             {analysisResult && (status === 'complete' || status.startsWith('analyzing')) && (
