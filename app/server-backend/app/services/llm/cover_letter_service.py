@@ -21,11 +21,13 @@ Second, analyze the JOB_DESCRIPTION to identify the key requirements, responsibi
 
 Then, write a cover letter from the candidate's perspective. The cover letter should:
 1.  Be 3-4 paragraphs long.
-2.  Have a professional and confident tone.
-3.  In the first paragraph, introduce the candidate and the specific role they are applying for.
-4.  In the body paragraphs, highlight 2-3 key experiences or projects from the resume that directly align with the most important requirements of the job description. Use specific examples and quantify achievements where possible.
-5.  In the final paragraph, reiterate enthusiasm for the role and the company, and include a strong call to action.
-6.  Do not include contact information, the date, or salutations like "Dear Hiring Manager" or "Sincerely". Only generate the body of the letter.
+2.  Not exceed 300 words.
+3.  Have a professional and confident tone.
+4.  In the first paragraph, introduce the candidate and the specific role they are applying for.
+5.  In the body paragraphs, highlight 2-3 key experiences or projects from the resume that directly align with the most important requirements of the job description. Use specific examples and quantify achievements where possible.
+6.  In the final paragraph, reiterate enthusiasm for the role and the company, and include a strong call to action.
+7.  Do not include contact information, the date, or salutations like "Dear Hiring Manager" or "Sincerely". Only generate the body of the letter.
+8.  Do not copy-paste sentences verbatim from the resume or job description. Instead, synthesize the information to create a unique and engaging narrative on how the candidates would fit in the team and add value.
 
 Your output MUST be a single, valid JSON object that strictly follows the provided format instructions.
 
