@@ -140,7 +140,11 @@ input, textarea, button {
   font-size: 1rem;
   padding: 0.4rem 0.8rem;
 }
-.back-button:hover { color: #fff; }
+
+.back-button:hover { 
+  color: #fff;
+  text-decoration: none;
+}
 
 header h1 {
   font-size: 1.5em;
@@ -165,6 +169,7 @@ header p {
   cursor: pointer;
   transition: border-color 0.25s;
   margin-top: auto; /* Push the button to the bottom */
+  margin-bottom: 1rem;
 }
 
 .analyze-button:hover {
@@ -179,35 +184,6 @@ header p {
 .error-message {
   color: #ff6b6b;
   margin-top: 1rem;
-}
-
-.results-section {
-  text-align: left;
-}
-
-.score-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #333;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-}
-
-.score {
-  font-size: 1.8em;
-  font-weight: bold;
-  color: #64ffda;
-}
-
-.suggestions-list {
-  list-style-type: '✅';
-  padding-left: 1.5rem;
-}
-
-.suggestions-list li {
-  padding-left: 0.5rem;
-  margin-bottom: 0.5rem;
 }
 
 .analyze-button {
@@ -285,8 +261,9 @@ header p {
 }
 
 .back-link:hover {
-  color: #1a6aff;
-  text-decoration: underline;
+  font-weight: bolder;
+  color: #f0f0f0;
+  text-decoration: none;
 }
 
 @keyframes fadeIn {

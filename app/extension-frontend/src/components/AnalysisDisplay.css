@@ -1,0 +1,35 @@
+.results-section {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  height: 100%;
+}
+
+.score-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #333;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+.score {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #64ffda;
+}
+
+.suggestions-list {
+  list-style-type: '✅';
+  padding-left: 1.5rem;
+}
+
+.suggestions-list li {
+  padding-left: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tailor-section {
+  margin-top: auto;
+}

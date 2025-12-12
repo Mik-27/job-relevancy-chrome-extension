@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AnalysisResult, TailoredResumeSchema } from '../types';
 import { Spinner } from './ui/Spinner';
 import { generateTailoredContent } from '../api/resumeApi';
+import './AnalysisDisplay.css';
 
 interface AnalysisDisplayProps {
   // It receives the result, which can be partial while loading
@@ -80,7 +81,7 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
             ))}
           </ul>
         ) : (
-          <Spinner />
+          <Spinner/>
         )}
 
         <div className="tailor-section">

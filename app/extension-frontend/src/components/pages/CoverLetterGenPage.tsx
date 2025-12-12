@@ -98,11 +98,11 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
       {error && <p className="error-message" style={{ marginTop: '1rem' }}>{error}</p>}
 
       <button 
-        className="generate-cl-button" 
+        className="analyze-button generate-cl-button" 
         onClick={handleGenerate}
         disabled={isGenerating || !jobDescription}
       >
-        {isGenerating ? <Spinner size="small" /> : 'Generate Cover Letter'}
+        {isGenerating ? <><Spinner size="small" />&nbsp; Analyzing CV and writing letter...</> : 'Generate Cover Letter'}
       </button>
       
     </div>

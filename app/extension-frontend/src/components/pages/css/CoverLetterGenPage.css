@@ -23,7 +23,7 @@
     font-size: 0.9rem;
 }
 
-.generate-cl-button {
+/* .generate-cl-button {
     background-color: #1a6aff;
     color: #fff;
     border: none;
@@ -32,4 +32,17 @@
     cursor: pointer;
     font-size: 1rem;
     margin-top: auto;
+} */
+
+/* .generate-cl-button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+} */
+
+/* .generate-cl-button:hover:enabled {
+    background-color: #0056e0;
+} */
+
+.generate-cl-button .spinner-container {
+    margin: 0;
 }

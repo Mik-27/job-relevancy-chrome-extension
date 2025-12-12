@@ -126,6 +126,9 @@
   font-size: 0.85rem;
   display: flex;
   align-items: center;
+  justify-content: center;
+  min-width: 125px;
+  min-height: 32px;
   transition: all 0.2s ease;
 }
 
@@ -135,8 +138,12 @@
 }
 
 .autoscore-button:disabled {
-  opacity: 0.5;
+  background-color: #555;
   cursor: not-allowed;
+}
+
+.autoscore-button .spinner-container {
+  margin: 0;
 }
 
 /* Ensure the top row layout is clean */

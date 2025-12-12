@@ -147,7 +147,7 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
           disabled={isScoring || !jobDescriptionText}
           title="Calculate relevancy for enabled resumes"
         >
-          {isScoring ? <Spinner size="small" /> : <><FaCalculator style={{marginRight: '6px'}}/> AutoScore</>}
+          <FaCalculator style={{marginRight: '6px'}}/> AutoScore
         </button>
       </div>
       <ul className="resume-list">

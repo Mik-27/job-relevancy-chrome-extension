@@ -17,6 +17,7 @@ import userProfileStyles from './components/profile/Profile.css?inline';
 import homeStyles from './components/dashboard/Home.css?inline';
 import coldEMailStyles from './components/pages/css/ColdEmailPage.css?inline';
 import coverLetterGenStyles from './components/pages/css/CoverLetterGenPage.css?inline';
+import analysisDisplayStyles from './components/AnalysisDisplay.css?inline';
 
 const ROOT_ID = 'resume-analyzer-overlay-root';
 
@@ -72,6 +73,7 @@ export function mountOverlay() {
     ${homeStyles}
     ${coldEMailStyles}
     ${coverLetterGenStyles}
+    ${analysisDisplayStyles}
 
     /* 3. Style the React Root to look like a solid window */
     #react-root {
