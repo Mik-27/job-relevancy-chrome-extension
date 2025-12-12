@@ -180,6 +180,7 @@ class FormField(BaseModel):
 class AutofillRequest(BaseModel):
     fields: List[FormField]
     job_description: Optional[str] = None
+    job_url: Optional[str] = None
 
 # Response payload
 class AutofillResponse(BaseModel):

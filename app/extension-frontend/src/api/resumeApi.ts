@@ -326,10 +326,10 @@ export const triggerColdOutreach = async (payload: { contacts?: Contact[], file?
 };
 
 
-export const generateAutofillResponses = async (fields: FormField[], jobDescription: string) => {
+export const generateAutofillResponses = async (fields: FormField[], jobDescription: string, jobUrl: string) => {
   const response = await authFetch(`${API_BASE_URL}/autofill/generate-responses`, {
     method: 'POST',
-    body: JSON.stringify({ fields, job_description: jobDescription }),
+    body: JSON.stringify({ fields, job_description: jobDescription, job_url: jobUrl }),
   });
   if (!response.ok) throw new Error("Failed to generate autofill responses");
   return response.json();

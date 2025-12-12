@@ -1,22 +1,54 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from .. import database, schemas
-from ..services.llm import autofill_service
+from ..services.llm import autofill_service, extraction_service
 from ..services import resume_service, gcs_service, pdf_service
 from ..security import get_current_user_id
 from ..config import settings
 
 router = APIRouter(prefix="/autofill", tags=["Autofill"])
 
+# --- Background Logging Task ---
+async def log_autofill_event(
+    user_id: str,
+    job_description: str,
+    job_url: str,
+    mappings: dict,
+    db: Session
+):
+    """
+    1. Extracts Company/Role/ID from the Job Description text.
+    2. Saves the autofill event to the database.
+    """
+    try:
+        # Reuse the extraction service we built for analysis!
+        metadata = await extraction_service.extract_job_metadata(job_description, job_url)
+        
+        log_entry = database.AutofillHistory(
+            user_id=user_id,
+            job_role=metadata.get('job_role'),
+            company_name=metadata.get('company_name'),
+            job_external_id=metadata.get('job_id'),
+            questions_answers=mappings
+        )
+        
+        db.add(log_entry)
+        db.commit()
+        print(f"Logged autofill event for {user_id} @ {metadata.get('company_name')}")
+        
+    except Exception as e:
+        print(f"Failed to log autofill event: {e}")
+        
+
 @router.post("/generate-responses", response_model=schemas.AutofillResponse)
 async def generate_responses(
     request: schemas.AutofillRequest,
+    background_tasks: BackgroundTasks,
     current_user_id: str = Depends(get_current_user_id),
     db: Session = Depends(database.get_db)
 ):
     try:
         # 1. Fetch User Context (Profile + Master CV)
-        # (This logic is reused from outreach.py - consider moving to a helper utility)
         user_context = ""
         user_profile = resume_service.get_user_profile_by_id(db, current_user_id)
         
@@ -42,6 +74,17 @@ async def generate_responses(
         )
         
         clean_mappings = {k: v for k, v in mappings.items() if v is not None}
+        
+        # Queue Background Logging (Fire and Forget)
+        if request.job_description:
+            background_tasks.add_task(
+                log_autofill_event, 
+                current_user_id, 
+                request.job_description, 
+                request.job_url or "",
+                clean_mappings, 
+                db
+            )
         
         return schemas.AutofillResponse(mappings=clean_mappings)
 

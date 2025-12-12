@@ -101,6 +101,22 @@ class AnalysisLog(Base):
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     
 
+class AutofillHistory(Base):
+    __tablename__ = "autofill_history"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, nullable=False, index=True)
+    
+    # Metadata extracted from JD
+    company_name = Column(String, nullable=True)
+    job_role = Column(String, nullable=True)
+    job_external_id = Column(String, nullable=True)
+    
+    # The actual filled data
+    questions_answers = Column(JSONB)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    
+
 # Dependency to get a DB session in our API endpoints
 def get_db():
     db = SessionLocal()

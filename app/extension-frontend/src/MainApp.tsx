@@ -104,7 +104,8 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
       setStatus('analyzing_suggestions');
 
       // 3. Call Backend (Unchanged)
-      const { mappings } = await generateAutofillResponses(scanResponse.fields, jobDescriptionText);
+      const jobUrl = window.location.href;
+      const { mappings } = await generateAutofillResponses(scanResponse.fields, jobDescriptionText, jobUrl);
 
       setStatus('autofilling');
       // 4. Apply Changes (Via Relay)
