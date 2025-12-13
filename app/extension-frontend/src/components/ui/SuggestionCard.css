@@ -22,25 +22,8 @@
   gap: 0.75rem;
 }
 
-.sc-reason-wrapper {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  padding-top: 2px;
-}
-
-.sc-icon-lightbulb {
-  color: #fbbf24; /* Yellow */
-  font-size: 0.9rem;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-.sc-reason-text {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #f0f0f0;
-  line-height: 1.4;
+.sc-type-badge {
+    font-weight: bolder;
 }
 
 .sc-location-badge {
@@ -93,12 +76,14 @@
   border: 1px dashed #555;
   border-radius: 8px;
   padding: 0.75rem;
+  margin-bottom: 0.35rem;
   font-size: 0.85rem;
   color: #888;
   line-height: 1.5;
   text-decoration: line-through;
   text-decoration-color: rgba(248, 113, 113, 0.4); /* Faint red line */
   text-decoration-thickness: 2px;
+  text-align: justify;
 }
 
 /* Arrow between boxes */
@@ -155,4 +140,78 @@
   color: white;
   line-height: 1.5;
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+  text-align: justify;
+}
+
+/* Reasoning Button */
+.sc-reason-button {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.3s ease;
+  background: rgba(255, 193, 7, 0.1); /* Subtle yellow */
+  border: 1px solid rgba(255, 193, 7, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sc-reason-button:hover {
+  background: rgba(255, 193, 7, 0.15);
+  border-color: rgba(255, 193, 7, 0.3);
+}
+
+.sc-reason-button.expanded {
+  background: rgba(255, 193, 7, 0.15);
+  border-color: rgba(255, 193, 7, 0.3);
+}
+
+.sc-reason-button.expanded .sc-reason-content {
+  max-height: 500px;
+  opacity: 1;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.sc-reason-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-reason-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffc107;
+}
+
+.sc-expand-icon {
+  font-size: 18px;
+  color: #ffc107;
+  font-weight: bold;
+  transition: transform 0.3s ease;
+}
+
+.sc-reason-content {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 193, 7, 0.2);
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: justify;
+  transition: 
+    max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease,
+    margin-top 0.3s ease,
+    padding-top 0.3s ease;
+}
+
+.sc-icon-lightbulb {
+  color: #fbbf24; /* Yellow */
+  font-size: 0.9rem;
+  margin-top: 2px;
+  flex-shrink: 0;
 }

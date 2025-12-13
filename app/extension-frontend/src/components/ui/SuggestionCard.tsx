@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaCopy, FaCheck, FaArrowRight, FaLightbulb, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaCopy, FaCheck, FaLightbulb, FaMapMarkerAlt, FaArrowDown } from 'react-icons/fa';
 import { SuggestionItem } from '../../types';
 import './SuggestionCard.css';
 
@@ -9,11 +9,16 @@ interface SuggestionCardProps {
 
 export const SuggestionCard: React.FC<SuggestionCardProps> = ({ item }) => {
   const [copied, setCopied] = useState(false);
+  const [reasoningExpanded, setReasoningExpanded] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(item.suggested_text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleToggleReasoning = () => {
+    setReasoningExpanded(!reasoningExpanded);
   };
 
   return (
@@ -24,7 +29,7 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({ item }) => {
         {/* Type Badge */}
         {item.type && (
           <div className="sc-type-badge">
-            {item.type}
+            {item.type.toUpperCase()}
           </div>
         )}
 
@@ -50,7 +55,7 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({ item }) => {
             
             {/* Arrow Indicator */}
             <div className="sc-arrow-wrapper">
-              <FaArrowRight size={10} />
+              <FaArrowDown size={10} />
             </div>
           </div>
         )}
@@ -75,14 +80,27 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({ item }) => {
            </div>
         </div>
         
-        {/* Reasoning */}
-        <div className="sc-reason-wrapper">
-          <FaLightbulb className="sc-icon-lightbulb" />
-          <span className="sc-reason-text">
+        {/* Reasoning - Collapsible */}
+        <button 
+          onClick={handleToggleReasoning}
+          className={`sc-reason-button ${reasoningExpanded ? 'expanded' : 'collapsed'}`}
+        >
+          <div className="sc-reason-header">
+            <FaLightbulb className="sc-icon-lightbulb" />
+            <span className="sc-reason-label">
+              {reasoningExpanded ? 'Why this works' : 'Why this works'}
+            </span>
+            <span className="sc-expand-icon">
+              {reasoningExpanded ? '−' : '+'}
+            </span>
+          </div>
+        
+          {reasoningExpanded && (
+            <div className="sc-reason-content">
             {item.reasoning}
-          </span>
-        </div>
-
+            </div>
+          )}
+        </button>
       </div>
     </div>
   );
