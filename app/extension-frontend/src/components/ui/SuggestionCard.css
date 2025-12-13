@@ -86,23 +86,6 @@
   text-align: justify;
 }
 
-/* Arrow between boxes */
-.sc-arrow-wrapper {
-  position: absolute;
-  bottom: -22px; /* Position half-way between boxes */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #2c2c2e; /* Matches card bg to hide border line */
-  padding: 4px;
-  border-radius: 50%;
-  border: 1px solid #444;
-  z-index: 10;
-  color: #555;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* Improved Text Box */
 .sc-improved-header {
   display: flex;

@@ -74,25 +74,41 @@ Always be specific in the suggestions provided to improve the resume for this sp
 Also, provide suggestions to remove irrelevant information that does not align with the job description.
 Try to use metrics or quantifying statements in the suggestions wherever possible.
 When providing a suggestion on quantifying achievements, always suggest specific metrics that align better with the job description and use researched data for metric values.
+For experience, do not suggest replacing the complete experience, instead suggest rewriting individual bullet points within that experience.
+Avoid the use of articles like 'a', 'an', 'the' in the suggested text.
 
 For each issue, provide a structured suggestion:
 1. **Type**: The type of suggestion: 'rewrite', 'addition', 'removal', or 'formatting'.
 2. **Location**: Specify where in the resume the change should be made (e.g., under which experience or project, or in which section).
 3. **Original Text:** The exact text from the resume that needs changing. If it's a new addition, removal or formatting, leave this empty.
 4. **Suggested Text:** A rewritten, powerful version using action verbs and provided metrics relevant to the JD.
-5. **Reasoning:** Why this change helps (e.g., "Adds quantifiable impact").
+5. **Reasoning:** Why this change helps (e.g., "Adds quantifiable impact"). Keep it short and simple.
 
 Formatting Instructions for suggestions:
 - Type: One of 'rewrite', 'addition', 'removal', or 'formatting'.
 - Formatting instruction for 'location' field is as follows:
-    Location: "[Experience/Project] at [Company/Project Name]"
-- If the suggestion is regarding adding a new bullet point in experience or projects, provide the full new bullet point as follows:
+    Location: "[Experience/Project]: [Company/Project Name]"
+- For location, use shorter names e.g. Experience instead of professional experience, Project instead of personal project.
+- If the suggestion is regarding addition in skills section, provide the skill to be added as follows:
+    Original Text: "" (leave empty)
+    Suggested Text: "Add [Skills to be added] to [Skill Heading]"
+- If the suggestion is regarding removal from skills section, provide the skill to be removed as follows:
+    Original Text: "" (leave empty)
+    Suggested Text: "Remove [Skills to be removed] from [Skill Heading]"
+- If the suggestion is regarding adding a new bullet point in experience or projects (addition), provide the full new bullet point as follows:
     Original Text: "" (leave empty)
     Suggested Text: "Point to be added or removed"
+- If the suggestion is regarding removing a new bullet point in experience or projects (removal), provide the full new bullet point as follows:
+    Original Text: "Point to be removed"
+    Suggested Text: "" (leave empty)
+- If the suggestion is regarding removing a complete project or experience (removal), provide the full new bullet point as follows:
+    Original Text: "Project/Experience Title" (Only Title)
+    Suggested Text: "" (leave empty)
 - If the suggestion is regarding merging bullet points, provide the merged bullet point as follows:
     Original Text: '[Bullet Point 1]...' + '[Bullet Point 2]...' 
     Suggested Text: '[Merged Bullet Point]'
 - If the suggestion is anything else, provide it as a concise action item in 'Suggested Text' (ignore the rephrasing format).
+- For the 'Reasoning' field, keep it concise, no need to repeat the project/experience/skill name. Just tell what value it adds
 
 Analyze the following resume and job description.
 <resume>

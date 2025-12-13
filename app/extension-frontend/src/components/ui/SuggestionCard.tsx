@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaCopy, FaCheck, FaLightbulb, FaMapMarkerAlt, FaArrowDown } from 'react-icons/fa';
+import { FaCopy, FaCheck, FaLightbulb, FaMapMarkerAlt } from 'react-icons/fa';
 import { SuggestionItem } from '../../types';
 import './SuggestionCard.css';
 
@@ -37,7 +37,7 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({ item }) => {
         {item.location && (
           <div className="sc-location-badge">
             <FaMapMarkerAlt size={10} />
-            {item.location}
+            {item.location.length > 30 ? item.location.slice(0, 27) + "..." : item.location}
           </div>
         )}
       </div>
@@ -48,37 +48,35 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({ item }) => {
         {/* Original Text (If applicable) */}
         {item.original_text && item.original_text !== "N/A" && (
           <div className="sc-section">
-            <span className="sc-label">Original</span>
+            {item.type === "rewrite"? (<span className="sc-label">Original</span>) : item.type === "addition" ? (<span className="sc-label">Add</span>) : item.type === "removal" ? (<span className="sc-label">Remove</span>) : null}
             <div className="sc-original-box">
-              {item.original_text}
-            </div>
-            
-            {/* Arrow Indicator */}
-            <div className="sc-arrow-wrapper">
-              <FaArrowDown size={10} />
+              {item.original_text.length > 125 ? item.original_text.slice(0, 125) + "..." : item.original_text}
             </div>
           </div>
         )}
 
         {/* Suggested Text */}
-        <div>
-           <div className="sc-improved-header">
-             <span className="sc-label highlight">
-               Improved Version
-             </span>
-             <button
+        {item.suggested_text && (
+          <div className="sc-section">
+            <div className="sc-improved-header">
+              {/* <span className="sc-label highlight">
+                Improved Version
+              </span> */}
+              {item.type === "rewrite"? (<span className="sc-label highlight">Improved Version</span>) : item.type === "addition" ? (<span className="sc-label highlight">Add</span>) : item.type === "removal" ? (<span className="sc-label highlight">Remove</span>) : null}
+              <button
                 onClick={handleCopy}
                 className="sc-copy-btn"
                 title="Copy to clipboard"
-             >
-               {copied ? <><FaCheck size={10} /> Copied</> : <><FaCopy size={10} /> Copy</>}
-             </button>
-           </div>
+              >
+                {copied ? <><FaCheck size={10} /> Copied</> : <><FaCopy size={10} /> Copy</>}
+              </button>
+            </div>
 
-           <div className="sc-improved-box">
-             {item.suggested_text}
-           </div>
-        </div>
+            <div className="sc-improved-box">
+              {item.suggested_text}
+            </div>
+          </div>
+        )}
         
         {/* Reasoning - Collapsible */}
         <button 

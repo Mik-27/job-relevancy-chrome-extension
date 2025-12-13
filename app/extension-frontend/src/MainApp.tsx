@@ -187,16 +187,37 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
          setJobDescriptionText(jd);
       }
 
-      // Parallel fetching
-      const [scoreResponse, suggestionsResponse] = await Promise.all([
-        getAnalysisScore(textToAnalyze, jd),
-        getAnalysisSuggestions(textToAnalyze, jd)
-      ]);
+    //   // Parallel fetching
+    //   const [scoreResponse, suggestionsResponse] = await Promise.all([
+    //     getAnalysisScore(textToAnalyze, jd),
+    //     getAnalysisSuggestions(textToAnalyze, jd)
+    //   ]);
 
-      setAnalysisResult({
-        relevancyScore: scoreResponse.relevancyScore,
-        suggestions: suggestionsResponse.suggestions,
+    //   setAnalysisResult({
+    //     relevancyScore: scoreResponse.relevancyScore,
+    //     suggestions: suggestionsResponse.suggestions,
+    //   });
+
+      const scorePromise = getAnalysisScore(textToAnalyze, jd).then(response => {
+        // Update state immediately when score arrives
+        setAnalysisResult(prev => ({
+          ...prev,
+          relevancyScore: response.relevancyScore,
+        }));
+        return response;
       });
+
+      const suggestionsPromise = getAnalysisSuggestions(textToAnalyze, jd).then(response => {
+        // Update state immediately when suggestions arrive
+        setAnalysisResult(prev => ({
+          ...prev,
+          suggestions: response.suggestions,
+        }));
+        return response;
+      });
+
+      const [scoreResponse, suggestionsResponse] = await Promise.all([scorePromise, suggestionsPromise]);
+
       setStatus('complete');
 
       // --- NEW: Log the event ---
