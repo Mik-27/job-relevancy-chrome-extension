@@ -31,15 +31,23 @@ class AnalyzeRequest(BaseModel):
     resumeText: str
     jobDescriptionText: str
 
+# --- NEW: Structure for a single suggestion ---
+class SuggestionItem(BaseModel):
+    type: str = Field(description="Type of suggestion: 'rewrite', 'addition', 'removal', or 'formatting'.")
+    location: str = Field(description="Where in the resume the change should be made (e.g., under which experience or project, or in which section).")
+    original_text: str = Field(description="The exact text from the resume that needs changing. If it's a new addition, removal or formatting, leave this empty.")
+    suggested_text: str = Field(description="The rewritten, optimized version of the text.")
+    reasoning: str = Field(description="A brief explanation of why this change improves the resume.")
+    
 class AnalysisResultSchema(BaseModel):
     relevancyScore: int = Field(description="An integer score from 0 to 100 representing how relevant the resume is to the job description.")
-    suggestions: List[str] = Field(description="A list of 5-7 concrete, actionable suggestions for the user to improve their resume for this specific job.")
+    suggestions: List[SuggestionItem] = Field(description="A list of 5-7 concrete, actionable suggestions for the user to improve their resume for this specific job.")
 
 class ScoreResponse(BaseModel):
     relevancyScore: int
 
 class SuggestionsResponse(BaseModel):
-    suggestions: List[str]
+    suggestions: List[SuggestionItem]
     
 # Schema for the first, fast LLM call to get only the score
 class RelevancyScoreSchema(BaseModel):
@@ -51,7 +59,7 @@ class RelevancyScoreSchema(BaseModel):
 
 # Schema for the second, more detailed LLM call to get only the suggestions
 class SuggestionsSchema(BaseModel):
-    suggestions: List[str] = Field(description="A list of 5-7 concrete, actionable suggestions for the user to improve their resume for this specific job.")
+    suggestions: List[SuggestionItem] = Field(description="A list of 5-7 concrete, actionable suggestions for the user to improve their resume for this specific job.")
     
 # Schema for returning a single resume in a list
 class ResumeBase(BaseModel):
@@ -228,7 +236,7 @@ class LogAnalysisRequest(BaseModel):
     job_description: str
     job_url: str
     relevancy_score: int
-    suggestions: List[str]
+    suggestions: List[SuggestionItem] 
     resume_source: str
     resume_id: Optional[int] = None
     resume_text: Optional[str] = None

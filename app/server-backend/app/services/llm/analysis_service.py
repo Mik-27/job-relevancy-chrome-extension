@@ -75,14 +75,24 @@ Also, provide suggestions to remove irrelevant information that does not align w
 Try to use metrics or quantifying statements in the suggestions wherever possible.
 When providing a suggestion on quantifying achievements, always suggest specific metrics that align better with the job description and use researched data for metric values.
 
+For each issue, provide a structured suggestion:
+1. **Type**: The type of suggestion: 'rewrite', 'addition', 'removal', or 'formatting'.
+2. **Location**: Specify where in the resume the change should be made (e.g., under which experience or project, or in which section).
+3. **Original Text:** The exact text from the resume that needs changing. If it's a new addition, removal or formatting, leave this empty.
+4. **Suggested Text:** A rewritten, powerful version using action verbs and provided metrics relevant to the JD.
+5. **Reasoning:** Why this change helps (e.g., "Adds quantifiable impact").
+
 Formatting Instructions for suggestions:
-- If the suggestion is regarding rephrasing/rewriting and bullet point in experience or projects, provide the full rewritten bullet point as follows:
-    "Rewrite the bullet point under [Experience/Project] at [Company/Project Name]: '[Original Bullet Point]...' -> '[Rewritten Bullet Point]'"
+- Type: One of 'rewrite', 'addition', 'removal', or 'formatting'.
+- Formatting instruction for 'location' field is as follows:
+    Location: "[Experience/Project] at [Company/Project Name]"
 - If the suggestion is regarding adding a new bullet point in experience or projects, provide the full new bullet point as follows:
-    "Add the following bullet point under [Experience/Project] at [Company/Project Name]: '[New Bullet Point]'"
+    Original Text: "" (leave empty)
+    Suggested Text: "Point to be added or removed"
 - If the suggestion is regarding merging bullet points, provide the merged bullet point as follows:
-    "Merge the following bullet points under [Experience/Project] at [Company/Project Name]: '[Bullet Point 1]...' and '[Bullet Point 2]...' -> '[Merged Bullet Point]'"
-- If the suggestion is anything else, provide it as a concise action item (ignore the rephrasing format).
+    Original Text: '[Bullet Point 1]...' + '[Bullet Point 2]...' 
+    Suggested Text: '[Merged Bullet Point]'
+- If the suggestion is anything else, provide it as a concise action item in 'Suggested Text' (ignore the rephrasing format).
 
 Analyze the following resume and job description.
 <resume>

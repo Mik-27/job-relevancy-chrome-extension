@@ -9,6 +9,7 @@ import appStyles from './App.css?inline';
 import authStyles from './components/auth/Auth.css?inline';
 import spinnerStyles from './components/ui/Spinner.css?inline';
 import tabsStyles from './components/ui/Tabs.css?inline';
+import suggestionCardStyles from './components/ui/SuggestionCard.css?inline';
 import chooseResumeStyles from './components/resume-tabs/ChooseResumeTab.css?inline';
 import uploadResumeStyles from './components/resume-tabs/UploadResumeTab.css?inline';
 import editorStyles from './components/editor/ResumeEditor.css?inline';
@@ -74,6 +75,7 @@ export function mountOverlay() {
     ${coldEMailStyles}
     ${coverLetterGenStyles}
     ${analysisDisplayStyles}
+    ${suggestionCardStyles}
 
     /* 3. Style the React Root to look like a solid window */
     #react-root {

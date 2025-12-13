@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
-import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, TailoredResumeSchema, TailoredContent, CoverLetterResponse, Contact, FormField } from "../types";
+import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, SuggestionItem, TailoredResumeSchema, TailoredContent, CoverLetterResponse, Contact, FormField } from "../types";
 import { UserProfile } from '../types';
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
@@ -341,7 +341,7 @@ export const logAnalysisEvent = async (
   jobDescription: string, 
   jobUrl: string,
   score: number, 
-  suggestions: string[],
+  suggestions: SuggestionItem[],
   resumeSource: string,
   resumeId: number | null,
   resumeText: string | null,

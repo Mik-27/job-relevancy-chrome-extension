@@ -11,10 +11,18 @@ export interface UserProfile {
   cv_url?: string;
 }
 
+export interface SuggestionItem {
+  type: string;
+  location: string;
+  original_text: string;
+  suggested_text: string;
+  reasoning: string;
+}
+
 // This interface defines the structure of a successful analysis from the backend
 export interface AnalysisResult {
   relevancyScore: number;
-  suggestions: string[];
+  suggestions: SuggestionItem[];
 }
 
 // --- Messages Sent TO Listeners ---
@@ -74,7 +82,7 @@ export interface ResumeWithScore extends Resume {
 }
 
 export interface SuggestionsResponse {
-  suggestions: string[];
+  suggestions: SuggestionItem[];
 }
 
 // Message: Overlay -> Background (Request to scan for autofill)

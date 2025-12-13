@@ -46,6 +46,7 @@ async def get_suggestions_endpoint(request: AnalyzeRequest, user_id: str = Depen
             resume=request.resumeText,
             job_description=request.jobDescriptionText
         )
+        logger.info(f"Suggestions: {suggestions[:300]}")
         return SuggestionsResponse(suggestions=suggestions)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get suggestions: {e}")
@@ -80,9 +81,9 @@ async def process_analysis_log(
         )
         db.add(log_entry)
         db.commit()
-        print(f"Logged analysis for user {user_id}: {metadata.get('job_role')} at {metadata.get('company_name')}")
+        logger.info(f"Logged analysis for user {user_id}: {metadata.get('job_role')} at {metadata.get('company_name')}")
     except Exception as e:
-        print(f"Failed to save analysis log: {e}")
+        logger.error(f"Failed to save analysis log: {e}")
 
 
 # --- NEW: Logging Endpoint ---

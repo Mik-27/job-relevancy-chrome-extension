@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AnalysisResult, TailoredResumeSchema } from '../types';
 import { Spinner } from './ui/Spinner';
+import { SuggestionCard } from './ui/SuggestionCard';
 import { generateTailoredContent } from '../api/resumeApi';
 import './AnalysisDisplay.css';
 
@@ -75,11 +76,11 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         </div>
         <h3>Suggestions for Improvement:</h3>
         {result.suggestions ? (
-          <ul className="suggestions-list">
-            {result.suggestions.map((suggestion, index) => (
-              <li key={index}>{suggestion}</li>
+          <div className="flex flex-col gap-2">
+            {result.suggestions.map((item, index) => (
+              <SuggestionCard key={index} item={item} />
             ))}
-          </ul>
+          </div>
         ) : (
           <Spinner/>
         )}
