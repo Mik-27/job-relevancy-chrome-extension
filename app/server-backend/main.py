@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from logging.config import dictConfig
+from app.logging_config import LogConfig
 from app.routers import analysis, resumes, tailor, cover_letter, users, outreach, autofill, applications
+
+dictConfig(LogConfig().model_dump())
 
 app = FastAPI(
     title="Resume Analyzer API",

@@ -1,9 +1,12 @@
+from ..logging_config import get_logger
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from ..schemas import AnalyzeRequest, ScoreResponse, SuggestionsResponse, LogAnalysisRequest
 from sqlalchemy.orm import Session
 from ..services.llm import analysis_service, extraction_service
 from ..database import AnalysisLog, get_db
 from ..security import get_current_user_id
+
+logger = get_logger(__name__)
 
 router = APIRouter(
     prefix="/analyze",
@@ -23,8 +26,10 @@ async def get_score_endpoint(request: AnalyzeRequest, user_id: str = Depends(get
             resume=request.resumeText,
             job_description=request.jobDescriptionText
         )
+        logger.info(f"Score computed: {score}")
         return ScoreResponse(relevancyScore=score)
     except Exception as e:
+        logger.error(f"Error in /score: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get score: {e}")
 
 

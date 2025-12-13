@@ -8,6 +8,7 @@ import pandas as pd
 from typing import List, Optional, Dict, Any
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
+from ..logging_config import get_logger
 
 from ..config import settings
 from ..security import get_current_user_id, validate_token_and_get_user_id
@@ -15,6 +16,8 @@ from .. import database
 from ..services import resume_service, gcs_service, pdf_service
 from ..database import OutreachHistory
 from ..schemas import OutreachHistorySchema, PaginatedOutreachHistory
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/outreach", tags=["Outreach"])
 
@@ -60,34 +63,34 @@ async def process_outreach_background(
     contacts_json: Optional[str],
     db: Session
 ):
-    print(f"Background: Processing outreach for {user_id}")
+    logger.info(f"Background: Processing outreach for {user_id}")
     
     # 1. PARSE INPUTS
     final_contacts_list = []
     try:
-        print("Background: Parsing inputs...")
+        logger.info("Background: Parsing inputs...")
         if file_bytes:
             # Determine format based on filename or try both
             if file_filename and file_filename.endswith('.csv'):
-                print("Background: Detected CSV file.")
+                logger.info("Background: Detected CSV file.")
                 df = pd.read_csv(io.BytesIO(file_bytes))
             else:
-                print("Background: Detected Excel file.")
+                logger.info("Background: Detected Excel file.")
                 df = pd.read_excel(io.BytesIO(file_bytes))
             final_contacts_list = normalize_dataframe(df)
         
         elif contacts_json:
-            print("Background: Parsing JSON contacts.")
+            logger.info("Background: Parsing JSON contacts.")
             parsed = json.loads(contacts_json)
             # Handle { "contacts": [...] } vs [...]
             final_contacts_list = parsed.get('contacts', parsed) if isinstance(parsed, dict) else parsed
 
     except Exception as e:
-        print(f"Background Error: Parsing failed - {e}")
+        logger.error(f"Background Error: Parsing failed - {e}")
         return
 
     if not final_contacts_list:
-        print("Background Error: No contacts found.")
+        logger.error("Background Error: No contacts found.")
         return
 
     # 2. LOG TO DATABASE & PREPARE N8N PAYLOAD
@@ -117,8 +120,10 @@ async def process_outreach_background(
             contacts_for_n8n.append(n8n_contact)
             
         db.commit()
+        logger.info(f"Background: Logged {len(final_contacts_list)} contacts to DB.")
+        
     except Exception as e:
-        print(f"Background Error: DB Logging failed - {e}")
+        logger.error(f"Background Error: DB Logging failed - {e}")
         return
 
     # 3. FETCH USER CONTEXT (MASTER CV)
