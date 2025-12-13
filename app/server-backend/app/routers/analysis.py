@@ -71,7 +71,7 @@ async def process_analysis_log(
             user_id=user_id,
             job_description=request.job_description,
             relevancy_score=request.relevancy_score,
-            suggestions=request.suggestions,
+            suggestions=[s.model_dump() for s in request.suggestions],
             job_role=metadata.get('job_role'),
             company_name=metadata.get('company_name'),
             job_external_id=metadata.get('job_id'),
