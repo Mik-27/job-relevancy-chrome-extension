@@ -86,3 +86,24 @@ async def upload_user_cv(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to upload CV: {e}")
+    
+
+# --- NEW: Lightweight Endpoint for Extension ---
+@router.get("/status", response_model=schemas.UserStatusSchema)
+def get_user_status(
+    current_user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Returns minimal info: Name, Email, and whether a Master CV is uploaded.
+    Used by the extension to check readiness without fetching full profile data.
+    """
+    user = db.query(database.User).filter(database.User.id == current_user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {
+        "first_name": user.first_name or "User",
+        "email": user.email,
+        "has_master_cv": bool(user.cv_url) # Check if URL exists
+    }

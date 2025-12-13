@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
-import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, SuggestionItem, TailoredResumeSchema, TailoredContent, CoverLetterResponse, Contact, FormField } from "../types";
+import { Resume, UploadResponse, ScoreResponse, SuggestionsResponse, SuggestionItem, TailoredResumeSchema, TailoredContent, CoverLetterResponse, Contact, FormField, UserStatus } from "../types";
 import { UserProfile } from '../types';
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
@@ -51,42 +51,13 @@ export const getUserProfile = async (): Promise<UserProfile> => {
   return response.json();
 };
 
-// NEW: Update text profile
-export const updateUserProfile = async (data: Partial<UserProfile>): Promise<UserProfile> => {
-  const response = await authFetch(`${API_BASE_URL}/users/me`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error("Failed to update profile.");
+
+// --- NEW: Lightweight Fetcher ---
+export const getUserStatus = async (): Promise<UserStatus> => {
+  const response = await authFetch(`${API_BASE_URL}/users/status`);
+  if (!response.ok) throw new Error("Failed to fetch user status");
   return response.json();
 };
-
-// NEW: Upload CV
-export const uploadUserCV = async (file: File): Promise<UserProfile> => {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  // We use the standard fetch for FormData + auth token (similar to uploadResume)
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error("User is not authenticated.");
-  formData.append("token", session.access_token); // Assuming we use the generic security dependency workaround, OR rely on the authFetch if you fixed the backend dependency logic.
-  
-  // Actually, since /users/me/cv uses the standard 'get_current_user_id' dependency which expects a header (because it doesn't have Form(...) args besides File),
-  // we SHOULD use authFetch logic but without Content-Type.
-  // Let's use the authFetch helper we modified earlier to handle FormData automatically!
-  
-  const response = await authFetch(`${API_BASE_URL}/users/me/cv`, {
-    method: 'POST',
-    body: formData
-  });
-
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.detail || "Failed to upload CV.");
-  }
-  return response.json();
-};
-
 
 export const uploadResume = async (file: File, company: string, autoscore: boolean): Promise<UploadResponse> => {
   const formData = new FormData();

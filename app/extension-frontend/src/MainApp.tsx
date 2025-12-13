@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './App.css';
 import type { Session } from '@supabase/supabase-js';
 import { AnalysisResult, ApplyAutofillResponse, RelayApplyMessage, RelayScanMessage, ResumeSource, ScanPageResponse, TailoredResumeSchema } from './types';
 import { Home } from './components/dashboard/Home';
+import { FaUserCircle, FaExternalLinkAlt } from 'react-icons/fa';
 // We reuse the existing tab components as "Pages" for now
 import { PasteResumePage } from './components/pages/PasteResumePage';
 import { MasterCVPage } from './components/pages/MasterCVPage';
@@ -10,17 +10,21 @@ import { UploadResumeTab } from './components/resume-tabs/UploadResumeTab';
 import { ChooseResumeTab } from './components/resume-tabs/ChooseResumeTab';
 import { ColdEmailPage } from './components/pages/ColdEmailPage';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
-import { Profile } from './components/profile/Profile';
+// import { Profile } from './components/profile/Profile';
 import { generateAutofillResponses, getAnalysisScore, getAnalysisSuggestions, logAnalysisEvent } from './api/resumeApi';
 // import { Spinner } from './components/ui/Spinner';
 import { supabase } from './lib/supabaseClient';
 import { ResumeEditor } from './components/editor/ResumeEditor';
 import { AutofillProgressPage } from './components/pages/AutofillProgressPage';
 import { CoverLetterGenPage } from './components/pages/CoverLetterGenPage';
+import './App.css';
 
+
+// URL for your Web Dashboard
+const WEB_DASHBOARD_URL = "http://localhost:3000/dashboard";
 
 // NEW: Expanded View Types
-type AppView = 'home' | 'profile' | 'choose_resume' | 'upload_resume' | 'paste_text' | 'master_cv' | 'analysis_results' | 'cover_letter_gen' | 'editor' | 'cold_email' | 'autofill_progress';
+type AppView = 'home' | 'choose_resume' | 'upload_resume' | 'paste_text' | 'master_cv' | 'analysis_results' | 'cover_letter_gen' | 'editor' | 'cold_email' | 'autofill_progress';
 
 type AppStatus = 'idle' | 'scraping' | 'analyzing_score' | 'analyzing_suggestions' | 'autofilling' | 'generating_content' | 'complete' | 'error';
 
@@ -64,6 +68,11 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+  };
+
+  // --- NEW: Open Web Dashboard ---
+  const openWebDashboard = () => {
+    window.open(WEB_DASHBOARD_URL, '_blank');
   };
 
   const handleAutofillClick = async () => {
@@ -144,8 +153,6 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
     setStatus('idle');
     setView('home');
   };
-
-  const handleProfileClick = () => setView('profile');
 
   // --- 2. Shared Handlers ---
 
@@ -286,9 +293,6 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
     switch (view) {
       case 'home':
         return <Home onNavigate={handleNavigation} userName={session.user.user_metadata.first_name || 'User'} />;
-      
-      case 'profile':
-        return <Profile onBack={goHome} />;
 
       case 'upload_resume':
         return (
@@ -338,7 +342,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
               <MasterCVPage 
                 jobDescription={jobDescriptionText}
                 onGenerationSuccess={handleMasterCVSuccess}
-                onNavigateProfile={() => setView('profile')}
+                onNavigateProfile={openWebDashboard}
               />
             </div>
         );
@@ -350,7 +354,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
               <h2>Cover Letter</h2>
               <CoverLetterGenPage 
                 jobDescription={jobDescriptionText}
-                onNavigateProfile={() => setView('profile')}
+                onNavigateProfile={openWebDashboard}
               />
             </div>
         );
@@ -429,17 +433,23 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
         </button>
       </div>
       
-      {view !== 'profile' && (
-        <header className="app-header">
-            <div className="user-info">
-            <p>Welcome,</p>
-            <span onClick={handleProfileClick} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-                {session.user.user_metadata.first_name || session.user.email}
-            </span>
-            </div>
-            <button onClick={handleLogout} className="logout-button">Sign Out</button>
-        </header>
-      )}
+      <header className="app-header">
+        <div className="user-info">
+            {/* --- NEW HEADER LAYOUT --- */}
+            <button 
+                onClick={openWebDashboard} 
+                className="profile-link-btn"
+                title="Manage Profile on Web Dashboard"
+            >
+                <FaUserCircle className="profile-icon" />
+                <span className="profile-name">
+                    {session.user.user_metadata.first_name || 'User'}
+                </span>
+                <FaExternalLinkAlt className="external-icon" />
+            </button>
+        </div>
+        <button onClick={handleLogout} className="logout-button">Sign Out</button>
+      </header>
 
       {renderContent()}
     </main>

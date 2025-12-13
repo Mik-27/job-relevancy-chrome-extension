@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getUserProfile, generateCoverLetterFromProfile } from '../../api/resumeApi';
-import { UserProfile } from '../../types';
+import { generateCoverLetterFromProfile, getUserStatus } from '../../api/resumeApi';
+import { UserStatus } from '../../types';
 import { Spinner } from '../ui/Spinner';
 import { FaFileSignature } from 'react-icons/fa';
 import './css/CoverLetterGenPage.css';
@@ -14,22 +14,22 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
   jobDescription, 
   onNavigateProfile 
 }) => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
 
   // 1. Check for Master CV
   useEffect(() => {
-    getUserProfile()
-      .then(setProfile)
+    getUserStatus()
+      .then(setUserStatus)
       .catch(() => setError("Failed to load user profile."))
       .finally(() => setLoadingProfile(false));
   }, []);
 
   // 2. Handle Generation
   const handleGenerate = async () => {
-    if (!profile || !jobDescription) return;
+    if (!userStatus || !jobDescription) return;
     
     setIsGenerating(true);
     setError('');
@@ -61,7 +61,7 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
   if (loadingProfile) return <div className="page-content"><Spinner /></div>;
 
   // State: No CV Uploaded
-  if (profile && !profile.cv_url) {
+  if (userStatus && !userStatus.has_master_cv) {
     return (
       <div className="page-content" style={{ textAlign: 'center', marginTop: '2rem' }}>
         <div style={{ fontSize: '3rem', marginBottom: '1rem', color: '#a0a0a0' }}><FaFileSignature /></div>
@@ -70,7 +70,7 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
           Please upload a Master CV in your profile to auto-generate cover letters.
         </p>
         <button className="analyze-button" onClick={onNavigateProfile}>
-          Go to Profile
+          Go to Web Dashboard
         </button>
       </div>
     );

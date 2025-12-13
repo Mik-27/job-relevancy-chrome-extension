@@ -82,12 +82,50 @@ input, textarea, button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid #444;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.user-info p {
+.profile-link-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 20px; /* Pill shape */
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-link-btn:hover {
+  background-color: #2c2c2e;
+  border-color: #444;
+}
+
+.profile-icon {
+  font-size: 1.2rem;
+  color: #a0a0a0;
+}
+
+.profile-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.external-icon {
+  font-size: 0.75rem;
+  color: #666;
+  margin-left: 2px;
+}
+
+.profile-link-btn:hover .external-icon {
+  color: #1a6aff; /* Highlight external icon on hover */
+}
+
+/* .user-info p {
   margin: 0;
   font-size: 0.8em;
   color: #a0a0a0;
@@ -97,13 +135,12 @@ input, textarea, button {
   margin: 0;
   font-size: 1.1em;
   font-weight: 500;
-}
+} */
 
 .top-bar {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  margin-bottom: 1rem;
 }
 
 .logout-button {

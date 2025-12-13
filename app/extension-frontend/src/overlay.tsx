@@ -14,7 +14,6 @@ import chooseResumeStyles from './components/resume-tabs/ChooseResumeTab.css?inl
 import uploadResumeStyles from './components/resume-tabs/UploadResumeTab.css?inline';
 import editorStyles from './components/editor/ResumeEditor.css?inline';
 import coverLetterStyles from './components/CoverLetterDisplay.css?inline';
-import userProfileStyles from './components/profile/Profile.css?inline';
 import homeStyles from './components/dashboard/Home.css?inline';
 import coldEMailStyles from './components/pages/css/ColdEmailPage.css?inline';
 import coverLetterGenStyles from './components/pages/css/CoverLetterGenPage.css?inline';
@@ -70,7 +69,6 @@ export function mountOverlay() {
     ${uploadResumeStyles}
     ${editorStyles}
     ${coverLetterStyles}
-    ${userProfileStyles}
     ${homeStyles}
     ${coldEMailStyles}
     ${coverLetterGenStyles}

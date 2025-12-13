@@ -11,6 +11,13 @@ export interface UserProfile {
   cv_url?: string;
 }
 
+// --- NEW: Lightweight Type ---
+export interface UserStatus {
+  first_name: string;
+  email: string;
+  has_master_cv: boolean;
+}
+
 export interface SuggestionItem {
   type: string;
   location: string;

@@ -26,6 +26,12 @@ class UserSchema(BaseModel):
     class Config:
         from_attributes = True
         
+# --- NEW: Lightweight User Status ---
+class UserStatusSchema(BaseModel):
+    first_name: str
+    email: str
+    has_master_cv: bool
+        
 
 class AnalyzeRequest(BaseModel):
     resumeText: str
