@@ -91,12 +91,9 @@ export const listResumes = async (): Promise<Resume[]> => {
   const response = await authFetch(`${API_BASE_URL}/resumes/`, {
     method: 'GET',
   });
-
   if (!response.ok) {
     throw new Error("Failed to fetch resumes");
   }
-
-  // The backend returns the list directly, so we can just return the JSON
   return response.json();
 };
 
@@ -105,18 +102,15 @@ export const getResumeContent = async (resumeId: number): Promise<string> => {
   const response = await authFetch(`${API_BASE_URL}/resumes/${resumeId}/content`, {
     method: 'GET',
   });
-
   if (!response.ok) {
     throw new Error("Failed to fetch resume content");
   }
-
-  // The backend returns the raw text, so we use .text()
-  return response.text();
+  return response.json();
 };
 
 
-export const getAnalysisScore = async (resumeText: string, jobDescriptionText: string): Promise<ScoreResponse> => {
-  const response = await authFetch(`${API_BASE_URL}/analyze/score`, {
+export const getAnalysisScore = async (resumeText: string, jobDescriptionText: string, forceRefresh: boolean = false): Promise<ScoreResponse> => {
+  const response = await authFetch(`${API_BASE_URL}/analyze/score?force_refresh=${forceRefresh}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resumeText, jobDescriptionText }),
@@ -126,8 +120,8 @@ export const getAnalysisScore = async (resumeText: string, jobDescriptionText: s
 };
 
 
-export const getAnalysisSuggestions = async (resumeText: string, jobDescriptionText: string): Promise<SuggestionsResponse> => {
-  const response = await authFetch(`${API_BASE_URL}/analyze/suggestions`, {
+export const getAnalysisSuggestions = async (resumeText: string, jobDescriptionText: string, forceRefresh: boolean = false): Promise<SuggestionsResponse> => {
+  const response = await authFetch(`${API_BASE_URL}/analyze/suggestions?force_refresh=${forceRefresh}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resumeText, jobDescriptionText }),

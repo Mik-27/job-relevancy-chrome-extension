@@ -4,34 +4,36 @@ import { Spinner } from './ui/Spinner';
 import { SuggestionCard } from './ui/SuggestionCard';
 import { generateTailoredContent } from '../api/resumeApi';
 import './AnalysisDisplay.css';
+import { FaSyncAlt } from 'react-icons/fa';
 
 interface AnalysisDisplayProps {
-  // It receives the result, which can be partial while loading
   result: Partial<AnalysisResult>;
   initialResumeText: string;
   initialJobDescriptionText: string;
   onTailoringSuccess: (content: TailoredResumeSchema) => void;
+
+  onRegenerate: () => void;
+  isRegenerating: boolean;
 }
 
 export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ 
   result, 
   initialResumeText, 
   initialJobDescriptionText,
-  onTailoringSuccess
+  onTailoringSuccess,
+  onRegenerate,
+  isRegenerating
 }) => {
-  // --- All state is now managed locally ---
   const [isGeneratingEditor, setIsGeneratingEditor] = useState(false);
-//   const [isGeneratingCL, setIsGeneratingCL] = useState(false);
+  // const [isGeneratingCL, setIsGeneratingCL] = useState(false);
   const [error, setError] = useState('');
 
   const handleGoToEditorClick = async () => {
     setIsGeneratingEditor(true);
     setError('');
     try {
-      // 1. Call API to get JSON content
       const content = await generateTailoredContent(initialResumeText, initialJobDescriptionText);
       
-      // 2. Pass content up to MainApp to switch views
       onTailoringSuccess(content); 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate AI content.");
@@ -65,7 +67,20 @@ export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   return (
     <>
       <section className="results-section">
-        <h2>Analysis Result</h2>
+        <div className="analysis-header">
+            <h2>Analysis Result</h2>
+            
+            <button 
+                onClick={onRegenerate}
+                disabled={isRegenerating}
+                className="regenerate-button"
+                title="Force AI to re-analyze (Bypasses Cache)"
+            >
+                <FaSyncAlt className={isRegenerating ? "spin-animation" : ""} />
+                {isRegenerating ? "Refreshing..." : "Regenerate"}
+            </button>
+        </div>
+        
         <div className="score-container">
           <p>Relevancy Score:</p>
           {result.relevancyScore !== undefined ? (

@@ -6,7 +6,7 @@ class LogConfig(BaseModel):
 
     LOGGER_NAME: str = "resume_analyzer"
     LOG_FORMAT: str = "%(levelprefix)s | %(asctime)s | %(name)s | %(message)s"
-    LOG_LEVEL: str = "INFO"
+    LOG_LEVEL: str = "DEBUG"
 
     # Logging config
     version: int = 1

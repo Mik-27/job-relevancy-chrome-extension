@@ -50,6 +50,9 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
   const [resumeSource, setResumeSource] = useState<ResumeSource>('paste'); // Default
   const [currentResumeId, setCurrentResumeId] = useState<number | null>(null);
 
+  // Track regenration state
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
   // Initial Scrape Logic (Unchanged)
   useEffect(() => {
     setStatus('scraping');
@@ -171,7 +174,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
   };
 
   // Core Analysis Logic
-  const startAnalysis = async (textToAnalyze: string, activeSource?: ResumeSource, activeId?: number) => {
+  const startAnalysis = async (textToAnalyze: string, forceRefresh = false, activeSource?: ResumeSource, activeId?: number) => {
     const source = activeSource || resumeSource;
     const id = activeId !== undefined ? activeId : currentResumeId;
     
@@ -181,10 +184,20 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
     }
     
     // Switch to results view immediately
-    setView('analysis_results'); 
-    setStatus('analyzing_score');
-    setError('');
-    setAnalysisResult({});
+    // setView('analysis_results'); 
+    // setStatus('analyzing_score');
+    // setAnalysisResult({});
+    
+    if (!forceRefresh) {
+        setView('analysis_results'); 
+        setStatus('analyzing_score');
+        setError('');
+        setAnalysisResult({});
+    } else {
+        setIsRegenerating(true);
+        setView('analysis_results'); 
+        setStatus('analyzing_score');
+    }
 
     try {
       // Re-verify JD just in case
@@ -194,19 +207,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
          setJobDescriptionText(jd);
       }
 
-    //   // Parallel fetching
-    //   const [scoreResponse, suggestionsResponse] = await Promise.all([
-    //     getAnalysisScore(textToAnalyze, jd),
-    //     getAnalysisSuggestions(textToAnalyze, jd)
-    //   ]);
-
-    //   setAnalysisResult({
-    //     relevancyScore: scoreResponse.relevancyScore,
-    //     suggestions: suggestionsResponse.suggestions,
-    //   });
-
       const scorePromise = getAnalysisScore(textToAnalyze, jd).then(response => {
-        // Update state immediately when score arrives
         setAnalysisResult(prev => ({
           ...prev,
           relevancyScore: response.relevancyScore,
@@ -215,7 +216,6 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
       });
 
       const suggestionsPromise = getAnalysisSuggestions(textToAnalyze, jd).then(response => {
-        // Update state immediately when suggestions arrive
         setAnalysisResult(prev => ({
           ...prev,
           suggestions: response.suggestions,
@@ -227,9 +227,9 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
 
       setStatus('complete');
 
-      // --- NEW: Log the event ---
-      // We do this AFTER updating the UI so the user sees results immediately.
-      // We don't await this (or we await it but it's fast because of background tasks).
+      // --- Log the event ---
+      // (This will save the new hash if it was a refresh)
+      // Note: If refreshing, we might be creating duplicate logs. That's actually fine for history tracking.
       const jobUrl = window.location.href;
       const resumeSnapshot = source === 'choose'? null : textToAnalyze; // Only snapshot non-chosen resumes
       logAnalysisEvent(
@@ -246,10 +246,16 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
       setError(errorMessage);
       setStatus('error');
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
   // --- Logic Adapters ---
+
+  const handleRegenerate = () => {
+    startAnalysis(resumeText, true);
+  };
 
   // When a resume is uploaded successfully
   const handleUploadSuccess = useCallback((parsedText: string, resumeId: number) => {
@@ -261,7 +267,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
     // After upload, ask user if they want to analyze immediately
     if(window.confirm("Upload successful! Analyze this resume now?")) {
         setPreviousView('upload_resume');
-        startAnalysis(parsedText, 'upload', resumeId);
+        startAnalysis(parsedText, false, 'upload', resumeId);
     } else {
         goHome();
     }
@@ -274,7 +280,7 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
     if (resumeId !== 0) {
       setCurrentResumeId(resumeId);
     }
-    startAnalysis(text, 'choose', resumeId);
+    startAnalysis(text, false, 'choose', resumeId);
   };
 
   // This function decides if we switch views OR run an action
@@ -380,8 +386,9 @@ export const MainApp: React.FC<{ session: Session }> = ({ session }) => {
                 result={analysisResult}
                 initialResumeText={resumeText}
                 initialJobDescriptionText={jobDescriptionText}
-                // Pass the handler to switch to editor view
                 onTailoringSuccess={handleStandardTailoringSuccess}
+                onRegenerate={handleRegenerate}
+                isRegenerating={isRegenerating}
               />
             )}
           </div>

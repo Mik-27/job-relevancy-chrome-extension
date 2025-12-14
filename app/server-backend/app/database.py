@@ -100,6 +100,8 @@ class AnalysisLog(Base):
     suggestions = Column(JSONB) # Stores the list of strings
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     
+    input_hash = Column(String, index=True) # Hash of JD + resume to identify duplicates
+    
 
 class AutofillHistory(Base):
     __tablename__ = "autofill_history"
