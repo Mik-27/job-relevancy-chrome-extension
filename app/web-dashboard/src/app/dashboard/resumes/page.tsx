@@ -6,6 +6,11 @@ import { listResumes, deleteResume, uploadResume, updateResumeAutoscore } from '
 import { FaFilePdf, FaTrash, FaPlus, FaTimes, FaCloudUploadAlt } from 'react-icons/fa';
 import { ResumeItem } from '@/types';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
+import { TagSelector } from '@/components/ui/TagSelector';
+
+// Constants (Same as extension)
+const ROLE_TAGS = ['AI Engineer', 'Data Scientist', 'Software Engineer', 'Data Engineer', 'DevOps', 'Product Management', 'AI Scientist', 'Data Analyst', 'Business Analyst'];
+const CATEGORY_TAGS = ['Finance', 'Healthcare', 'AdTech', 'EdTech', 'Banking', 'Ecommerce', 'Operation'];
 
 export default function MyResumesPage() {
   const [resumes, setResumes] = useState<ResumeItem[]>([]);
@@ -18,6 +23,9 @@ export default function MyResumesPage() {
   const [companyName, setCompanyName] = useState('');
   const [autoscore, setAutoscore] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const toast = useToast(); 
 
@@ -38,6 +46,35 @@ export default function MyResumesPage() {
 
   // --- Handlers ---  
 
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile) return;
+
+    setIsUploading(true);
+    try {
+      await uploadResume(
+        uploadFile, 
+        companyName || "General", 
+        autoscore,
+        selectedRoles,
+        selectedCategories
+      );
+      await fetchData();
+      setIsModalOpen(false);
+      setUploadFile(null);
+      setCompanyName('');
+      setAutoscore(false);
+      setSelectedRoles([]);
+      setSelectedCategories([]);
+      toast.success("Resume uploaded successfully.");
+    } catch (error) {
+      toast.error("Failed to upload resume. Please try again.");
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering card click if we add one later
     if (!window.confirm("Are you sure you want to delete this resume?")) return;
@@ -52,29 +89,7 @@ export default function MyResumesPage() {
     }
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!uploadFile) return;
-
-    setIsUploading(true);
-    try {
-      await uploadResume(uploadFile, companyName || "General", autoscore);
-      await fetchData(); // Refresh list
-      setIsModalOpen(false);
-      // Reset form
-      setUploadFile(null);
-      setCompanyName('');
-      setAutoscore(false);
-      toast.success("Resume uploaded successfully.");
-    } catch (error) {
-      toast.error("Failed to upload resume. Please try again.");
-      console.error(error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  // --- NEW: Handle Toggle ---
+  // --- Handle Toggle ---
   const handleToggleAutoscore = async (id: number, currentStatus: boolean, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent opening the preview modal
     
@@ -159,30 +174,42 @@ export default function MyResumesPage() {
                 <p className="text-xs text-muted truncate mt-1" title={resume.filename}>
                   {resume.filename}
                 </p>
-                  <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-muted">
-                        Uploaded: {new Date().toLocaleDateString()} 
-                    </span>
+                {/* --- NEW: Tags Display --- */}
+                <div className="flex flex-wrap gap-1 mt-3 mb-2">
+                   {[...(resume.tags_role || []), ...(resume.tags_category || [])].slice(0, 3).map((tag, i) => (
+                     <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted border border-border">
+                       {tag}
+                     </span>
+                   ))}
+                   {/* Show +X if there are more than 3 tags */}
+                   {((resume.tags_role?.length || 0) + (resume.tags_category?.length || 0)) > 3 && (
+                     <span className="text-[10px] px-1 py-0.5 text-muted">...</span>
+                   )}
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-muted">
+                      Uploaded: {new Date().toLocaleDateString()} 
+                  </span>
 
-                    <div className="flex items-center justify-between">
-                      <span className="mr-2 text-[10px] text-muted">Auto-Score</span>
-                   
-                      {/* Custom Toggle Switch */}
-                      <button
-                        onClick={(e) => handleToggleAutoscore(resume.id, resume.autoscore, e)}
+                  <div className="flex items-center justify-between">
+                    <span className="mr-2 text-[10px] text-muted">Auto-Score</span>
+                 
+                    {/* Custom Toggle Switch */}
+                    <button
+                      onClick={(e) => handleToggleAutoscore(resume.id, resume.autoscore, e)}
+                      className={`
+                        relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none
+                        ${resume.autoscore ? 'bg-primary' : 'bg-gray-600'}
+                     `}
+                      title="Toggle Auto-Scoring"
+                    >
+                      <span
                         className={`
-                          relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none
-                          ${resume.autoscore ? 'bg-primary' : 'bg-gray-600'}
-                       `}
-                        title="Toggle Auto-Scoring"
-                      >
-                        <span
-                          className={`
-                          inline-block h-3 w-3 transform rounded-full bg-white transition-transform
-                          ${resume.autoscore ? 'translate-x-5' : 'translate-x-1'}
-                          `}
-                        />
-                      </button>
+                        inline-block h-3 w-3 transform rounded-full bg-white transition-transform
+                        ${resume.autoscore ? 'translate-x-5' : 'translate-x-1'}
+                        `}
+                      />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -228,6 +255,23 @@ export default function MyResumesPage() {
                         className="block w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-border cursor-pointer"
                     />
                 </div>
+              </div>
+
+              {/* --- NEW: Tag Selectors --- */}
+              <div className="p-4 bg-[#262626] rounded-lg border border-border">
+                <TagSelector 
+                    label="Roles" 
+                    options={ROLE_TAGS} 
+                    selectedTags={selectedRoles} 
+                    onChange={setSelectedRoles} 
+                />
+                <div className="h-px bg-border my-4"></div>
+                <TagSelector 
+                    label="Industry / Category" 
+                    options={CATEGORY_TAGS} 
+                    selectedTags={selectedCategories} 
+                    onChange={setSelectedCategories} 
+                />
               </div>
 
               {/* Autoscore Checkbox */}

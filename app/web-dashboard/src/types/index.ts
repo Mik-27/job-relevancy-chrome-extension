@@ -45,6 +45,8 @@ export interface ResumeItem {
   created_at: string;
   autoscore: boolean;
   file_url?: string;
+  tags_role: string[];
+  tags_category: string[];
 }
 
 export interface UploadResumeResponse {

@@ -99,11 +99,20 @@ export const listResumes = async (): Promise<ResumeItem[]> => {
   return response.json();
 };
 
-export const uploadResume = async (file: File, company: string, autoscore: boolean): Promise<UploadResumeResponse> => {
+export const uploadResume = async (
+  file: File, 
+  company: string, 
+  autoscore: boolean,
+  tagsRole: string[],
+  tagsCategory: string[]
+): Promise<UploadResumeResponse> => {
+
   const formData = new FormData();
   formData.append("file", file);
   formData.append("company", company);
   formData.append("autoscore", String(autoscore));
+  formData.append("tags_role_json", JSON.stringify(tagsRole));
+  formData.append("tags_category_json", JSON.stringify(tagsCategory));
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
