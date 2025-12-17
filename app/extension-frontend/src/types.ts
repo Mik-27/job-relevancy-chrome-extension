@@ -154,6 +154,8 @@ export interface Resume {
   filename: string;
   company: string;
   autoscore: boolean;
+  tags_role: string[];
+  tags_category: string[];
 }
 
 export interface UploadResponse {

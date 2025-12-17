@@ -10,6 +10,7 @@ import authStyles from './components/auth/Auth.css?inline';
 import spinnerStyles from './components/ui/Spinner.css?inline';
 import tabsStyles from './components/ui/Tabs.css?inline';
 import suggestionCardStyles from './components/ui/SuggestionCard.css?inline';
+import TagSelectorStyles from './components/ui/TagSelector.css?inline';
 import chooseResumeStyles from './components/resume-tabs/ChooseResumeTab.css?inline';
 import uploadResumeStyles from './components/resume-tabs/UploadResumeTab.css?inline';
 import editorStyles from './components/editor/ResumeEditor.css?inline';
@@ -18,6 +19,7 @@ import homeStyles from './components/dashboard/Home.css?inline';
 import coldEMailStyles from './components/pages/css/ColdEmailPage.css?inline';
 import coverLetterGenStyles from './components/pages/css/CoverLetterGenPage.css?inline';
 import analysisDisplayStyles from './components/AnalysisDisplay.css?inline';
+
 
 const ROOT_ID = 'resume-analyzer-overlay-root';
 
@@ -74,6 +76,7 @@ export function mountOverlay() {
     ${coverLetterGenStyles}
     ${analysisDisplayStyles}
     ${suggestionCardStyles}
+    ${TagSelectorStyles}
 
     /* 3. Style the React Root to look like a solid window */
     #react-root {

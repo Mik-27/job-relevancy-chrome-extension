@@ -161,6 +161,14 @@ export const ChooseResumeTab: React.FC<ChooseResumeTabProps> = ({ setSelectedRes
             <div className="resume-info">
               <strong>{resume.company}</strong>
               <span>{resume.filename}</span>
+              {/* --- NEW: Display Tags --- */}
+              <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
+                {[...resume.tags_role, ...resume.tags_category].slice(0, 3).map((tag, i) => (
+                   <span key={i} style={{ fontSize: '0.65rem', padding: '1px 6px', borderRadius: '4px', background: '#333', color: '#ccc', border: '1px solid #444' }}>
+                     {tag}
+                   </span>
+                ))}
+              </div>
             </div>
             <div className="resume-actions">
               {/* --- NEW: Conditional rendering for the score/spinner --- */}

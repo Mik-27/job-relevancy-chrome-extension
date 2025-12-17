@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 import { uploadResume } from '../../api/resumeApi';
+import { TagSelector } from '../ui/TagSelector';
+import './UploadResumeTab.css';
+
+// Define the constants
+const ROLE_TAGS = ['AI Engineer', 'Data Scientist', 'Software Engineer', 'Data Engineer', 'DevOps', 'Product Management', 'AI Scientist', 'Data Analyst', 'Business Analyst'];
+const CATEGORY_TAGS = ['Finance', 'Healthcare', 'AdTech', 'EdTech', 'Banking', 'Ecommerce', 'Operation'];
 
 interface UploadResumeTabProps {
   onUploadSuccess: (parsedText: string, id: number) => void;
@@ -10,6 +16,9 @@ export const UploadResumeTab: React.FC<UploadResumeTabProps> = ({ onUploadSucces
   const [companyName, setCompanyName] = useState('');
   const [enableAutoscore, setEnableAutoscore] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -32,7 +41,15 @@ export const UploadResumeTab: React.FC<UploadResumeTabProps> = ({ onUploadSucces
     setError('');
     setSuccessMessage('');
     try {
-      const result = await uploadResume(selectedFile, companyName || "General", enableAutoscore);
+      const result = await uploadResume(
+        selectedFile, 
+        companyName || "General", 
+        enableAutoscore,
+        selectedRoles,
+        selectedCategories
+    );
+      setSelectedRoles([]);
+      setSelectedCategories([]);
       setSuccessMessage(`✅ Resume for ${companyName || "General"} uploaded successfully!`);
       onUploadSuccess(result.content, result.id);
     } catch (err) {
@@ -60,6 +77,22 @@ export const UploadResumeTab: React.FC<UploadResumeTabProps> = ({ onUploadSucces
       <div className="form-group">
         <label className='file-upload' htmlFor="file-upload">Resume PDF</label>
         <input id="file-upload" type="file" accept=".pdf" onChange={handleFileChange} />
+      </div>
+
+      {/* --- NEW: Tag Selectors --- */}
+      <div className='form-group' style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+        <TagSelector 
+          label="Roles" 
+          options={ROLE_TAGS} 
+          selectedTags={selectedRoles} 
+          onChange={setSelectedRoles} 
+        />
+        <TagSelector 
+          label="Industry / Category" 
+          options={CATEGORY_TAGS} 
+          selectedTags={selectedCategories} 
+          onChange={setSelectedCategories} 
+        />
       </div>
 
       <div className="form-group">

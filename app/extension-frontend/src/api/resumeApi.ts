@@ -59,16 +59,25 @@ export const getUserStatus = async (): Promise<UserStatus> => {
   return response.json();
 };
 
-export const uploadResume = async (file: File, company: string, autoscore: boolean): Promise<UploadResponse> => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("company", company);
-  formData.append("autoscore", String(autoscore));
+export const uploadResume = async (
+  file: File, 
+  company: string, 
+  autoscore: boolean,
+  tagsRole: string[],
+  tagsCategory: string[]
+): Promise<UploadResponse> => {
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     throw new Error("User is not authenticated.");
   }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("company", company);
+  formData.append("autoscore", String(autoscore));
+  formData.append("tags_role_json", JSON.stringify(tagsRole));
+  formData.append("tags_category_json", JSON.stringify(tagsCategory));
   
   // Append the token to the form data under a specific key, like 'token'.
   formData.append("token", session.access_token);
