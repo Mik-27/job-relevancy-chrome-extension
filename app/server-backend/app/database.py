@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import Boolean, create_engine, Column, Integer, String, Text, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from .config import settings
 import datetime
 
@@ -20,7 +20,6 @@ class Resume(Base):
     __tablename__ = "resumes"
 
     id = Column(Integer, primary_key=True, index=True)
-    # NEW: Add the user_id column. It will be a string (UUID from Supabase).
     user_id = Column(String, nullable=False, index=True)
     filename = Column(String, index=True)
     company = Column(String, index=True, default="General")
@@ -28,6 +27,8 @@ class Resume(Base):
     content = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     autoscore = Column(Boolean, default=False, nullable=False)
+    tags_role = Column(ARRAY(String), default=[])
+    tags_category = Column(ARRAY(String), default=[])
 
 
 # ORM Model for the 'users' table

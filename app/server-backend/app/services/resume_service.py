@@ -25,7 +25,18 @@ def get_resume_content_by_id(db: Session, resume_id: int, user_id: str) -> str |
                .first()
     return resume.content if resume else None
 
-def create_resume_entry(db: Session, user_id: str, filename: str, storage_path: str, content: str, company: str, autoscore: bool) -> database.Resume:
+def create_resume_entry(
+    db: Session, 
+    user_id: str, 
+    filename: str, 
+    storage_path: str, 
+    content: str, 
+    company: str, 
+    autoscore: bool, 
+    tags_role: list[str],
+    tags_category: list[str]
+) -> database.Resume:
+    
     """Creates a new record for an uploaded resume in the database."""
     new_resume = database.Resume(
         user_id=user_id,
@@ -33,7 +44,9 @@ def create_resume_entry(db: Session, user_id: str, filename: str, storage_path: 
         storage_path=storage_path,
         content=content,
         company=company,
-        autoscore=autoscore
+        autoscore=autoscore,
+        tags_role=tags_role,
+        tags_category=tags_category
     )
     db.add(new_resume)
     db.commit()

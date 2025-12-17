@@ -1,3 +1,5 @@
+import json
+from ..logging_config import get_logger
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
 from sqlalchemy.orm import Session
 from typing import List
@@ -6,6 +8,8 @@ from .. import database, schemas
 from ..config import settings
 from ..services import gcs_service, pdf_service, resume_service
 from ..security import get_current_user_id, validate_token_and_get_user_id
+
+logger = get_logger(__name__)
 
 router = APIRouter(
     prefix="/resumes",
@@ -18,6 +22,8 @@ async def upload_resume(
     token: str = Form(...),
     company: str = Form("General"),
     autoscore: bool = Form(False),
+    tags_role_json: str = Form("[]"), 
+    tags_category_json: str = Form("[]"),
     file: UploadFile = File(...), 
     db: Session = Depends(database.get_db)
 ):
@@ -26,6 +32,14 @@ async def upload_resume(
     # Manually call our validation function with the token from the form.
     # If it fails, it will raise an HTTPException and stop execution.
     current_user_id = validate_token_and_get_user_id(token)
+    
+    try:
+        tags_role = json.loads(tags_role_json)
+        tags_category = json.loads(tags_category_json)
+    except json.JSONDecodeError:
+        logger.error("Failed to decode tags_role or tags_category JSON.")
+        tags_role = []
+        tags_category = []
     
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Invalid file type. Only PDFs are allowed.")
@@ -47,7 +61,9 @@ async def upload_resume(
             storage_path=destination_path,
             content=extracted_text,
             company=company,
-            autoscore=autoscore
+            autoscore=autoscore,
+            tags_role=tags_role,
+            tags_category=tags_category 
         )
 
         return {

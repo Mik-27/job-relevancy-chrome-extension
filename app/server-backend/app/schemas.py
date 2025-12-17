@@ -74,6 +74,8 @@ class ResumeBase(BaseModel):
     company: str
     autoscore: bool
     file_url: Optional[str] = None 
+    tags_role: List[str] = []
+    tags_category: List[str] = []
 
     # This tells Pydantic to read the data even if it's an ORM model
     class Config:
