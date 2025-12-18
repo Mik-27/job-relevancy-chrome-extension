@@ -76,6 +76,7 @@ class ResumeBase(BaseModel):
     file_url: Optional[str] = None 
     tags_role: List[str] = []
     tags_category: List[str] = []
+    created_at: datetime
 
     # This tells Pydantic to read the data even if it's an ORM model
     class Config:

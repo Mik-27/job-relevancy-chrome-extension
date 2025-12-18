@@ -32,6 +32,7 @@ export default function MyResumesPage() {
   const fetchData = async () => {
     try {
       const data = await listResumes();
+      console.log("Fetched Resumes:", data);
       setResumes(data);
     } catch (error) {
       console.error(error);
@@ -135,7 +136,7 @@ export default function MyResumesPage() {
           {/* --- 1. Upload New Card --- */}
           <div 
             onClick={() => setIsModalOpen(true)}
-            className="border-2 border-dashed border-border bg-card/50 hover:bg-card hover:border-primary rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all group h-48"
+            className="border-2 border-dashed border-border bg-card/50 hover:bg-card hover:border-primary rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all group h-72" /* Fixed Height h-72 */
           >
             <div className="p-4 rounded-full bg-secondary group-hover:bg-primary/20 text-muted group-hover:text-primary transition-colors mb-4">
               <FaPlus size={24} />
@@ -149,69 +150,68 @@ export default function MyResumesPage() {
             <div 
               key={resume.id} 
               onClick={() => setPreviewResume(resume)}
-              className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between h-48 hover:border-primary transition-all relative group cursor-pointer shadow-sm hover:shadow-md"
-            >  
-              {/* Top Section */}
-              <div className="flex items-start justify-between">
+              // CHANGED: Added 'h-72' for fixed height and 'flex flex-col' for layout control
+              className="bg-card border border-border rounded-xl p-5 flex flex-col h-72 hover:border-primary transition-all relative group cursor-pointer shadow-sm hover:shadow-md"
+            >
+              
+              {/* --- Header Section (Fixed at Top) --- */}
+              <div className="flex items-start justify-between mb-2">
                 <div className="p-3 bg-red-500/10 text-red-400 rounded-lg">
                   <FaFilePdf size={24} />
                 </div>
-                {/* Delete Button (Hidden by default, shown on group hover) */}
                 <button 
                   onClick={(e) => handleDelete(resume.id, e)}
-                  className="text-muted hover:text-error p-2 rounded hover:bg-error/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="text-muted hover:text-error p-2 rounded hover:bg-error/10 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                   title="Delete"
                 >
                   <FaTrash size={14} />
                 </button>
               </div>
 
-              {/* Content */}
-              <div>
-                <h4 className="font-bold text-foreground truncate" title={resume.company}>
+              {/* --- Body Section (Takes available space) --- */}
+              <div className="flex-1 min-h-0 flex flex-col">
+                <h4 className="font-bold text-foreground truncate text-lg" title={resume.company}>
                   {resume.company}
                 </h4>
-                <p className="text-xs text-muted truncate mt-1" title={resume.filename}>
+                <p className="text-xs text-muted truncate mt-1 mb-3" title={resume.filename}>
                   {resume.filename}
                 </p>
-                {/* --- NEW: Tags Display --- */}
-                <div className="flex flex-wrap gap-1 mt-3 mb-2">
-                   {[...(resume.tags_role || []), ...(resume.tags_category || [])].slice(0, 3).map((tag, i) => (
-                     <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted border border-border">
+
+                {/* Tags Container - Scrolls if too many tags, preventing layout break */}
+                <div className="flex flex-wrap gap-1.5 content-start overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-1">
+                   {[...(resume.tags_role || []), ...(resume.tags_category || [])].map((tag, i) => (
+                     <span key={i} className="text-[10px] px-2 py-1 rounded-md bg-secondary text-gray-300 border border-border whitespace-nowrap">
                        {tag}
                      </span>
                    ))}
-                   {/* Show +X if there are more than 3 tags */}
-                   {((resume.tags_role?.length || 0) + (resume.tags_category?.length || 0)) > 3 && (
-                     <span className="text-[10px] px-1 py-0.5 text-muted">...</span>
-                   )}
                 </div>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-muted">
-                      Uploaded: {new Date().toLocaleDateString()} 
-                  </span>
+              </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="mr-2 text-[10px] text-muted">Auto-Score</span>
-                 
-                    {/* Custom Toggle Switch */}
-                    <button
-                      onClick={(e) => handleToggleAutoscore(resume.id, resume.autoscore, e)}
-                      className={`
-                        relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none
-                        ${resume.autoscore ? 'bg-primary' : 'bg-gray-600'}
-                     `}
-                      title="Toggle Auto-Scoring"
-                    >
-                      <span
-                        className={`
-                        inline-block h-3 w-3 transform rounded-full bg-white transition-transform
-                        ${resume.autoscore ? 'translate-x-5' : 'translate-x-1'}
-                        `}
-                      />
-                    </button>
-                  </div>
-                </div>
+              {/* --- Footer Section (Pinned to Bottom) --- */}
+              <div className="pt-4 border-t border-border mt-3 flex items-center justify-between bg-card z-10">
+                   <span className="text-[10px] text-muted">
+                        Uploaded: {resume.created_at ? new Date(resume.created_at).toLocaleDateString() : 'N/A'} 
+                   </span>
+                   
+                   {/* Autoscore Toggle */}
+                   <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                     <span className="text-[10px] text-muted">Auto-Score</span>
+                     <button
+                       onClick={(e) => handleToggleAutoscore(resume.id, resume.autoscore, e)}
+                       className={`
+                         relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none
+                         ${resume.autoscore ? 'bg-primary' : 'bg-gray-600'}
+                       `}
+                       title="Toggle Auto-Scoring"
+                     >
+                       <span
+                         className={`
+                           inline-block h-3 w-3 transform rounded-full bg-white transition-transform
+                           ${resume.autoscore ? 'translate-x-5' : 'translate-x-1'}
+                         `}
+                       />
+                     </button>
+                   </div>
               </div>
             </div>
           ))}
