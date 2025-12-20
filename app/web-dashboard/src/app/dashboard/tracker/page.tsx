@@ -7,6 +7,7 @@ import { getApplications, updateApplicationStatus, createApplication, deleteAppl
 import { useToast } from '@/context/ToastContext';
 import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack, FaSearch, FaBan } from 'react-icons/fa';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { JobDetailModal } from '@/components/tracker/JobDetailModal';
 
 // Define columns/statuses
 const STATUSES = {
@@ -26,6 +27,7 @@ export default function TrackerPage() {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
 
   const toast = useToast();
 
@@ -141,6 +143,13 @@ export default function TrackerPage() {
   // Only show apps where on_board is TRUE
   const getBoardAppsByStatus = (status: string) => 
     filteredApplications.filter(a => a.status === status && a.on_board);
+
+  // --- NEW: Handle updates from the Modal ---
+  // When we save the JD in the modal, we need to update the list in the background
+  const handleAppUpdate = (updatedApp: Application) => {
+    setApplications(prev => prev.map(app => app.id === updatedApp.id ? updatedApp : app));
+    setSelectedApp(updatedApp); // Keep the modal data fresh
+  };
 
   if (loading) return <div className="p-8 text-muted">Loading...</div>;
 
@@ -272,6 +281,7 @@ export default function TrackerPage() {
                                 ${snapshot.isDragging ? 'shadow-xl rotate-1 scale-105 border-primary z-50' : ''}
                                 `}
                                 style={provided.draggableProps.style}
+                                onClick={() => setSelectedApp(app)}
                             >
                                 {/* --- NEW: Quick Unpin Button on Card --- */}
                                 <button 
@@ -381,6 +391,16 @@ export default function TrackerPage() {
             </div>
         </div>
       )}
+
+      {/* --- 4. RENDER THE MODAL --- */}
+      {selectedApp && (
+        <JobDetailModal 
+            app={selectedApp} 
+            onClose={() => setSelectedApp(null)} 
+            onUpdate={handleAppUpdate} 
+        />
+      )}
+
       <ConfirmModal 
          isOpen={!!itemToDelete}
          onClose={() => setItemToDelete(null)}

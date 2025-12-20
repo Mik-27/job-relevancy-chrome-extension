@@ -1,4 +1,4 @@
-import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application } from '@/types';
+import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application, InterviewPrep } from '@/types';
 import { supabase } from './supabaseClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -200,3 +200,25 @@ export const deleteApplication = async (id: string): Promise<void> => {
     const response = await authFetch(`${API_BASE_URL}/applications/${id}`, { method: 'DELETE' });
     if (response.status !== 204) throw new Error("Failed to delete");
 };
+
+
+export const updateApplication = async (id: string, data: Partial<Application>): Promise<Application> => {
+    const response = await authFetch(`${API_BASE_URL}/applications/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error("Failed to update");
+    return response.json();
+}
+
+export const getInterviewPrep = async (appId: string): Promise<InterviewPrep | null> => {
+    const response = await authFetch(`${API_BASE_URL}/interviews/${appId}`);
+    if (response.status === 404) return null;
+    return response.json();
+}
+
+export const generateInterviewPrep = async (appId: string): Promise<InterviewPrep> => {
+    const response = await authFetch(`${API_BASE_URL}/interviews/${appId}/generate`, { method: 'POST' });
+    if (!response.ok) throw new Error("Generation failed");
+    return response.json();
+}

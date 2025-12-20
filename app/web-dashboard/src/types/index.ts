@@ -65,8 +65,47 @@ export interface Application {
   salary_range?: string;
   status: 'saved' | 'applied' | 'interviewing' | 'offer' | 'rejected';
   referred_by?: string;
+  job_description?: string;
   notes?: string;
   on_board: boolean;
   created_at: string;
   updated_at: string;
+}
+
+// --- Interview Prep Types ---
+
+export interface CompanyAnalysis {
+  values: string[];
+  tech_stack: string[];
+  challenges: string[];
+}
+
+export interface TechnicalQuestion {
+  question: string;
+  topic: string;
+  answer_key: string;
+}
+
+export interface ResumeDeepDiveQuestion {
+  question: string;
+  context: string;
+}
+
+export interface BehavioralQuestion {
+  question: string;
+  competency: string;
+}
+
+export interface InterviewPrepContent {
+  company_analysis: CompanyAnalysis;
+  technical_questions: TechnicalQuestion[];
+  resume_deep_dive: ResumeDeepDiveQuestion[];
+  behavioral_questions: BehavioralQuestion[];
+}
+
+export interface InterviewPrep {
+  id: string;
+  application_id: string;
+  content: InterviewPrepContent;
+  created_at: string;
 }
