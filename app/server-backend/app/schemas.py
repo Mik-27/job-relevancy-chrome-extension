@@ -216,6 +216,7 @@ class ApplicationBase(BaseModel):
     notes: Optional[str] = None
     referred_by: Optional[str] = None
     job_description: Optional[str] = None
+    resume_id: Optional[int] = None
     on_board: Optional[bool] = False
 
 class ApplicationCreate(ApplicationBase):
@@ -231,6 +232,7 @@ class ApplicationUpdate(BaseModel):
     notes: Optional[str] = None
     referred_by: Optional[str] = None
     job_description: Optional[str] = None
+    resume_id: Optional[int] = None
     on_board: Optional[bool] = None
 
 class ApplicationResponse(ApplicationBase):

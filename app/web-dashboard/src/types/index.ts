@@ -54,6 +54,7 @@ export interface UploadResumeResponse {
   company: string;
   message: string;
   content: string;
+  resume: ResumeItem;
 }
 
 export interface Application {
@@ -65,6 +66,7 @@ export interface Application {
   salary_range?: string;
   status: 'saved' | 'applied' | 'interviewing' | 'offer' | 'rejected';
   referred_by?: string;
+  resume_id?: number;
   job_description?: string;
   notes?: string;
   on_board: boolean;

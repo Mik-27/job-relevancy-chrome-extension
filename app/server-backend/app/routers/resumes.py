@@ -71,6 +71,7 @@ async def upload_resume(
             "filename": file.filename, 
             "company": company,
             "content": extracted_text, 
+            "resume": new_resume,
             "message": "Upload successful"
         }
 

@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Application } from '@/types';
-import { getApplications, updateApplicationStatus, createApplication, deleteApplication, toggleApplicationBoardStatus } from '@/lib/api';
+import { Application, ResumeItem } from '@/types';
+import { getApplications, updateApplicationStatus, createApplication, deleteApplication, toggleApplicationBoardStatus, listResumes, uploadResume } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
-import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack, FaSearch, FaBan } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack, FaSearch, FaBan, FaCloudUploadAlt } from 'react-icons/fa';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { JobDetailModal } from '@/components/tracker/JobDetailModal';
+import { JobDetailModal } from '@/components/modals/JobDetailModal';
+import { UploadResumeModal } from '@/components/modals/UploadResumeModal';
 
 // Define columns/statuses
 const STATUSES = {
@@ -23,19 +24,47 @@ export default function TrackerPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'board' | 'list'>('list');
   const [isAdding, setIsAdding] = useState(false);
-  const [newApp, setNewApp] = useState({ company_name: '', job_title: '', job_url: '', job_id: '', referred_by: '' });
+  const [newApp, setNewApp] = useState<{
+    company_name: string;
+    job_title: string;
+    job_url: string;
+    job_id: string;
+    referred_by: string;
+    resume_id: number | undefined;
+  }>({ 
+    company_name: '', 
+    job_title: '', 
+    job_url: '',
+    job_id: '',
+    referred_by: '',
+    resume_id: undefined
+  });
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [availableResumes, setAvailableResumes] = useState<ResumeItem[]>([]);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const toast = useToast();
 
+  // Initial Fetch
   useEffect(() => {
-    getApplications()
-      .then(setApplications)
-      .catch(() => toast.error("Failed to load tracker"))
-      .finally(() => setLoading(false));
+    const init = async () => {
+        try {
+            const [appsData, resumesData] = await Promise.all([
+                getApplications(),
+                listResumes()
+            ]);
+            setApplications(appsData);
+            setAvailableResumes(resumesData);
+        } catch(e) {
+            toast.error("Failed to load data");
+        } finally {
+            setLoading(false);
+        }
+    };
+    init();
   }, []);
 
   // --- FILTERING LOGIC ---
@@ -81,13 +110,16 @@ export default function TrackerPage() {
   // --- UPDATED ADD HANDLER ---
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(!newApp.company_name || !newApp.job_title) return;
+    if(!newApp.company_name || !newApp.job_title) {
+        toast.error("Company and Job Title are required");
+        return;
+    }
 
     try {
       const created = await createApplication({ ...newApp, status: 'saved' });
       setApplications([created, ...applications]);
       setIsAdding(false);
-      setNewApp({ company_name: '', job_title: '', job_url: '', job_id: '', referred_by: '' });
+      setNewApp({ company_name: '', job_title: '', job_url: '', job_id: '', referred_by: '', resume_id: undefined });
       toast.success("Job added!");
     } catch (err) {
       toast.error("Failed to add job");
@@ -205,31 +237,71 @@ export default function TrackerPage() {
       {isAdding && (
         <form onSubmit={handleAdd} className="mb-8 bg-card p-4 rounded-xl border border-border flex flex-col md:flex-row gap-4 items-end animate-in fade-in slide-in-from-top-4">
           <div className="flex-1 w-full">
-            <label className="text-xs text-muted block mb-1">Company</label>
+            <label htmlFor="company-name" className="text-xs text-muted block mb-1">Company</label>
             <input 
-                className="w-full bg-input border border-border rounded p-2 text-foreground focus:outline-none focus:border-primary"
-                value={newApp.company_name}
-                onChange={e => setNewApp({...newApp, company_name: e.target.value})}
-                required
+              id="company-name"
+              className="w-full bg-input border border-border rounded p-2 text-foreground focus:outline-none focus:border-primary"
+              value={newApp.company_name}
+              onChange={e => setNewApp({...newApp, company_name: e.target.value})}
+              required
             />
           </div>
           <div className="flex-1 w-full">
-            <label className="text-xs text-muted block mb-1">Job Title</label>
+            <label htmlFor="job-title" className="text-xs text-muted block mb-1">Job Title</label>
             <input 
-                className="w-full bg-input border border-border rounded p-2 text-foreground focus:outline-none focus:border-primary"
-                value={newApp.job_title}
-                onChange={e => setNewApp({...newApp, job_title: e.target.value})}
-                required
+              id="job-title"
+              className="w-full bg-input border border-border rounded p-2 text-foreground focus:outline-none focus:border-primary"
+              value={newApp.job_title}
+              onChange={e => setNewApp({...newApp, job_title: e.target.value})}
+              required
             />
           </div>
-          <div>
-                <label className="text-xs text-muted block mb-1">Job ID</label>
-                <input className="w-full bg-input border border-border rounded p-2 text-foreground" value={newApp.job_id} onChange={e => setNewApp({...newApp, job_id: e.target.value})} />
-             </div>
-             <div>
-                <label className="text-xs text-muted block mb-1">Referred By</label>
-                <input className="w-full bg-input border border-border rounded p-2 text-foreground" value={newApp.referred_by} onChange={e => setNewApp({...newApp, referred_by: e.target.value})} />
-             </div>
+          <div className="flex-1 w-full">
+            <label htmlFor="job-id" className="text-xs text-muted block mb-1">Job ID</label>
+            <input id='job-id' className="w-full bg-input border border-border rounded p-2 text-foreground" value={newApp.job_id} onChange={e => setNewApp({...newApp, job_id: e.target.value})} />
+          </div>
+          <div className="flex-1 w-full">
+            <label htmlFor="referred-by" className="text-xs text-muted block mb-1">Referred By</label>
+            <input id="referred-by" className="w-full bg-input border border-border rounded p-2 text-foreground" value={newApp.referred_by} onChange={e => setNewApp({...newApp, referred_by: e.target.value})} />
+          </div>
+          {/* --- UPDATED: Resume Selection --- */}
+          <div className="flex-[2] w-full">
+            <label htmlFor="linked-resume" className="text-xs text-muted block mb-1">Linked Resume</label>
+            <div className="flex gap-2">
+              <select 
+                id="linked-resume"
+                className="flex-[2] w-full bg-input border border-border rounded p-2 text-foreground text-sm focus:outline-none focus:border-primary"
+                value={newApp.resume_id}
+                onChange={e => setNewApp({...newApp, resume_id: Number(e.target.value)})}
+              >
+                <option value="">Select a Resume...</option>
+                {availableResumes.map(r => (
+                  // FIXME: Truncate long names properly
+                  <option 
+                    key={r.id} 
+                    value={r.id} 
+                    style={{
+                      maxWidth: '50px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                    {r.company} - {r.filename}
+                  </option>
+                ))}
+              </select>
+                
+              {/* Open Modal Button */}
+              <button 
+                type="button"
+                onClick={() => setIsUploadModalOpen(true)}
+                className="bg-secondary hover:bg-white/10 text-muted hover:text-white p-2 rounded border border-border transition"
+                title="Upload New Resume"
+              >
+                <FaCloudUploadAlt size={16} />
+              </button>
+            </div>
+          </div>
           <div className="flex-1 w-full">
             <label className="text-xs text-muted block mb-1">URL (Optional)</label>
             <input 
@@ -400,6 +472,18 @@ export default function TrackerPage() {
             onUpdate={handleAppUpdate} 
         />
       )}
+
+      {/* --- ADD MODAL --- */}
+      <UploadResumeModal 
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSuccess={(newResume) => {
+            // 1. Add to local list so it appears in dropdown
+            setAvailableResumes([newResume.resume, ...availableResumes]);
+            // 2. Auto-select it in the form
+            setNewApp(prev => ({ ...prev, resume_id: newResume.resume.id }));
+        }}
+      />
 
       <ConfirmModal 
          isOpen={!!itemToDelete}

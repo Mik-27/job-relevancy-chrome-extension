@@ -2,30 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/context/ToastContext'; 
-import { listResumes, deleteResume, uploadResume, updateResumeAutoscore } from '@/lib/api';
-import { FaFilePdf, FaTrash, FaPlus, FaTimes, FaCloudUploadAlt } from 'react-icons/fa';
+import { listResumes, deleteResume, updateResumeAutoscore } from '@/lib/api';
+import { FaFilePdf, FaTrash, FaPlus} from 'react-icons/fa';
 import { ResumeItem } from '@/types';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
-import { TagSelector } from '@/components/ui/TagSelector';
+import { UploadResumeModal } from '@/components/modals/UploadResumeModal';
 
-// Constants (Same as extension)
-const ROLE_TAGS = ['AI Engineer', 'Data Scientist', 'Software Engineer', 'Data Engineer', 'DevOps', 'Product Management', 'AI Scientist', 'Data Analyst', 'Business Analyst'];
-const CATEGORY_TAGS = ['Finance', 'Healthcare', 'AdTech', 'EdTech', 'Banking', 'Ecommerce', 'Operation'];
 
 export default function MyResumesPage() {
   const [resumes, setResumes] = useState<ResumeItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [previewResume, setPreviewResume] = useState<ResumeItem | null>(null);
-
-  // Upload State
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [companyName, setCompanyName] = useState('');
-  const [autoscore, setAutoscore] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const toast = useToast(); 
 
@@ -46,35 +34,6 @@ export default function MyResumesPage() {
   }, []);
 
   // --- Handlers ---  
-
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!uploadFile) return;
-
-    setIsUploading(true);
-    try {
-      await uploadResume(
-        uploadFile, 
-        companyName || "General", 
-        autoscore,
-        selectedRoles,
-        selectedCategories
-      );
-      await fetchData();
-      setIsModalOpen(false);
-      setUploadFile(null);
-      setCompanyName('');
-      setAutoscore(false);
-      setSelectedRoles([]);
-      setSelectedCategories([]);
-      toast.success("Resume uploaded successfully.");
-    } catch (error) {
-      toast.error("Failed to upload resume. Please try again.");
-      console.error(error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering card click if we add one later
@@ -135,7 +94,7 @@ export default function MyResumesPage() {
           
           {/* --- 1. Upload New Card --- */}
           <div 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsUploadOpen(true)}
             className="border-2 border-dashed border-border bg-card/50 hover:bg-card hover:border-primary rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all group h-72" /* Fixed Height h-72 */
           >
             <div className="p-4 rounded-full bg-secondary group-hover:bg-primary/20 text-muted group-hover:text-primary transition-colors mb-4">
@@ -150,7 +109,6 @@ export default function MyResumesPage() {
             <div 
               key={resume.id} 
               onClick={() => setPreviewResume(resume)}
-              // CHANGED: Added 'h-72' for fixed height and 'flex flex-col' for layout control
               className="bg-card border border-border rounded-xl p-5 flex flex-col h-72 hover:border-primary transition-all relative group cursor-pointer shadow-sm hover:shadow-md"
             >
               
@@ -219,90 +177,15 @@ export default function MyResumesPage() {
       )}
 
       {/* --- Upload Modal --- */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
-          <div 
-            className="bg-card border border-border rounded-xl w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-foreground">Upload Resume</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-muted hover:text-white"><FaTimes /></button>
-            </div>
-
-            <form onSubmit={handleUpload} className="space-y-4">
-              
-              {/* Company Name Input */}
-              <div>
-                <label className="block text-sm font-medium text-muted mb-2">Company Name (Optional)</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Google"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full bg-input border border-border rounded-lg p-3 text-foreground focus:ring-2 focus:ring-primary outline-none"
-                />
-              </div>
-
-              {/* File Input */}
-              <div>
-                <label className="block text-sm font-medium text-muted mb-2">Resume File (PDF)</label>
-                <div className="border border-border bg-input rounded-lg p-2">
-                    <input 
-                        type="file" 
-                        accept=".pdf"
-                        onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                        className="block w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-border cursor-pointer"
-                    />
-                </div>
-              </div>
-
-              {/* --- NEW: Tag Selectors --- */}
-              <div className="p-4 bg-[#262626] rounded-lg border border-border">
-                <TagSelector 
-                    label="Roles" 
-                    options={ROLE_TAGS} 
-                    selectedTags={selectedRoles} 
-                    onChange={setSelectedRoles} 
-                />
-                <div className="h-px bg-border my-4"></div>
-                <TagSelector 
-                    label="Industry / Category" 
-                    options={CATEGORY_TAGS} 
-                    selectedTags={selectedCategories} 
-                    onChange={setSelectedCategories} 
-                />
-              </div>
-
-              {/* Autoscore Checkbox */}
-              <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-secondary/20">
-                <input 
-                  type="checkbox" 
-                  id="autoscore"
-                  checked={autoscore}
-                  onChange={(e) => setAutoscore(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-600 text-primary focus:ring-primary bg-input"
-                />
-                <label htmlFor="autoscore" className="text-sm text-foreground cursor-pointer select-none">
-                  Enable Auto-Scoring
-                </label>
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={!uploadFile || isUploading}
-                className="w-full bg-primary hover:bg-blue-600 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-              >
-                {isUploading ? (
-                   'Uploading...'
-                ) : (
-                   <><FaCloudUploadAlt size={18} /> Upload Resume</>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* --- NEW: Reusable Upload Modal --- */}
+      <UploadResumeModal 
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onSuccess={(newResume) => {
+            // Update list immediately
+            setResumes([newResume.resume, ...resumes]);
+        }}
+      />
 
       {/* --- NEW: Resume Preview Modal --- */}
       <FilePreviewModal 

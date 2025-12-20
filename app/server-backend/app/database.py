@@ -74,6 +74,7 @@ class Application(Base):
     job_id = Column(String, nullable=True)
     salary_range = Column(String, nullable=True)
     referred_by = Column(String, nullable=True)
+    resume_id = Column(Integer, ForeignKey("resumes.id"), nullable=True)
     job_description = Column(Text, nullable=True)
     status = Column(String, default="saved")
     notes = Column(Text, nullable=True)
