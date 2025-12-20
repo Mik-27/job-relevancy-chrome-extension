@@ -215,6 +215,7 @@ class ApplicationBase(BaseModel):
     status: Optional[str] = "saved"
     notes: Optional[str] = None
     referred_by: Optional[str] = None
+    job_description: Optional[str] = None
     on_board: Optional[bool] = False
 
 class ApplicationCreate(ApplicationBase):
@@ -229,6 +230,7 @@ class ApplicationUpdate(BaseModel):
     status: Optional[str] = None
     notes: Optional[str] = None
     referred_by: Optional[str] = None
+    job_description: Optional[str] = None
     on_board: Optional[bool] = None
 
 class ApplicationResponse(ApplicationBase):
@@ -240,7 +242,6 @@ class ApplicationResponse(ApplicationBase):
         from_attributes = True
         
         
-# --- NEW: Logging Schema ---
 class LogAnalysisRequest(BaseModel):
     job_description: str
     job_url: str
@@ -249,3 +250,10 @@ class LogAnalysisRequest(BaseModel):
     resume_source: str
     resume_id: Optional[int] = None
     resume_text: Optional[str] = None
+    
+    
+# NEW: Schema for Interview Prep Output
+class InterviewPrepResponse(BaseModel):
+    id: str
+    application_id: str
+    content: Dict[str, Any]

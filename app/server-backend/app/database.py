@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Boolean, create_engine, Column, Integer, String, Text, DateTime
+from sqlalchemy import Boolean, ForeignKey, create_engine, Column, Integer, String, Text, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from .config import settings
@@ -74,6 +74,7 @@ class Application(Base):
     job_id = Column(String, nullable=True)
     salary_range = Column(String, nullable=True)
     referred_by = Column(String, nullable=True)
+    job_description = Column(Text, nullable=True)
     status = Column(String, default="saved")
     notes = Column(Text, nullable=True)
     on_board = Column(Boolean, default=False)
@@ -117,6 +118,18 @@ class AutofillHistory(Base):
     
     # The actual filled data
     questions_answers = Column(JSONB)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    
+class InterviewPrep(Base):
+    __tablename__ = "interview_preps"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    application_id = Column(String, ForeignKey("applications.id"), nullable=False)
+    user_id = Column(String, nullable=False)
+    
+    # Stores { company_analysis, technical_questions, behavioral_questions, resume_deep_dive }
+    content = Column(JSONB) 
+    
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
 
