@@ -403,6 +403,7 @@ export default function TrackerPage() {
                             <th className="p-4 font-semibold text-muted">Company</th>
                             <th className="p-4 font-semibold text-muted">Role</th>
                             <th className="p-4 font-semibold text-muted">Job ID</th>
+                            <th className="p-4 font-semibold text-muted">Resume</th>
                             <th className="p-4 font-semibold text-muted">Referred By</th>
                             <th className="p-4 font-semibold text-muted">Status</th>
                             <th className="p-4 font-semibold text-muted">Last Updated</th>
@@ -418,6 +419,28 @@ export default function TrackerPage() {
                                     <td className="p-4 font-medium text-foreground">{app.company_name}</td>
                                     <td className="p-4 text-muted">{app.job_title}</td>
                                     <td className="p-4 text-xs text-muted font-mono">{app.job_id || '-'}</td>
+                                    <td className="p-4 text-xs text-muted">
+                                      <div className="font-medium text-foreground">
+                                        {app.resume_id 
+                                          ? (() => {
+                                            const resume = availableResumes.find(r => r.id === app.resume_id);
+                                            console.log('Found resume for app:', app, resume);
+                                            return resume ? `${resume.company}` : '-';
+                                          })()
+                                          : ''
+                                        }
+                                      </div>
+                                      <div>
+                                        {app.resume_id 
+                                          ? (() => {
+                                            const resume = availableResumes.find(r => r.id === app.resume_id);
+                                            console.log('Found resume for app:', app, resume);
+                                            return resume ? `${resume.filename}` : '-';
+                                          })()
+                                          : '-'
+                                        }
+                                      </div>
+                                    </td>
                                     <td className="p-4 text-xs text-muted">{app.referred_by || '-'}</td>
                                     
                                     {/* Editable Status Column */}
