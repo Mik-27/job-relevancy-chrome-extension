@@ -3,13 +3,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Application, ResumeItem } from '@/types';
-import { getApplications, updateApplicationStatus, createApplication, deleteApplication, toggleApplicationBoardStatus, listResumes, uploadResume } from '@/lib/api';
+import { getApplications, updateApplicationStatus, createApplication, deleteApplication, toggleApplicationBoardStatus, listResumes } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
 import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack, FaSearch, FaBan, FaCloudUploadAlt } from 'react-icons/fa';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { JobDetailModal } from '@/components/modals/JobDetailModal';
 import { UploadResumeModal } from '@/components/modals/UploadResumeModal';
-import Link from 'next/link';
 
 // Define columns/statuses
 const STATUSES = {
@@ -66,7 +65,7 @@ export default function TrackerPage() {
         }
     };
     init();
-  }, []);
+  });
 
   // --- FILTERING LOGIC ---
   const filteredApplications = useMemo(() => {

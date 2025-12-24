@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Application, } from '@/types';
 import { updateApplication } from '@/lib/api';
-import { FaTimes, FaRobot } from 'react-icons/fa';
-// import { Spinner } from '../ui/Spinner/Spinner';
+import { FaTimes } from 'react-icons/fa';
 
 interface JobDetailModalProps {
   app: Application;

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
-  getApplication, updateApplication, 
+  getApplication,
   getInterviewRounds, createInterviewRound, updateInterviewRound, deleteInterviewRound, generateRoundPrep 
 } from '@/lib/api';
 import { Application, InterviewRound, InterviewType, RoundStatus } from '@/types';
@@ -11,7 +11,7 @@ import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { useToast } from '@/context/ToastContext';
 import { 
   FaArrowLeft, FaCalendarAlt, FaPlus, FaRobot, FaTrash, 
-  FaCheckCircle, FaSave, FaTimes 
+  FaCheckCircle, FaTimes 
 } from 'react-icons/fa';
 
 export default function ApplicationRoadmapPage() {
@@ -27,7 +27,6 @@ export default function ApplicationRoadmapPage() {
   
   // States for JD Editing
   const [jdText, setJdText] = useState('');
-  const [isSavingJD, setIsSavingJD] = useState(false);
 
   // States for Add Round
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -58,20 +57,6 @@ export default function ApplicationRoadmapPage() {
     };
     init();
   }, [appId, toast]);
-
-  const handleSaveJD = async () => {
-    if (!app) return;
-    setIsSavingJD(true);
-    try {
-      // Correctly typed Partial<Application>
-      await updateApplication(app.id, { job_description: jdText });
-      toast.success("Job Description saved");
-    } catch (e) {
-      toast.error("Failed to save JD");
-    } finally {
-      setIsSavingJD(false);
-    }
-  };
 
   const handleAddRound = async (e: React.FormEvent) => {
     e.preventDefault();
