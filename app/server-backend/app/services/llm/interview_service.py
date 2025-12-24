@@ -8,6 +8,7 @@ llm = ChatVertexAI(
     temperature=0.4, 
 )
 
+# ------------------------ DEPRECATED: Use generate_round_prep ------------------------
 # We want raw JSON output for flexibility
 prompt_template = """
 You are an expert Technical Interview Coach. Create a comprehensive Interview Preparation Kit.
@@ -57,6 +58,7 @@ async def generate_interview_kit(resume_text: str, job_description: str) -> dict
     
     return json.loads(content)
 
+# ----------------------------------------------------------------------------
 
 # We need dynamic prompts based on type
 async def generate_round_prep(
@@ -72,8 +74,11 @@ async def generate_round_prep(
         specific_instructions = """
         Focus on Hard Skills. 
         - Generate 3 LeetCode-style algorithmic questions relevant to the role's level.
-        - Generate 5 technical concept questions (e.g., specific language quirks, database internals).
-        - Include code snippets in answers where applicable.
+        - Generate 7 technical concept questions related to the job description and user's resume.
+        - For Leetcode-style questions:
+          - Provide hints on approach.
+          - Provide coding paradigms to use (e.g., "Use DFS", "Two-pointer technique", "2D dynamic programming").
+        - Include code solutions in 'sample_answer' for Leetcode-style questions.
         """
     elif interview_type == "system_design":
         specific_instructions = """
@@ -81,29 +86,39 @@ async def generate_round_prep(
         - Generate 2 high-level system design prompts (e.g., "Design Twitter").
         - List key trade-offs to discuss (SQL vs NoSQL, Latency vs Consistency).
         - Focus on scalability and reliability.
+        - Generate a total of 10 questions combining design and architecture concepts.
         """
     elif interview_type == "behavioral" or interview_type == "hiring_manager":
         specific_instructions = """
         Focus on Soft Skills and Culture.
-        - Generate 5 STAR method questions based on the company's values found in the JD.
+        - Generate 10 STAR method questions based on the company's values found in the JD.
         - Suggest "situations" from the user's resume that fit these questions.
+        - Eg: "Tell me about a time you faced a conflict at work..."
         """
     else: # Screening
         specific_instructions = """
         Focus on Basics.
-        - "Tell me about yourself" pitch.
+        - "Tell me about yourself" pitch. (Make this pitch more personalized rather than just repeating resume points)
         - "Why this company?"
-        - Salary expectation handling.
+        - "What makes you a perfect candidate for the role".
+        - Basic questions on resume highlights.
+        - General tips for Salary Negotiations.
         """
 
     prompt_template = f"""
-    You are an expert Interview Coach. Prepare a guide for a {{interview_type}} interview.
+    You are an expert Interview Coach. Prepare a guide for a {{interview_type}} interview. Generate focused study areas, questions, and tips.
+    
+    ### GENERAL INSTRUCTIONS
+    - The questions must contain the question text, a hint on how to answer, and a sample answer.
+    - Add line breaks between new points for readability.
+    - Bolden bullet headings.
+    - Keep the tone encouraging and positive.
 
     ### INPUTS
     Resume: {resume_text}
     Job Description: {job_description}
 
-    ### INSTRUCTIONS
+    ### SPECIFICINSTRUCTIONS
     {specific_instructions}
 
     ### OUTPUT FORMAT (JSON)
@@ -111,7 +126,7 @@ async def generate_round_prep(
     {{{{
         "focus_areas": ["Top 3 topics to study"],
         "questions": [
-            {{{{ "q": "Question text", "hint": "How to answer/Answer Key" }}}}
+            {{{{ "q": "Question text", "hint": "How to answer - tips", "sample_answer": "Example Answer" }}}}
         ],
         "tips": ["Specific tips for this interview type"]
     }}}}

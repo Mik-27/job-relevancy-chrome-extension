@@ -7,6 +7,9 @@ from ..security import get_current_user_id
 from ..services.llm import interview_service
 from ..services import resume_service, gcs_service, pdf_service
 from ..config import settings
+from ..logging_config import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/interview-rounds", tags=["Interview Rounds"])
 
@@ -49,6 +52,7 @@ async def generate_round_prep(
     # Fetch App (for JD)
     app_record = db.query(database.Application).filter(database.Application.id == round_record.application_id).first()
     if not app_record.job_description: raise HTTPException(status_code=400, detail="Job Description missing.")
+    if app_record.status != "interviewing": raise HTTPException(status_code=400, detail="Application not in interviewing stage.")
 
     # Fetch Resume (Master CV or Text) - Simplified for brevity (reuse your existing logic)
     user_profile = resume_service.get_user_profile_by_id(db, user_id)
