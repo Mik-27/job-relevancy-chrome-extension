@@ -133,6 +133,20 @@ class InterviewPrep(Base):
     
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
+class InterviewRound(Base):
+    __tablename__ = "interview_rounds"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    application_id = Column(String, ForeignKey("applications_history.id"), nullable=False)
+    user_id = Column(String, nullable=False)
+    round_number = Column(Integer, nullable=False)
+    interview_type = Column(String, nullable=False)  # e.g., screening, technical, system_design, behavioral, hiring_manager
+    interview_date = Column(DateTime, nullable=True)
+    status = Column(String, default="scheduled")  # e.g., scheduled, completed, cancelled
+    user_feedback = Column(Text, nullable=True)
+    prep_material = Column(JSONB, nullable=True)  # The JSON from AI
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
 # Dependency to get a DB session in our API endpoints
 def get_db():

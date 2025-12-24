@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Application, ResumeItem } from '@/types';
 import { getApplications, updateApplicationStatus, createApplication, deleteApplication, toggleApplicationBoardStatus, listResumes, uploadResume } from '@/lib/api';
@@ -9,6 +9,7 @@ import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack, FaSearch
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { JobDetailModal } from '@/components/modals/JobDetailModal';
 import { UploadResumeModal } from '@/components/modals/UploadResumeModal';
+import Link from 'next/link';
 
 // Define columns/statuses
 const STATUSES = {
@@ -183,6 +184,13 @@ export default function TrackerPage() {
     setSelectedApp(updatedApp); // Keep the modal data fresh
   };
 
+  const handleInterviewPrepRoute = (app: Application) => {
+    setSelectedApp(app);
+    if (app.job_description) {
+        window.location.href = `/dashboard/applications/${app.id}`;
+    }
+  };
+
   if (loading) return <div className="p-8 text-muted">Loading...</div>;
 
   return (
@@ -353,16 +361,8 @@ export default function TrackerPage() {
                                 ${snapshot.isDragging ? 'shadow-xl rotate-1 scale-105 border-primary z-50' : ''}
                                 `}
                                 style={provided.draggableProps.style}
-                                onClick={() => setSelectedApp(app)}
+                                onClick={() => handleInterviewPrepRoute(app)}
                             >
-                                {/* --- NEW: Quick Unpin Button on Card --- */}
-                                <button 
-                                  onClick={(e) => handleToggleBoard(app.id, true, e)}
-                                  className="absolute top-2 right-2 text-primary opacity-0 group-hover:opacity-100 hover:text-muted transition"
-                                  title="Remove from Board (Keep in List)"
-                                >
-                                  <FaThumbtack size={10} />
-                                </button>
                                 <h4 className="font-bold text-foreground text-sm">{app.company_name}</h4>
                                 <p className="text-xs text-muted mt-1">{app.job_title}</p>
                                 
@@ -376,7 +376,15 @@ export default function TrackerPage() {
                                                 <FaExternalLinkAlt size={10} />
                                             </a>
                                         )}
-                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteClick(app.id); }} className="text-muted hover:text-error transition opacity-0 group-hover:opacity-100">
+                                        {/* --- NEW: Quick Unpin Button on Card --- */}
+                                        <button 
+                                            onClick={(e) => handleToggleBoard(app.id, true, e)}
+                                            className="text-primary hover:text-muted transition"
+                                            title="Remove from Board (Keep in List)"
+                                        >
+                                            <FaThumbtack size={10} />
+                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteClick(app.id); }} className="text-muted hover:text-error transition">
                                             <FaTrash size={10} />
                                         </button>
                                     </div>
@@ -488,13 +496,18 @@ export default function TrackerPage() {
       )}
 
       {/* --- 4. RENDER THE MODAL --- */}
-      {selectedApp && (
+      {selectedApp && selectedApp.job_description === undefined && (
         <JobDetailModal 
             app={selectedApp} 
             onClose={() => setSelectedApp(null)} 
             onUpdate={handleAppUpdate} 
         />
       )}
+
+      {/* {selectedApp && selectedApp.job_description !== undefined && (
+        <Link href={`/dashboard/tracker/${selectedApp.id}`} onClick={(e) => { e.preventDefault(); setSelectedApp(null); }}>
+        </Link>
+      )} */}
 
       {/* --- ADD MODAL --- */}
       <UploadResumeModal 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 from pydantic import BaseModel, Field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 # NEW: Schema for updating profile (all fields optional)
 class UserUpdateSchema(BaseModel):
@@ -261,5 +261,33 @@ class InterviewPrepResponse(BaseModel):
     content: Dict[str, Any]
     created_at: datetime
     
+    class Config:
+        from_attributes = True
+        
+InterviewType = Literal['screening', 'technical', 'system_design', 'behavioral', 'hiring_manager']
+RoundStatus = Literal['scheduled', 'completed', 'cancelled']
+
+class InterviewRoundBase(BaseModel):
+    round_number: int
+    interview_type: InterviewType
+    interview_date: Optional[datetime] = None
+    status: RoundStatus = 'scheduled'
+    user_feedback: Optional[str] = None
+
+class InterviewRoundCreate(InterviewRoundBase):
+    application_id: str
+
+class InterviewRoundUpdate(BaseModel):
+    interview_date: Optional[datetime] = None
+    status: Optional[RoundStatus] = None
+    user_feedback: Optional[str] = None
+    prep_material: Optional[Dict[str, Any]] = None
+
+class InterviewRoundResponse(InterviewRoundBase):
+    id: UUID
+    application_id: UUID
+    prep_material: Optional[Dict[str, Any]] = None
+    created_at: datetime
+
     class Config:
         from_attributes = True

@@ -82,32 +82,29 @@ export interface CompanyAnalysis {
   challenges: string[];
 }
 
-export interface TechnicalQuestion {
-  question: string;
-  topic: string;
-  answer_key: string;
+export type InterviewType = 'screening' | 'technical' | 'system_design' | 'behavioral' | 'hiring_manager';
+export type RoundStatus = 'scheduled' | 'completed' | 'cancelled';
+
+export interface PrepQuestion {
+  q: string;    // The question text
+  hint: string; // The answer key or advice
 }
 
-export interface ResumeDeepDiveQuestion {
-  question: string;
-  context: string;
+export interface InterviewPrepMaterial {
+  focus_areas: string[];
+  questions: PrepQuestion[];
+  tips: string[];
 }
 
-export interface BehavioralQuestion {
-  question: string;
-  competency: string;
-}
-
-export interface InterviewPrepContent {
-  company_analysis: CompanyAnalysis;
-  technical_questions: TechnicalQuestion[];
-  resume_deep_dive: ResumeDeepDiveQuestion[];
-  behavioral_questions: BehavioralQuestion[];
-}
-
-export interface InterviewPrep {
+export interface InterviewRound {
   id: string;
   application_id: string;
-  content: InterviewPrepContent;
+  round_number: number;
+  interview_type: InterviewType;
+  interview_date: string | null;
+  status: RoundStatus;
+  user_feedback: string | null;
+  // CHANGED: No longer 'any', now strictly typed
+  prep_material: InterviewPrepMaterial | null; 
   created_at: string;
 }

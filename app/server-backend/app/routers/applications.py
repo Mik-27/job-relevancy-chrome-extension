@@ -27,6 +27,21 @@ def create_application(
     db.refresh(new_app)
     return new_app
 
+@router.get("/{app_id}", response_model=schemas.ApplicationResponse)
+def get_application(
+    app_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db)
+):
+    app_record = db.query(database.Application).filter(
+        database.Application.id == app_id, 
+        database.Application.user_id == user_id
+    ).first()
+    
+    if not app_record:
+        raise HTTPException(status_code=404, detail="Application not found")
+    return app_record
+
 @router.patch("/{app_id}", response_model=schemas.ApplicationResponse)
 def update_application(
     app_id: str,

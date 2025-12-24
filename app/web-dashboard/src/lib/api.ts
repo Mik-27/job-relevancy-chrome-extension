@@ -1,4 +1,4 @@
-import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application, InterviewPrep } from '@/types';
+import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application, InterviewRound } from '@/types';
 import { supabase } from './supabaseClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -168,6 +168,12 @@ export const getApplications = async (): Promise<Application[]> => {
   return response.json();
 };
 
+export const getApplication = async (id: string): Promise<Application> => {
+  const response = await authFetch(`${API_BASE_URL}/applications/${id}`);
+  if (!response.ok) throw new Error("Failed to fetch application");
+  return response.json();
+};
+
 export const createApplication = async (data: Partial<Application>): Promise<Application> => {
   const response = await authFetch(`${API_BASE_URL}/applications/`, {
     method: 'POST',
@@ -211,14 +217,44 @@ export const updateApplication = async (id: string, data: Partial<Application>):
     return response.json();
 }
 
-export const getInterviewPrep = async (appId: string): Promise<InterviewPrep | null> => {
-    const response = await authFetch(`${API_BASE_URL}/interviews/${appId}`);
-    if (response.status === 404) return null;
-    return response.json();
-}
 
-export const generateInterviewPrep = async (appId: string): Promise<InterviewPrep> => {
-    const response = await authFetch(`${API_BASE_URL}/interviews/${appId}/generate`, { method: 'POST' });
-    if (!response.ok) throw new Error("Generation failed");
-    return response.json();
-}
+// --- Interview Rounds ---
+
+export const getInterviewRounds = async (appId: string): Promise<InterviewRound[]> => {
+  const response = await authFetch(`${API_BASE_URL}/interview-rounds/${appId}`);
+  if (!response.ok) throw new Error("Failed to fetch rounds");
+  return response.json();
+};
+
+export const createInterviewRound = async (data: Partial<InterviewRound>): Promise<InterviewRound> => {
+  const response = await authFetch(`${API_BASE_URL}/interview-rounds/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to create round");
+  return response.json();
+};
+
+export const updateInterviewRound = async (roundId: string, data: Partial<InterviewRound>): Promise<InterviewRound> => {
+  const response = await authFetch(`${API_BASE_URL}/interview-rounds/${roundId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to update round");
+  return response.json();
+};
+
+export const deleteInterviewRound = async (roundId: string): Promise<void> => {
+  const response = await authFetch(`${API_BASE_URL}/interview-rounds/${roundId}`, {
+    method: 'DELETE',
+  });
+  if (response.status !== 204 && !response.ok) throw new Error("Failed to delete round");
+};
+
+export const generateRoundPrep = async (roundId: string): Promise<InterviewRound> => {
+  const response = await authFetch(`${API_BASE_URL}/interview-rounds/${roundId}/generate`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error("AI Generation failed");
+  return response.json();
+};
