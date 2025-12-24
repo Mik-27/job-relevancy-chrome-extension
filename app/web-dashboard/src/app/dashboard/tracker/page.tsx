@@ -65,7 +65,7 @@ export default function TrackerPage() {
         }
     };
     init();
-  });
+  }, [toast]);
 
   // --- FILTERING LOGIC ---
   const filteredApplications = useMemo(() => {
