@@ -256,6 +256,10 @@ class LogAnalysisRequest(BaseModel):
     
 # NEW: Schema for Interview Prep Output
 class InterviewPrepResponse(BaseModel):
-    id: str
-    application_id: str
+    id: UUID
+    application_id: UUID
     content: Dict[str, Any]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
