@@ -125,7 +125,7 @@ class InterviewPrep(Base):
     __tablename__ = "interview_preps"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    application_id = Column(String, ForeignKey("applications.id"), nullable=False)
+    application_id = Column(String, ForeignKey("applications_history.id"), nullable=False)
     user_id = Column(String, nullable=False)
     
     # Stores { company_analysis, technical_questions, behavioral_questions, resume_deep_dive }
