@@ -83,7 +83,7 @@ export interface CompanyAnalysis {
 }
 
 export type InterviewType = 'screening' | 'technical' | 'system_design' | 'behavioral' | 'hiring_manager';
-export type RoundStatus = 'scheduled' | 'completed' | 'cancelled';
+export type RoundStatus = 'scheduled' | 'progressed' | 'rejected' | 'cancelled';
 
 export interface PrepQuestion {
   q: string;    // The question text

@@ -6,7 +6,7 @@ import {
   getApplication, updateApplication, 
   getInterviewRounds, createInterviewRound, updateInterviewRound, deleteInterviewRound, generateRoundPrep 
 } from '@/lib/api';
-import { Application, InterviewRound, InterviewType } from '@/types';
+import { Application, InterviewRound, InterviewType, RoundStatus } from '@/types';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { useToast } from '@/context/ToastContext';
 import { 
@@ -128,9 +128,9 @@ export default function ApplicationRoadmapPage() {
     setRounds(rounds.map(r => r.id === roundId ? { ...r, user_feedback: feedback } : r));
   };
   
-  const saveFeedback = async (roundId: string, feedback: string) => {
+  const saveFeedback = async (roundId: string, feedback: string, status: RoundStatus) => {
      try {
-         await updateInterviewRound(roundId, { user_feedback: feedback });
+         await updateInterviewRound(roundId, { user_feedback: feedback, status });
          toast.success("Feedback saved");
      } catch(e) {
          toast.error("Failed to save feedback");
@@ -154,10 +154,10 @@ export default function ApplicationRoadmapPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+      <div className="flex-1 min-h-0 ml-10 mr-10">
         
         {/* LEFT COL: Job Description */}
-        <div className="lg:col-span-1 bg-card border border-border rounded-xl flex flex-col overflow-hidden">
+        {/* <div className="lg:col-span-1 bg-card border border-border rounded-xl flex flex-col overflow-hidden">
             <div className="p-4 border-b border-border bg-secondary/20 flex justify-between items-center">
                 <h3 className="font-semibold text-foreground">Job Description</h3>
                 <button 
@@ -174,10 +174,10 @@ export default function ApplicationRoadmapPage() {
                 value={jdText}
                 onChange={(e) => setJdText(e.target.value)}
             />
-        </div>
+        </div> */}
 
         {/* RIGHT COL: Roadmap */}
-        <div className="lg:col-span-2 flex flex-col gap-4 overflow-y-auto pr-2">
+        <div className="flex flex-col gap-4 overflow-y-auto pr-2">
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-foreground">Interview Roadmap</h2>
                 <button 
@@ -248,16 +248,37 @@ export default function ApplicationRoadmapPage() {
                         )}
 
                         {/* Feedback Section */}
-                        <div className="relative">
-                            <textarea 
-                                placeholder="Post-interview notes & feedback..."
-                                className="w-full bg-input border border-border rounded-lg p-3 text-sm text-foreground focus:border-primary outline-none transition"
-                                rows={2}
-                                value={round.user_feedback || ''}
-                                onChange={(e) => handleFeedbackChange(round.id, e.target.value)}
-                                onBlur={(e) => saveFeedback(round.id, e.target.value)}
-                            />
-                        </div>
+                        { round.interview_date && (
+                            <>
+                                <div className="relative">
+                                    <textarea 
+                                        placeholder="Post-interview notes & feedback..."
+                                        className="w-full bg-input border border-border rounded-lg p-3 text-sm text-foreground focus:border-primary outline-none transition"
+                                        rows={2}
+                                        value={round.user_feedback || ''}
+                                        onChange={(e) => handleFeedbackChange(round.id, e.target.value)}
+                                        // onBlur={(e) => saveFeedback(round.id, e.target.value)}
+                                        />
+                                </div>
+                                {
+                                    round.status === 'scheduled' && (
+                                    <div className='flex flex-row gap-2'>
+                                        <button
+                                            onClick={() => saveFeedback(round.id, round.user_feedback || '', 'progressed')}
+                                            className="bg-success hover:bg-green-600 text-white px-3 py-1 rounded-lg flex items-center gap-2 text-sm transition"
+                                        >
+                                            Progressed
+                                        </button>
+                                        <button
+                                            onClick={() => saveFeedback(round.id, round.user_feedback || '', 'rejected')}
+                                            className="bg-error hover:bg-red-600 text-white px-3 py-1 rounded-lg flex items-center gap-2 text-sm transition"
+                                        >
+                                            Rejected
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </div>
             ))}

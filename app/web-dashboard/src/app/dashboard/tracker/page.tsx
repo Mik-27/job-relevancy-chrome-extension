@@ -185,8 +185,9 @@ export default function TrackerPage() {
   };
 
   const handleInterviewPrepRoute = (app: Application) => {
+    console.log("clicked app:", app);
     setSelectedApp(app);
-    if (app.job_description) {
+    if (app.job_description && app.status === 'interviewing') {
         window.location.href = `/dashboard/applications/${app.id}`;
     }
   };
@@ -361,10 +362,16 @@ export default function TrackerPage() {
                                 ${snapshot.isDragging ? 'shadow-xl rotate-1 scale-105 border-primary z-50' : ''}
                                 `}
                                 style={provided.draggableProps.style}
-                                onClick={() => handleInterviewPrepRoute(app)}
+                                // onClick={() => handleInterviewPrepRoute(app)}
                             >
                                 <h4 className="font-bold text-foreground text-sm">{app.company_name}</h4>
                                 <p className="text-xs text-muted mt-1">{app.job_title}</p>
+                                
+                                {app.status === 'interviewing' && (
+                                    <button className='bg-primary hover:bg-blue-600 text-white px-2 py-1 rounded text-xs mt-2' onClick={() => handleInterviewPrepRoute(app)}>
+                                        Interview Prep
+                                    </button>
+                                )}
                                 
                                 <div className="flex justify-between items-center mt-3 border-t border-border/30 pt-2">
                                     <span className="text-[10px] text-gray-500">
@@ -496,18 +503,13 @@ export default function TrackerPage() {
       )}
 
       {/* --- 4. RENDER THE MODAL --- */}
-      {selectedApp && selectedApp.job_description === undefined && (
+      {selectedApp && !selectedApp.job_description && (
         <JobDetailModal 
             app={selectedApp} 
             onClose={() => setSelectedApp(null)} 
             onUpdate={handleAppUpdate} 
         />
       )}
-
-      {/* {selectedApp && selectedApp.job_description !== undefined && (
-        <Link href={`/dashboard/tracker/${selectedApp.id}`} onClick={(e) => { e.preventDefault(); setSelectedApp(null); }}>
-        </Link>
-      )} */}
 
       {/* --- ADD MODAL --- */}
       <UploadResumeModal 
