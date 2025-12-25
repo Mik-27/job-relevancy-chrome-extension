@@ -360,7 +360,7 @@ export default function ApplicationRoadmapPage() {
                     <div className="space-y-4">
                         {viewPrepRound.prep_material.questions.map((q, i) => (
                             <div key={i} className="bg-secondary/20 p-4 rounded-lg border border-border">
-                                <p className="font-medium text-lg mb-4 text-foreground">{q.q}</p>
+                                <div className="text-lg mb-4 text-foreground"><MarkdownRenderer>{q.q}</MarkdownRenderer></div>
                                 {/* Hint Section - Collapsible */}
                                 <div 
                                     onClick={() => toggleHint(i)}
@@ -407,7 +407,6 @@ export default function ApplicationRoadmapPage() {
                     <h4 className="text-primary font-bold uppercase tracking-wider text-sm mb-3">Strategy Tips</h4>
                     <ul className="list-disc list-inside text-gray-300 space-y-2">
                         {viewPrepRound.prep_material.tips.map((tip, i) => (
-                            console.log(tip),
                             <div key={i}><MarkdownRenderer>{tip}</MarkdownRenderer></div>
                         ))}
                     </ul>
