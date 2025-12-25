@@ -1,7 +1,9 @@
 import json
 from langchain_core.prompts import PromptTemplate
 from langchain_google_vertexai import ChatVertexAI
-from ...config import settings
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 llm = ChatVertexAI(
     model_name="gemini-2.5-pro",
@@ -73,7 +75,7 @@ async def generate_round_prep(
     if interview_type == "technical":
         specific_instructions = """
         Focus on Hard Skills. 
-        - Generate 3 LeetCode-style algorithmic questions relevant to the role's level.
+        - Generate 3 LeetCode-style algorithmic questions relevant to the role's level based on the company (if you know what questions have been asked by the company).
         - Generate 7 technical concept questions related to the job description and user's resume.
         - For Leetcode-style questions:
           - Provide hints on approach.
@@ -111,8 +113,9 @@ async def generate_round_prep(
     ### GENERAL INSTRUCTIONS
     - The questions must contain the question text, a hint on how to answer, and a sample answer.
     - Add line breaks ('\n') between new points for readability.
-    - Bolden bullet headings.
-    - For Leetcode style questions, provide the complete coding solution in the sample answer. Enclose the code in triple backticks.
+    - Bolden headings for a point.
+    - For Leetcode style questions, provide the complete coding solution in the sample answer. 
+    - Strictly enclose the code in triple backticks and not starting with language name (eg. Python).
     - Keep the tone encouraging and positive.
 
     ### INPUTS
@@ -145,7 +148,9 @@ async def generate_round_prep(
     
     # ... (Cleanup markdown logic same as before) ...
     content = response.content.strip()
+    logger.debug("Generated Round Prep Response:", content)  # Debug log
+    
     if content.startswith("```json"):
-        content = content.replace("```json", "").replace("```", "")
+        content = content.replace("```json", "").strip("```")
     
     return json.loads(content)
