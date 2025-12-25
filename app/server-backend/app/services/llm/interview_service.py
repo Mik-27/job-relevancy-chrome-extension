@@ -110,8 +110,9 @@ async def generate_round_prep(
     
     ### GENERAL INSTRUCTIONS
     - The questions must contain the question text, a hint on how to answer, and a sample answer.
-    - Add line breaks between new points for readability.
+    - Add line breaks ('\n') between new points for readability.
     - Bolden bullet headings.
+    - For Leetcode style questions, provide the complete coding solution in the sample answer. Enclose the code in triple backticks.
     - Keep the tone encouraging and positive.
 
     ### INPUTS

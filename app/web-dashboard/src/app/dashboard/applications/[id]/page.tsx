@@ -11,8 +11,11 @@ import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { useToast } from '@/context/ToastContext';
 import { 
   FaArrowLeft, FaCalendarAlt, FaPlus, FaRobot, FaTrash, 
-  FaCheckCircle, FaTimes 
+  FaCheckCircle, FaTimes, 
+  FaLightbulb
 } from 'react-icons/fa';
+import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
+import { FaNoteSticky } from 'react-icons/fa6';
 
 export default function ApplicationRoadmapPage() {
   const params = useParams();
@@ -36,6 +39,8 @@ export default function ApplicationRoadmapPage() {
   // States for Generating/Viewing Prep
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [viewPrepRound, setViewPrepRound] = useState<InterviewRound | null>(null);
+
+  const [expandedQuestions, setExpandedQuestions] = useState<{[key: string]: {hint: boolean, answer: boolean}}>({});
 
   useEffect(() => {
     if (!appId) return;
@@ -121,6 +126,28 @@ export default function ApplicationRoadmapPage() {
          toast.error("Failed to save feedback");
      }
   }
+
+  const toggleHint = (questionIndex: number) => {
+    const key = `${viewPrepRound?.id}-${questionIndex}`;
+    setExpandedQuestions(prev => ({
+        ...prev,
+        [key]: {
+        hint: !prev[key]?.hint,
+        answer: prev[key]?.answer || false
+        }
+    }));
+  };
+
+  const toggleAnswer = (questionIndex: number) => {
+    const key = `${viewPrepRound?.id}-${questionIndex}`;
+    setExpandedQuestions(prev => ({
+        ...prev,
+        [key]: {
+        hint: prev[key]?.hint || false,
+        answer: !prev[key]?.answer
+        }
+    }));
+  };    
 
   if (loading) return <div className="p-10 flex justify-center"><Spinner size="large" className="text-primary"/></div>;
   if (!app) return <div className="p-10 text-muted">Application not found</div>;
@@ -322,7 +349,7 @@ export default function ApplicationRoadmapPage() {
                     <h4 className="text-primary font-bold uppercase tracking-wider text-sm mb-3">Focus Areas</h4>
                     <div className="flex flex-wrap gap-2">
                         {viewPrepRound.prep_material.focus_areas.map((area, i) => (
-                            <span key={i} className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-sm">{area}</span>
+                            <span key={i} className="bg-primary/10 text-foreground/75 border border-primary/20 px-6 py-1 rounded-full text-sm"><MarkdownRenderer>{area}</MarkdownRenderer></span>
                         ))}
                     </div>
                 </section>
@@ -333,10 +360,42 @@ export default function ApplicationRoadmapPage() {
                     <div className="space-y-4">
                         {viewPrepRound.prep_material.questions.map((q, i) => (
                             <div key={i} className="bg-secondary/20 p-4 rounded-lg border border-border">
-                                <p className="font-medium text-lg mb-2 text-foreground">{q.q}</p>
-                                <div className="bg-[#111] p-3 rounded text-sm text-gray-400">
-                                    <strong className="text-green-400 block mb-1 text-xs uppercase">Hint:</strong>
-                                    {q.hint}
+                                <p className="font-medium text-lg mb-4 text-foreground">{q.q}</p>
+                                {/* Hint Section - Collapsible */}
+                                <div 
+                                    onClick={() => toggleHint(i)}
+                                    className="bg-yellow-500 bg-opacity-50 border border-yellow-300 p-3 rounded text-sm cursor-pointer hover:bg-yellow-500 hover:bg-opacity-70 transition"
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <strong className="text-yellow-300 text-xs uppercase flex items-center gap-1"> <FaLightbulb size={12} /> Hint:</strong>
+                                        <span className="text-yellow-300 text-xs">
+                                            {expandedQuestions[`${viewPrepRound?.id}-${i}`]?.hint ? '−' : '+'}
+                                        </span>
+                                    </div>
+                                    {expandedQuestions[`${viewPrepRound?.id}-${i}`]?.hint && (
+                                        <div className="mt-2 text-foreground transition duration-300">
+                                            <MarkdownRenderer>{q.hint}</MarkdownRenderer>
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {/* Sample Answer Section - Collapsible */}
+                                <div 
+                                    onClick={() => toggleAnswer(i)}
+                                    className="bg-green-500 bg-opacity-20 border border-green-400 p-3 rounded text-sm cursor-pointer hover:bg-green-500 hover:bg-opacity-30 transition mt-3"
+                                >
+                                    <div className="flex justify-between items-center">
+                                        {/* FIXME: Change icon */}
+                                        <strong className="text-green-400 text-xs uppercase flex items-center gap-1"> <FaNoteSticky size={12} /> Sample Answer:</strong>
+                                        <span className="text-green-400 text-xs">
+                                            {expandedQuestions[`${viewPrepRound?.id}-${i}`]?.answer ? '−' : '+'}
+                                        </span>
+                                    </div>
+                                    {expandedQuestions[`${viewPrepRound?.id}-${i}`]?.answer && (
+                                        <div className="mt-2 text-gray-300 transition duration-300">
+                                            <MarkdownRenderer>{q.sample_answer}</MarkdownRenderer>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -348,7 +407,8 @@ export default function ApplicationRoadmapPage() {
                     <h4 className="text-primary font-bold uppercase tracking-wider text-sm mb-3">Strategy Tips</h4>
                     <ul className="list-disc list-inside text-gray-300 space-y-2">
                         {viewPrepRound.prep_material.tips.map((tip, i) => (
-                            <li key={i}>{tip}</li>
+                            console.log(tip),
+                            <div key={i}><MarkdownRenderer>{tip}</MarkdownRenderer></div>
                         ))}
                     </ul>
                 </section>

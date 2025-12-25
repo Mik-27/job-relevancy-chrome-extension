@@ -88,6 +88,7 @@ export type RoundStatus = 'scheduled' | 'progressed' | 'rejected' | 'cancelled';
 export interface PrepQuestion {
   q: string;    // The question text
   hint: string; // The answer key or advice
+  sample_answer: string; // A sample answer or solution
 }
 
 export interface InterviewPrepMaterial {
