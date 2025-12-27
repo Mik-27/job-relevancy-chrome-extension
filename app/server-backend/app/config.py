@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     BUCKET_NAME: str
     GOOGLE_APPLICATION_CREDENTIALS: str
     
+    GCP_PROJECT_ID: str
+    GCP_CLIENT_LOCATION: str = "us-central1"
+    
     # N8N Webhook URL
     N8N_WEBHOOK_SECRET: str = ""
     N8N_WEBHOOK_URL: str = ""

@@ -15,7 +15,7 @@ import {
   FaLightbulb
 } from 'react-icons/fa';
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
-import { FaNoteSticky } from 'react-icons/fa6';
+import { FaHeadset, FaNoteSticky } from 'react-icons/fa6';
 
 export default function ApplicationRoadmapPage() {
   const params = useParams();
@@ -192,6 +192,12 @@ export default function ApplicationRoadmapPage() {
         <div className="flex flex-col gap-4 overflow-y-auto pr-2">
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-foreground">Interview Roadmap</h2>
+                <button 
+                    onClick={() => router.push(`/dashboard/interview/${appId}`)}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md"
+                >
+                    <FaHeadset /> Practice Live
+                </button>
                 <button 
                     onClick={() => setIsAddModalOpen(true)}
                     className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition"

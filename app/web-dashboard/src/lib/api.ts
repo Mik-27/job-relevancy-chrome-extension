@@ -258,3 +258,19 @@ export const generateRoundPrep = async (roundId: string): Promise<InterviewRound
   if (!response.ok) throw new Error("AI Generation failed");
   return response.json();
 };
+
+// Live Interview Functions
+
+export const getLiveInterviewWebSocketUrl = async (appId: string): Promise<string> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("User is not authenticated");
+  
+  // Construct WS URL (ws:// or wss://)
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  // Adjust base URL to point to backend host (remove /api if it's there, or parse it)
+  // Assuming NEXT_PUBLIC_API_BASE_URL is like "http://localhost:8000/api"
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('http', 'ws');
+  
+  // URL: ws://localhost:8000/api/ws/live-interview?app_id=...&token=...
+  return `${apiBase}/ws/live-interview?app_id=${appId}&token=${session.access_token}`;
+};

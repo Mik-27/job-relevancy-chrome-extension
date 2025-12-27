@@ -148,7 +148,6 @@ async def generate_round_prep(
     
     # ... (Cleanup markdown logic same as before) ...
     content = response.content.strip()
-    logger.debug("Generated Round Prep Response:", content)  # Debug log
     
     if content.startswith("```json"):
         content = content.replace("```json", "").strip("```")

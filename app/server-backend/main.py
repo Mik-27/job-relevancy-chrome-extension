@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from logging.config import dictConfig
 from app.logging_config import LogConfig
-from app.routers import analysis, resumes, tailor, cover_letter, users, outreach, autofill, applications, interviews, interview_rounds
+from app.routers import analysis, resumes, tailor, cover_letter, users, outreach, autofill, applications, interviews, interview_rounds, live_interview
 
 dictConfig(LogConfig().model_dump())
 
@@ -36,6 +36,7 @@ app.include_router(autofill.router, prefix="/api")
 app.include_router(applications.router, prefix="/api") 
 app.include_router(interviews.router, prefix="/api")
 app.include_router(interview_rounds.router, prefix="/api")
+app.include_router(live_interview.router, prefix="/api")
 
 
 @app.get("/", tags=["Root"])
