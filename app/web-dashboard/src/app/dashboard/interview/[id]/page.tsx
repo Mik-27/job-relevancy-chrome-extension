@@ -6,12 +6,12 @@ import { getLiveInterviewWebSocketUrl, getUserProfile } from '@/lib/api';
 import { useLiveInterview } from '@/hooks/useLiveInterview';
 import { FaMicrophone, FaPhoneSlash, FaRobot, FaUser } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
-import './page.css'; // Import the CSS
+import './page.css';
 
 export default function LiveInterviewPage() {
   const params = useParams();
   const router = useRouter();
-  const appId = params.id as string;
+  const sessionId = params.id as string;
   const [wsUrl, setWsUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState('Candidate');
   
@@ -25,10 +25,10 @@ export default function LiveInterviewPage() {
     getUserProfile().then(p => setUserName(p.first_name)).catch(() => {});
     
     // 2. Get WS URL
-    getLiveInterviewWebSocketUrl(appId)
-      .then(setWsUrl)
+    getLiveInterviewWebSocketUrl(sessionId)
+      .then((url => {setWsUrl(url); }))
       .catch((err) => console.error("Failed to get WS URL", err));
-  }, [appId]);
+  }, [sessionId]);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {

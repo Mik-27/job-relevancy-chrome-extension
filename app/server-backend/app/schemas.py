@@ -306,7 +306,7 @@ class InterviewSessionCreate(BaseModel):
     title: str = "Mock Interview"
 
 class InterviewSessionResponse(BaseModel):
-    id: str
+    id: UUID
     title: str
     status: str
     created_at: datetime

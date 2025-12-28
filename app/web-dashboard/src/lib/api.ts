@@ -261,21 +261,19 @@ export const generateRoundPrep = async (roundId: string): Promise<InterviewRound
 
 // Live Interview Functions
 
-export const getLiveInterviewWebSocketUrl = async (appId: string): Promise<string> => {
+export const getLiveInterviewWebSocketUrl = async (sessionId: string): Promise<string> => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("User is not authenticated");
   
-  // Construct WS URL (ws:// or wss://)
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  // Adjust base URL to point to backend host (remove /api if it's there, or parse it)
-  // Assuming NEXT_PUBLIC_API_BASE_URL is like "http://localhost:8000/api"
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('http', 'ws');
+  // Correctly convert HTTP(S) to WS(S)
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+  const wsBase = apiBase.replace(/^https?:\/\//, (match) => 
+    match === 'https://' ? 'wss://' : 'ws://'
+  );
   
-  // URL: ws://localhost:8000/api/ws/live-interview?app_id=...&token=...
-  return `${apiBase}/ws/live-interview?app_id=${appId}&token=${session.access_token}`;
+  // WebSocket endpoint is under /api prefix
+  return `${wsBase}/ws/live-interview?session_id=${sessionId}&token=${session.access_token}`;
 };
-
-// ... imports
 
 // Create Session
 export const createInterviewSession = async (appId?: string): Promise<{ id: string }> => {

@@ -4,7 +4,7 @@ import traceback
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
 from sqlalchemy.orm import Session
 from google import genai
-from google.genai import types 
+from google.genai import types
 from ..database import get_db, InterviewSession, InterviewMessage
 from ..config import settings
 from ..services import live_session_service
@@ -110,6 +110,8 @@ async def websocket_endpoint(
 
             # --- Task B: Receive from Gemini -> Send to React (Frontend) ---
             async def send_to_client():
+                user_transcript = ""
+                model_transcript = ""
                 try:
                     async for response in session.receive():
                         print(f"Received response: {response}")
@@ -128,18 +130,46 @@ async def websocket_endpoint(
                                     if part.text:
                                         await websocket.send_json({ "type": "text", "data": part.text })
                             # Sending transcription data
-                            if server_content.input_transcription and not server_content.input_transcription.finished:
-                                await websocket.send_json({
-                                    "type": "transcript",
-                                    "role": "user",
-                                    "data": server_content.input_transcription.text
-                                })
-                            if server_content.output_transcription and not server_content.output_transcription.finished:
-                                await websocket.send_json({
-                                    "type": "transcript",
-                                    "role": "ai",
-                                    "data": server_content.output_transcription.text
-                                })
+                            if server_content.input_transcription:
+                                if not server_content.input_transcription.finished:
+                                    user_transcript += server_content.input_transcription.text
+                                    await websocket.send_json({
+                                        "type": "transcript",
+                                        "role": "user",
+                                        "data": server_content.input_transcription.text
+                                    })
+                                else:
+                                    try:
+                                        msg = InterviewMessage(
+                                            session_id=session_id,
+                                            role="user",
+                                            content=user_transcript
+                                        )
+                                        db.add(msg)
+                                        db.commit()
+                                        user_transcript = ""
+                                    except Exception as e:
+                                        logger.error(f"DB Error saving user transcript: {e}")
+                            if server_content.output_transcription:
+                                if not server_content.output_transcription.finished:
+                                    model_transcript += server_content.output_transcription.text
+                                    await websocket.send_json({
+                                        "type": "transcript",
+                                        "role": "ai",
+                                        "data": server_content.output_transcription.text
+                                    })
+                                else:
+                                    try:
+                                        msg = InterviewMessage(
+                                            session_id=session_id,
+                                            role="ai",
+                                            content=model_transcript
+                                        )
+                                        db.add(msg)
+                                        db.commit()
+                                        model_transcript = ""
+                                    except Exception as e:
+                                        logger.error(f"DB Error saving model transcript: {e}")
                             if server_content.turn_complete:
                                 logger.info("Turn complete from Gemini")
                                 # await websocket.send_json({"type": "turn_complete"})

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   getApplication,
-  getInterviewRounds, createInterviewRound, updateInterviewRound, deleteInterviewRound, generateRoundPrep 
+  getInterviewRounds, createInterviewRound, updateInterviewRound, deleteInterviewRound, generateRoundPrep, 
+  createInterviewSession
 } from '@/lib/api';
 import { Application, InterviewRound, InterviewType, RoundStatus } from '@/types';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
@@ -127,6 +128,15 @@ export default function ApplicationRoadmapPage() {
      }
   }
 
+  const handleStartLive = async () => {
+    try {
+        const session = await createInterviewSession(appId);
+        router.push(`/dashboard/interview/${session.id}`);
+    } catch (e) {
+        toast.error("Failed to start session");
+    }
+  };
+
   const toggleHint = (questionIndex: number) => {
     const key = `${viewPrepRound?.id}-${questionIndex}`;
     setExpandedQuestions(prev => ({
@@ -193,7 +203,7 @@ export default function ApplicationRoadmapPage() {
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-foreground">Interview Roadmap</h2>
                 <button 
-                    onClick={() => router.push(`/dashboard/interview/${appId}`)}
+                    onClick={handleStartLive}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md"
                 >
                     <FaHeadset /> Practice Live

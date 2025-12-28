@@ -151,7 +151,7 @@ class InterviewRound(Base):
 
 # Live Interview Tables
 class InterviewSession(Base):
-    __tablename__ = "interview_sessions"
+    __tablename__ = "live_interview_sessions"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String, nullable=False, index=True)
@@ -161,10 +161,10 @@ class InterviewSession(Base):
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
 
 class InterviewMessage(Base):
-    __tablename__ = "interview_messages"
+    __tablename__ = "live_interview_messages"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    session_id = Column(String, ForeignKey("interview_sessions.id"), nullable=False, index=True)
+    session_id = Column(String, ForeignKey("live_interview_sessions.id"), nullable=False, index=True)
     role = Column(String, nullable=False) # 'user' or 'ai'
     content = Column(Text)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
