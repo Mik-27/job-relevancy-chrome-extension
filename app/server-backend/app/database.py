@@ -158,6 +158,7 @@ class InterviewSession(Base):
     application_id = Column(String, nullable=True)
     title = Column(String)
     status = Column(String, default="active")
+    report = Column(JSONB, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
 
 class InterviewMessage(Base):

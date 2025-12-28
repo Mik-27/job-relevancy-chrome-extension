@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 from .. import database, schemas
 from ..security import get_current_user_id
+from ..services.llm import report_service
+from ..services import live_session_service
 
 router = APIRouter(prefix="/live-interview-sessions", tags=["Live Interview","Live Interview Sessions"])
 
@@ -55,3 +57,44 @@ def create_session(
     db.commit()
     db.refresh(new_session)
     return new_session
+
+
+# --- NEW: End Session & Generate Report ---
+@router.post("/{session_id}/end", response_model=schemas.ShadowReportSchema)
+async def end_session_and_generate_report(
+    session_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db)
+):
+    # 1. Fetch Session
+    session = db.query(database.InterviewSession).filter(
+        database.InterviewSession.id == session_id,
+        database.InterviewSession.user_id == user_id
+    ).first()
+    if not session: raise HTTPException(status_code=404, detail="Session not found")
+
+    # 2. Fetch Transcript
+    messages = db.query(database.InterviewMessage).filter(
+        database.InterviewMessage.session_id == session_id
+    ).order_by(database.InterviewMessage.created_at.asc()).all()
+    
+    transcript_text = "\n".join([f"{msg.role.upper()}: {msg.content}" for msg in messages])
+
+    # 3. Fetch Context (JD)
+    # We reuse the helper logic from live_session_service
+    job_context = live_session_service.get_interview_context(db, session.application_id, user_id)
+
+    # 4. Generate Report
+    try:
+        report_data = await report_service.generate_interview_report(job_context, transcript_text)
+        
+        # 5. Save to DB
+        session.status = "completed"
+        session.report = report_data
+        db.commit()
+        
+        return report_data
+        
+    except Exception as e:
+        print(f"Report Generation Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate report")

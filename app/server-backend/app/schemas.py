@@ -314,3 +314,14 @@ class InterviewSessionResponse(BaseModel):
     
     class Config:
         from_attributes = True
+        
+# --- NEW: Shadow Report Schemas ---
+class ShadowReportSchema(BaseModel):
+    verdict: Literal["Strong Hire", "Lean Hire", "Lean No Hire", "Strong No Hire"] = Field(description="The final hiring decision.")
+    candidate_presence: str = Field(description="Assessment of confidence, clarity, and communication style.")
+    star_proficiency: str = Field(description="How well the candidate used the STAR method (Situation, Task, Action, Result).")
+    key_observations: List[str] = Field(description="General observations about the interview performance.")
+    strengths: List[str] = Field(description="Specific areas where the candidate excelled.")
+    red_flags: List[str] = Field(description="Concerns or areas where the candidate failed to meet expectations.")
+    hiring_manager_summary: str = Field(description="A professional summary of the candidate's performance.")
+    areas_for_improvement: List[str] = Field(description="Specific actionable advice for the candidate.")
