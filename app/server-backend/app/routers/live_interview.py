@@ -47,10 +47,23 @@ async def websocket_endpoint(
     # 2. Get Context
     system_instruction = live_session_service.get_interview_context(db, app_id, user_id)
     
-    config = {
-        "response_modalities": ["AUDIO"],
-        "system_instruction": system_instruction,
-    }
+    config = types.LiveConnectConfig(
+            response_modalities=[types.Modality.AUDIO],
+            speech_config=types.SpeechConfig(
+                voice_config=types.VoiceConfig(
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                        voice_name="Puck"
+                    )
+                )
+            ),
+            system_instruction=types.Content(parts=[types.Part(text=system_instruction)]),
+            input_audio_transcription=types.AudioTranscriptionConfig(),
+            output_audio_transcription=types.AudioTranscriptionConfig(),
+        )
+    # config = {
+    #     "response_modalities": ["AUDIO"],
+    #     "system_instruction": system_instruction,
+    # }
 
     try:
         async with client.aio.live.connect(model=MODEL_ID, config=config) as session:
@@ -61,6 +74,7 @@ async def websocket_endpoint(
                 try:
                     while True:
                         message = await websocket.receive_json()
+                        # print(message)
                         if "realtime_input" in message and "media_chunks" in message["realtime_input"]:
                             for chunk in message["realtime_input"]["media_chunks"]:
                                 b64_data = chunk["data"]
@@ -87,6 +101,7 @@ async def websocket_endpoint(
             async def send_to_client():
                 try:
                     async for response in session.receive():
+                        print(f"Received response: {response}")
                         server_content = response.server_content
                         if server_content:
                             if server_content.model_turn:
@@ -104,7 +119,18 @@ async def websocket_endpoint(
                                         })
                                     if part.text:
                                         await websocket.send_json({ "type": "text", "data": part.text })
-                            
+                            if server_content.input_transcription:
+                                await websocket.send_json({
+                                    "type": "transcript",
+                                    "role": "user",
+                                    "data": server_content.input_transcription.text
+                                })
+                            if server_content.output_transcription:
+                                await websocket.send_json({
+                                    "type": "transcript",
+                                    "role": "ai",
+                                    "data": server_content.output_transcription.text
+                                })
                             if server_content.turn_complete:
                                 logger.info("Turn complete from Gemini")
                                 # await websocket.send_json({"type": "turn_complete"})

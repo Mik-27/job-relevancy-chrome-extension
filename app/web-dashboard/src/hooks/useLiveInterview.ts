@@ -7,9 +7,16 @@ declare global {
   }
 }
 
+export interface ChatMessage {
+  role: 'user' | 'ai';
+  text: string;
+//   timestamp: Date;
+}
+
 export const useLiveInterview = (wsUrl: string | null) => {
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState<ChatMessage[]>([]);
   const [volume, setVolume] = useState(0); // This will update at ~60fps
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -57,6 +64,22 @@ export const useLiveInterview = (wsUrl: string | null) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
     return bytes.buffer as ArrayBuffer;
+  };
+
+  // Helper to append text to the last message if it's from the same role (streaming effect)
+  const appendToTranscript = (role: 'user' | 'ai', text: string) => {
+    setTranscript(prev => {
+      const last = prev[prev.length - 1];
+      // If the last message was from AI and we are receiving more AI text, append it
+      if (last && last.role === role) {
+        return [
+          ...prev.slice(0, -1),
+          { ...last, text: last.text + text }
+        ];
+      }
+      // Otherwise, start a new bubble
+      return [...prev, { role, text, timestamp: new Date() }];
+    });
   };
 
   // --- Volume Animation Loop ---
@@ -228,11 +251,16 @@ export const useLiveInterview = (wsUrl: string | null) => {
       setTimeout(() => startRecording(), 100);
     };
 
-    socket.onmessage = (event) => {
+    socket.onmessage = async (event) => {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === 'audio') {
           playAudioChunk(msg.data);
+        }
+        else if (msg.type === 'transcript' && msg.role === 'ai') {
+            appendToTranscript('ai', msg.data);
+        } else if (msg.type === 'transcript' && msg.role === 'user') {
+            appendToTranscript('user', msg.data);
         }
       } catch (e) { console.error(e); }
     };
@@ -263,5 +291,5 @@ export const useLiveInterview = (wsUrl: string | null) => {
     return () => disconnect();
   }, [disconnect]);
 
-  return { status, isSpeaking, connect, disconnect, errorMsg, volume };
+  return { status, isSpeaking, connect, disconnect, errorMsg, volume, transcript };
 };
