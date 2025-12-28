@@ -66,7 +66,7 @@ export default function LiveInterviewPage() {
             <div className="volume-track">
               <div 
                 className="volume-fill" 
-                style={{ width: `${Math.min(100, volume)}%` }}
+                style={{ width: `${volume}%` }}
               ></div>
             </div>
             <div className="volume-labels">

@@ -96,7 +96,7 @@
 .volume-fill {
   height: 100%;
   background: linear-gradient(90deg, #60a5fa, #a78bfa);
-  transition: width 0.1s ease-out;
+  /* transition: width 0.001s ease-out; */
 }
 
 .volume-labels {

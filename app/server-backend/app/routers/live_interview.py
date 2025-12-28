@@ -107,9 +107,6 @@ async def websocket_endpoint(
                             if server_content.model_turn:
                                 for part in server_content.model_turn.parts:
                                     if part.inline_data:
-                                        # --- FIX IS HERE ---
-                                        # 1. Convert raw bytes to Base64 bytes
-                                        # 2. Decode bytes to UTF-8 string for JSON serialization
                                         b64_audio = base64.b64encode(part.inline_data.data).decode('utf-8')
                                         
                                         await websocket.send_json({
@@ -119,13 +116,14 @@ async def websocket_endpoint(
                                         })
                                     if part.text:
                                         await websocket.send_json({ "type": "text", "data": part.text })
-                            if server_content.input_transcription:
+                            # Sending transcription data
+                            if server_content.input_transcription and not server_content.input_transcription.finished:
                                 await websocket.send_json({
                                     "type": "transcript",
                                     "role": "user",
                                     "data": server_content.input_transcription.text
                                 })
-                            if server_content.output_transcription:
+                            if server_content.output_transcription and not server_content.output_transcription.finished:
                                 await websocket.send_json({
                                     "type": "transcript",
                                     "role": "ai",
