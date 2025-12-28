@@ -274,3 +274,22 @@ export const getLiveInterviewWebSocketUrl = async (appId: string): Promise<strin
   // URL: ws://localhost:8000/api/ws/live-interview?app_id=...&token=...
   return `${apiBase}/ws/live-interview?app_id=${appId}&token=${session.access_token}`;
 };
+
+// ... imports
+
+// Create Session
+export const createInterviewSession = async (appId?: string): Promise<{ id: string }> => {
+  const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/`, {
+    method: 'POST',
+    body: JSON.stringify({ application_id: appId }),
+  });
+  if (!response.ok) throw new Error("Failed to create session");
+  return response.json();
+};
+
+// Get Sessions List
+export const getInterviewSessions = async () => {
+    const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/`);
+    if (!response.ok) throw new Error("Failed to fetch sessions");
+    return response.json();
+};

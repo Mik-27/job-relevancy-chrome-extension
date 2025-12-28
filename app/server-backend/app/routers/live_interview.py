@@ -5,7 +5,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
 from sqlalchemy.orm import Session
 from google import genai
 from google.genai import types 
-from .. import database
+from ..database import get_db, InterviewSession, InterviewMessage
 from ..config import settings
 from ..services import live_session_service
 from ..logging_config import get_logger
@@ -29,9 +29,9 @@ client = genai.Client(
 @router.websocket("/ws/live-interview")
 async def websocket_endpoint(
     websocket: WebSocket,
-    app_id: str = Query(...),
+    session_id: str = Query(...),
     token: str = Query(...), 
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(get_db)
 ):
     await websocket.accept()
 
@@ -44,7 +44,22 @@ async def websocket_endpoint(
         await websocket.close(code=1008)
         return
 
-    # 2. Get Context
+    # 2. Fetch Session & Context
+    interview_session = db.query(InterviewSession).filter(
+        InterviewSession.id == session_id, 
+        InterviewSession.user_id == user_id
+    ).first()
+    
+    if not interview_session:
+        logger.error("Session not found")
+        await websocket.close(code=1008)
+        return
+
+    # Use the application_id from the session to get the context
+    app_id = interview_session.application_id
+    
+    # TODO: Handle case where app_id is None - Generic interview
+    # 3. Get Context
     system_instruction = live_session_service.get_interview_context(db, app_id, user_id)
     
     config = types.LiveConnectConfig(
@@ -60,10 +75,6 @@ async def websocket_endpoint(
             input_audio_transcription=types.AudioTranscriptionConfig(),
             output_audio_transcription=types.AudioTranscriptionConfig(),
         )
-    # config = {
-    #     "response_modalities": ["AUDIO"],
-    #     "system_instruction": system_instruction,
-    # }
 
     try:
         async with client.aio.live.connect(model=MODEL_ID, config=config) as session:

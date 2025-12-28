@@ -119,7 +119,7 @@ class AutofillHistory(Base):
     
     # The actual filled data
     questions_answers = Column(JSONB)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     
 class InterviewPrep(Base):
     __tablename__ = "interview_preps"
@@ -131,7 +131,7 @@ class InterviewPrep(Base):
     # Stores { company_analysis, technical_questions, behavioral_questions, resume_deep_dive }
     content = Column(JSONB) 
     
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     
 class InterviewRound(Base):
     __tablename__ = "interview_rounds"
@@ -145,8 +145,29 @@ class InterviewRound(Base):
     status = Column(String, default="scheduled")  # e.g., scheduled, completed, cancelled
     user_feedback = Column(Text, nullable=True)
     prep_material = Column(JSONB, nullable=True)  # The JSON from AI
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
+    
+
+# Live Interview Tables
+class InterviewSession(Base):
+    __tablename__ = "interview_sessions"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, nullable=False, index=True)
+    application_id = Column(String, nullable=True)
+    title = Column(String)
+    status = Column(String, default="active")
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+
+class InterviewMessage(Base):
+    __tablename__ = "interview_messages"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id = Column(String, ForeignKey("interview_sessions.id"), nullable=False, index=True)
+    role = Column(String, nullable=False) # 'user' or 'ai'
+    content = Column(Text)
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
 
 # Dependency to get a DB session in our API endpoints
 def get_db():

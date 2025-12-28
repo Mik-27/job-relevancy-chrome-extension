@@ -14,8 +14,8 @@ import {
   FaCheckCircle, FaTimes, 
   FaLightbulb
 } from 'react-icons/fa';
-import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import { FaHeadset, FaNoteSticky } from 'react-icons/fa6';
+import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 
 export default function ApplicationRoadmapPage() {
   const params = useParams();

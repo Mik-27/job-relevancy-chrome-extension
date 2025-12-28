@@ -291,3 +291,26 @@ class InterviewRoundResponse(InterviewRoundBase):
 
     class Config:
         from_attributes = True
+        
+# --- Live Interview Session Schemas ---
+class InterviewMessageBase(BaseModel):
+    role: str
+    content: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class InterviewSessionCreate(BaseModel):
+    application_id: Optional[str] = None
+    title: str = "Mock Interview"
+
+class InterviewSessionResponse(BaseModel):
+    id: str
+    title: str
+    status: str
+    created_at: datetime
+    # We might want to return the last message or summary later
+    
+    class Config:
+        from_attributes = True

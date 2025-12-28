@@ -14,9 +14,9 @@ import {
   FaPaperPlane,
   FaUserCircle,
   FaChevronUp,
-  FaCog,
-  FaFileAlt
+  FaFileAlt,
 } from 'react-icons/fa';
+import { FaHeadset } from 'react-icons/fa6';
 
 export default function DashboardLayout({
   children,
@@ -118,6 +118,12 @@ export default function DashboardLayout({
             <div className="text-xl"><FaPaperPlane /></div>
             <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100'}`}>
               Cold Outreach
+            </span>
+          </Link>
+          <Link href="/dashboard/interview" className={linkClass('/dashboard/interview')} title={isCollapsed ? "Live Interview" : ""}>
+            <div className="text-xl"><FaHeadset /></div>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100'}`}>
+              Live Interview
             </span>
           </Link>
 
