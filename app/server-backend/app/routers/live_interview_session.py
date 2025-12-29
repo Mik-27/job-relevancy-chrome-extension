@@ -58,8 +58,26 @@ def create_session(
     db.refresh(new_session)
     return new_session
 
+# --- Get Single Session with Report ---
+@router.get("/{session_id}", response_model=schemas.InterviewSessionResponse)
+def get_interview_session(
+    session_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db)
+):
+    """Fetch details of a single session, including the report if completed."""
+    session = db.query(database.InterviewSession).filter(
+        database.InterviewSession.id == session_id,
+        database.InterviewSession.user_id == user_id
+    ).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    return session
 
-# --- NEW: End Session & Generate Report ---
+
+# --- End Session & Generate Report ---
 @router.post("/{session_id}/end", response_model=schemas.ShadowReportSchema)
 async def end_session_and_generate_report(
     session_id: str,

@@ -304,16 +304,6 @@ class InterviewMessageBase(BaseModel):
 class InterviewSessionCreate(BaseModel):
     application_id: Optional[str] = None
     title: str = "Mock Interview"
-
-class InterviewSessionResponse(BaseModel):
-    id: UUID
-    title: str
-    status: str
-    created_at: datetime
-    # We might want to return the last message or summary later
-    
-    class Config:
-        from_attributes = True
         
 # --- NEW: Shadow Report Schemas ---
 class ShadowReportSchema(BaseModel):
@@ -325,3 +315,13 @@ class ShadowReportSchema(BaseModel):
     red_flags: List[str] = Field(description="Concerns or areas where the candidate failed to meet expectations.")
     hiring_manager_summary: str = Field(description="A professional summary of the candidate's performance.")
     areas_for_improvement: List[str] = Field(description="Specific actionable advice for the candidate.")
+
+class InterviewSessionResponse(BaseModel):
+    id: UUID
+    title: str
+    status: str
+    created_at: datetime
+    report: Optional[ShadowReportSchema] = None
+    
+    class Config:
+        from_attributes = True

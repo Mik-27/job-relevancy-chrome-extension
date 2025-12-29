@@ -119,3 +119,11 @@ export interface ShadowReport {
   hiring_manager_summary: string;
   areas_for_improvement: string[];
 }
+
+export interface InterviewSession {
+  id: string;
+  title: string;
+  status: 'active' | 'completed';
+  created_at: string;
+  report?: ShadowReport;
+}

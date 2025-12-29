@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getLiveInterviewWebSocketUrl, getUserProfile, endInterviewSession } from '@/lib/api';
+import { getLiveInterviewWebSocketUrl, getUserProfile, endInterviewSession, getInterviewSession } from '@/lib/api';
 import { useLiveInterview } from '@/hooks/useLiveInterview';
-import { ShadowReport as ShadowReportType } from '@/types';
+import { InterviewSession, ShadowReport as ShadowReportType } from '@/types';
 import { ShadowReport } from '@/components/interview/ShadowReport';
 import { FaMicrophone, FaPhoneSlash, FaRobot, FaUser } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
@@ -16,22 +16,43 @@ export default function LiveInterviewPage() {
   const sessionId = params.id as string;
   const [wsUrl, setWsUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState('Candidate');
+  const [sessionData, setSessionData] = useState<InterviewSession | null>(null);
   const [report, setReport] = useState<ShadowReportType | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   // Auto-scroll ref
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const { status, isSpeaking, connect, disconnect, errorMsg, volume, transcript } = useLiveInterview(wsUrl);
 
+  // 1. Initial Fetch: Check Session Status
   useEffect(() => {
-    // 1. Get User Name
-    getUserProfile().then(p => setUserName(p.first_name)).catch(() => {});
-    
-    // 2. Get WS URL
-    getLiveInterviewWebSocketUrl(sessionId)
-      .then((url => {setWsUrl(url); }))
-      .catch((err) => console.error("Failed to get WS URL", err));
+    const init = async () => {
+      try {
+        // Fetch User
+        getUserProfile().then(p => setUserName(p.first_name)).catch(() => {});
+
+        // Fetch Session Details
+        const session = await getInterviewSession(sessionId);
+        setSessionData(session);
+
+        if (session.status === 'completed' && session.report) {
+          // If completed, show report immediately
+          setReport(session.report);
+          setLoading(false);
+        } else {
+          // If active, prepare WebSocket
+          const url = await getLiveInterviewWebSocketUrl(sessionId);
+          setWsUrl(url);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Initialization failed", err);
+        setLoading(false);
+      }
+    };
+    init();
   }, [sessionId]);
 
   // Auto-scroll to bottom of chat
@@ -52,6 +73,11 @@ export default function LiveInterviewPage() {
         setGeneratingReport(false);
     }
   };
+
+
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center"><Spinner size="large" /></div>;
+  }
 
   if (generatingReport) {
       return (
