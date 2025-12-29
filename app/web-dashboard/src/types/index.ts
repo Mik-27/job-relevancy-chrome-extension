@@ -105,7 +105,17 @@ export interface InterviewRound {
   interview_date: string | null;
   status: RoundStatus;
   user_feedback: string | null;
-  // CHANGED: No longer 'any', now strictly typed
   prep_material: InterviewPrepMaterial | null; 
   created_at: string;
+}
+
+export interface ShadowReport {
+  verdict: "Strong Hire" | "Lean Hire" | "Lean No Hire" | "Strong No Hire";
+  candidate_presence: string;
+  star_proficiency: string;
+  key_observations: string[];
+  strengths: string[];
+  red_flags: string[];
+  hiring_manager_summary: string;
+  areas_for_improvement: string[];
 }

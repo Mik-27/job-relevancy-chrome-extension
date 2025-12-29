@@ -1,4 +1,4 @@
-import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application, InterviewRound } from '@/types';
+import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application, InterviewRound, ShadowReport } from '@/types';
 import { supabase } from './supabaseClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -290,4 +290,13 @@ export const getInterviewSessions = async () => {
     const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/`);
     if (!response.ok) throw new Error("Failed to fetch sessions");
     return response.json();
+};
+
+// End session and get report
+export const endInterviewSession = async (sessionId: string): Promise<ShadowReport> => {
+  const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/${sessionId}/end`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error("Failed to generate report");
+  return response.json();
 };
