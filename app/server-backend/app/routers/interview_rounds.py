@@ -62,7 +62,7 @@ async def generate_round_prep(
          resume_text = pdf_service.extract_text_from_pdf_bytes(gcs_service.download_file_as_bytes(clean_path))
 
     # Generate
-    prep_content = await interview_service.generate_round_prep(resume_text, app_record.job_description, round_record.interview_type)
+    prep_content = await interview_service.generate_round_prep(resume_text, app_record.job_description, round_record.interview_type, round_record.notes)
     
     # Save
     round_record.prep_material = prep_content

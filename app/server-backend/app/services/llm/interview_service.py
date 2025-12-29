@@ -66,11 +66,13 @@ async def generate_interview_kit(resume_text: str, job_description: str) -> dict
 async def generate_round_prep(
     resume_text: str, 
     job_description: str, 
-    interview_type: str
+    interview_type: str,
+    notes: str = ""
 ) -> dict:
     
     # 1. Select Prompt based on Type
     specific_instructions = ""
+    notes = notes if notes else "No additional interview information provided."
     
     if interview_type == "technical":
         specific_instructions = """
@@ -124,6 +126,9 @@ async def generate_round_prep(
 
     ### SPECIFICINSTRUCTIONS
     {specific_instructions}
+    
+    ### Interview Round Notes (if any):
+    {notes}
 
     ### OUTPUT FORMAT (JSON)
     Return a valid JSON object. The structure should be:
