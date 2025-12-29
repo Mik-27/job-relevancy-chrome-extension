@@ -4,7 +4,7 @@ from ..config import settings
 from .. import database
 
 # Helper to fetch context from DB
-def get_interview_context(db: Session, application_id: str, user_id: str) -> str:
+def get_interview_context(db: Session, application_id: str, round_id: str, user_id: str) -> str:
     """
     Fetches the Resume and Job Description to build the System Instruction.
     """

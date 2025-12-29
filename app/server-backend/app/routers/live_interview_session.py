@@ -4,7 +4,6 @@ from typing import List
 from .. import database, schemas
 from ..security import get_current_user_id
 from ..services.llm import report_service
-from ..services import live_session_service
 
 router = APIRouter(prefix="/live-interview-sessions", tags=["Live Interview","Live Interview Sessions"])
 
@@ -90,6 +89,11 @@ async def end_session_and_generate_report(
         database.InterviewSession.user_id == user_id
     ).first()
     if not session: raise HTTPException(status_code=404, detail="Session not found")
+    
+    application = db.query(database.Application).filter(
+        database.Application.id == session.application_id,
+        database.Application.user_id == user_id
+    ).first()
 
     # 2. Fetch Transcript
     messages = db.query(database.InterviewMessage).filter(
@@ -99,8 +103,7 @@ async def end_session_and_generate_report(
     transcript_text = "\n".join([f"{msg.role.upper()}: {msg.content}" for msg in messages])
 
     # 3. Fetch Context (JD)
-    # We reuse the helper logic from live_session_service
-    job_context = live_session_service.get_interview_context(db, session.application_id, user_id)
+    job_context = application.job_description if application and application.job_description else "No Job Description provided."
 
     # 4. Generate Report
     try:
