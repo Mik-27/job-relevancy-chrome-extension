@@ -18,6 +18,13 @@ import {
 import { FaHeadset, FaNoteSticky } from 'react-icons/fa6';
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 
+export interface newRoundData {
+    interview_type: InterviewType;
+    interview_date: string | null;
+    duration_minutes: string | null;
+    notes?: string;
+}
+
 export default function ApplicationRoadmapPage() {
   const params = useParams();
   const router = useRouter();
@@ -34,8 +41,9 @@ export default function ApplicationRoadmapPage() {
 
   // States for Add Round
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newRoundType, setNewRoundType] = useState<InterviewType>('screening');
-  const [newRoundDate, setNewRoundDate] = useState('');
+//   const [newRoundType, setNewRoundType] = useState<InterviewType>('screening');
+//   const [newRoundDate, setNewRoundDate] = useState('');
+  const [newRound, setNewRound] = useState<newRoundData>({interview_type:'screening', interview_date: null, duration_minutes: null, notes: ''});
 
   // States for Generating/Viewing Prep
   const [generatingId, setGeneratingId] = useState<string | null>(null);
@@ -70,14 +78,14 @@ export default function ApplicationRoadmapPage() {
     try {
       const nextRoundNumber = rounds.length + 1;
       // Partial<InterviewRound> for creation
-      const newRound = await createInterviewRound({
+      const newRoundData = await createInterviewRound({
         application_id: appId,
         round_number: nextRoundNumber,
-        interview_type: newRoundType,
-        interview_date: newRoundDate ? new Date(newRoundDate).toISOString() : null,
+        interview_type: newRound?.interview_type,
+        interview_date: newRound?.interview_date ? new Date(newRound.interview_date).toISOString() : null,
         status: 'scheduled'
       });
-      setRounds([...rounds, newRound]);
+      setRounds([...rounds, newRoundData]);
       setIsAddModalOpen(false);
       toast.success("Round added");
     } catch (e) {
@@ -323,8 +331,14 @@ export default function ApplicationRoadmapPage() {
                     <label className="text-xs text-muted block mb-1">Type</label>
                     <select 
                         className="w-full bg-input border border-border rounded p-2 text-foreground"
-                        value={newRoundType}
-                        onChange={e => setNewRoundType(e.target.value as InterviewType)}
+                        value={newRound?.interview_type || 'screening'}
+                        onChange={e => setNewRound(prev => ({ 
+                            interview_type: e.target.value as InterviewType,
+                            interview_date: prev?.interview_date ?? null,
+                            duration_minutes: prev?.duration_minutes ?? null,
+                            notes: prev?.notes ?? ''
+                        }))}
+                        required
                     >
                         <option value="screening">Recruiter Screening</option>
                         <option value="technical">Technical (Coding)</option>
@@ -334,14 +348,57 @@ export default function ApplicationRoadmapPage() {
                     </select>
                 </div>
                 <div>
+                    <label className="text-xs text-muted block mb-1">Duration</label>
+                    <select 
+                        className="w-full bg-input border border-border rounded p-2 text-foreground"
+                        value={newRound?.duration_minutes || '15'}
+                        onChange={e => setNewRound(prev => ({ 
+                            interview_type: prev?.interview_type ?? 'screening',
+                            interview_date: prev?.interview_date ?? null,
+                            duration_minutes: e.target.value,
+                            notes: prev?.notes ?? ''
+                        }))}
+                        required
+                    >
+                        <option value="screening">15 minutes</option>
+                        <option value="technical">30 minutes</option>
+                        <option value="system_design">45 minutes</option>
+                        <option value="behavioral">60 minutes</option>
+                        <option value="hiring_manager">90 minutes</option>
+                        <option value="hiring_manager">120 minutes</option>
+                    </select>
+                </div>
+                <div>
                     <label className="text-xs text-muted block mb-1">Date</label>
                     <input 
                         type="date" 
                         className="w-full bg-input border border-border rounded p-2 text-foreground"
-                        value={newRoundDate}
-                        onChange={e => setNewRoundDate(e.target.value)}
+                        value={newRound?.interview_date || ''}
+                        onChange={e => setNewRound(prev => ({ 
+                            interview_type: prev?.interview_type ?? 'screening',
+                            interview_date: e.target.value,
+                            duration_minutes: prev?.duration_minutes ?? null,
+                            notes: prev?.notes ?? ''
+                        }))}
+                        required
                     />
                 </div>
+                <div> 
+                    <label className="text-xs text-muted block mb-1">Notes</label>
+                    <textarea
+                        className="w-full bg-input border border-border rounded p-2 text-foreground"
+                        value={newRound?.notes || ''}
+                        onChange={e => setNewRound(prev => ({
+                            interview_type: prev?.interview_type ?? 'screening',
+                            interview_date: prev?.interview_date ?? null,
+                            duration_minutes: prev?.duration_minutes ?? null,
+                            notes: e.target.value
+                        }))}
+                        placeholder='Any notes from the recruiter regarding the interview...'
+                        rows={3}
+                    />
+                </div>
+
                 <button onClick={handleAddRound} className="w-full bg-primary hover:bg-blue-600 text-white py-2 rounded-lg font-medium mt-2">
                     Save Round
                 </button>

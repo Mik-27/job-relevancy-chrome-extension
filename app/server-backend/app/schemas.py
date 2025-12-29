@@ -272,7 +272,9 @@ class InterviewRoundBase(BaseModel):
     interview_type: InterviewType
     interview_date: Optional[datetime] = None
     status: RoundStatus = 'scheduled'
+    duration_minutes: Optional[str] = None # FIXME: Should be int and non nullable
     user_feedback: Optional[str] = None
+    notes: Optional[str] = None
 
 class InterviewRoundCreate(InterviewRoundBase):
     application_id: str

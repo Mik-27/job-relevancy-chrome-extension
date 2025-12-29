@@ -145,6 +145,8 @@ class InterviewRound(Base):
     status = Column(String, default="scheduled")  # e.g., scheduled, completed, cancelled
     user_feedback = Column(Text, nullable=True)
     prep_material = Column(JSONB, nullable=True)  # The JSON from AI
+    notes = Column(Text, nullable=True)
+    duration_minutes = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     updated_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
     
