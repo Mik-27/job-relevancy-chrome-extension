@@ -28,21 +28,16 @@ export interface newRoundData {
 export default function ApplicationRoadmapPage() {
   const params = useParams();
   const router = useRouter();
-  // Safe cast for Next.js params
   const appId = Array.isArray(params.id) ? params.id[0] : params.id;
   const toast = useToast();
 
   const [app, setApp] = useState<Application | null>(null);
   const [rounds, setRounds] = useState<InterviewRound[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // States for JD Editing
   const [jdText, setJdText] = useState('');
 
   // States for Add Round
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-//   const [newRoundType, setNewRoundType] = useState<InterviewType>('screening');
-//   const [newRoundDate, setNewRoundDate] = useState('');
   const [newRound, setNewRound] = useState<newRoundData>({interview_type:'screening', interview_date: null, duration_minutes: null, notes: ''});
 
   // States for Generating/Viewing Prep
@@ -62,7 +57,14 @@ export default function ApplicationRoadmapPage() {
         ]);
         setApp(appData);
         setJdText(appData.job_description || '');
-        setRounds(roundsData);
+
+        // Sort rounds by date (null dates go to the end)
+        const sortedRounds = roundsData.sort((a, b) => {
+          if (!a.interview_date) return 1;
+          if (!b.interview_date) return -1;
+          return new Date(a.interview_date).getTime() - new Date(b.interview_date).getTime();
+        });
+        setRounds(sortedRounds);
       } catch (error) {
         toast.error("Failed to load application data");
       } finally {
@@ -75,18 +77,59 @@ export default function ApplicationRoadmapPage() {
   const handleAddRound = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!appId) return;
+    setLoading(true);
     try {
-      const nextRoundNumber = rounds.length + 1;
-      // Partial<InterviewRound> for creation
+      const sortedRounds = [...rounds].sort((a, b) => {
+        if (!a.interview_date) return 1;
+        if (!b.interview_date) return -1;
+        return new Date(a.interview_date).getTime() - new Date(b.interview_date).getTime();
+      });
+
+      let insertPosition = sortedRounds.length;
+
+      if (newRound?.interview_date) {
+        const newDate = new Date(newRound.interview_date).getTime();
+        insertPosition = sortedRounds.findIndex(r => {
+          if (!r.interview_date) return true;
+          return new Date(r.interview_date).getTime() > newDate;
+        });
+        
+        if (insertPosition === -1) {
+          insertPosition = sortedRounds.length;
+        }
+      }
+
+      const newRoundNumber = insertPosition + 1;
+
       const newRoundData = await createInterviewRound({
         application_id: appId,
-        round_number: nextRoundNumber,
+        round_number: newRoundNumber,
         interview_type: newRound?.interview_type,
         interview_date: newRound?.interview_date ? new Date(newRound.interview_date).toISOString() : null,
         status: 'scheduled'
       });
-      setRounds([...rounds, newRoundData]);
+
+      // Update round numbers for all rounds that come after the insertion point
+      const roundsToUpdate = sortedRounds.slice(insertPosition);
+      const updatePromises = roundsToUpdate.map(round => 
+        updateInterviewRound(round.id, { 
+          round_number: round.round_number + 1 
+        })
+      );
+      await Promise.all(updatePromises);
+
+      const updatedRounds = sortedRounds.map((round, idx) => {
+        if (idx >= insertPosition) {
+          return { ...round, round_number: round.round_number + 1 };
+        }
+        return round;
+      });
+    
+      updatedRounds.splice(insertPosition, 0, newRoundData);
+    
+      setRounds(updatedRounds);
       setIsAddModalOpen(false);
+      setLoading(false);
       toast.success("Round added");
     } catch (e) {
       toast.error("Failed to add round");
@@ -95,9 +138,33 @@ export default function ApplicationRoadmapPage() {
 
   const handleDeleteRound = async (roundId: string) => {
     if (!confirm("Delete this interview round?")) return;
+    setLoading(true);
     try {
       await deleteInterviewRound(roundId);
-      setRounds(rounds.filter(r => r.id !== roundId));
+
+      const deletedRound = rounds.find(r => r.id === roundId);
+      if (!deletedRound) return;
+        
+      const deletedRoundNumber = deletedRound.round_number;
+      const remainingRounds = rounds.filter(r => r.id !== roundId);
+        
+      const roundsToUpdate = remainingRounds.filter(r => r.round_number > deletedRoundNumber);
+        
+      const updatePromises = roundsToUpdate.map(round => 
+        updateInterviewRound(round.id, { 
+          round_number: round.round_number - 1 
+        })
+      );  
+      await Promise.all(updatePromises);
+
+      const updatedRounds = remainingRounds.map(round => {
+        if (round.round_number > deletedRoundNumber) {
+          return { ...round, round_number: round.round_number - 1 };
+        }
+        return round;
+      });
+      setRounds(updatedRounds);
+      setLoading(false);
       toast.success("Round deleted");
     } catch (e) {
       toast.error("Failed to delete");
@@ -106,13 +173,12 @@ export default function ApplicationRoadmapPage() {
 
   const handleGeneratePrep = async (roundId: string) => {
     if (!jdText) {
-      toast.error("Please add a Job Description on the left first.");
+      toast.error("Please add a Job Description first.");
       return;
     }
     setGeneratingId(roundId);
     try {
       const updatedRound = await generateRoundPrep(roundId);
-      // Update the local state with the new data containing the prep material
       setRounds(rounds.map(r => r.id === roundId ? updatedRound : r));
       toast.success("Interview Prep Generated!");
       setViewPrepRound(updatedRound);
@@ -206,7 +272,7 @@ export default function ApplicationRoadmapPage() {
             />
         </div> */}
 
-        {/* RIGHT COL: Roadmap */}
+        {/* Rounds */}
         <div className="flex flex-col gap-4 overflow-y-auto pr-2">
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-foreground">Interview Roadmap</h2>
@@ -293,7 +359,7 @@ export default function ApplicationRoadmapPage() {
                                         rows={2}
                                         value={round.user_feedback || ''}
                                         onChange={(e) => handleFeedbackChange(round.id, e.target.value)}
-                                        // onBlur={(e) => saveFeedback(round.id, e.target.value)}
+                                        // onBlur={(e) => saveFeedback(round.id, e.target.value)} //FIXME: Save on blur? Or change onChange to trigger when user stops typing
                                         />
                                 </div>
                                 {
@@ -488,7 +554,6 @@ export default function ApplicationRoadmapPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
