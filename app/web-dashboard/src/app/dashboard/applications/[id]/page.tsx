@@ -202,9 +202,9 @@ export default function ApplicationRoadmapPage() {
      }
   }
 
-  const handleStartLive = async () => {
+  const handleStartLive = async (roundId: string) => {
     try {
-        const session = await createInterviewSession(appId);
+        const session = await createInterviewSession(appId, roundId);
         router.push(`/dashboard/interview/${session.id}`);
     } catch (e) {
         toast.error("Failed to start session");
@@ -276,12 +276,12 @@ export default function ApplicationRoadmapPage() {
         <div className="flex flex-col gap-4 overflow-y-auto pr-2">
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-foreground">Interview Roadmap</h2>
-                <button 
+                {/* <button 
                     onClick={handleStartLive}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md"
                 >
                     <FaHeadset /> Practice Live
-                </button>
+                </button> */}
                 <button 
                     onClick={() => setIsAddModalOpen(true)}
                     className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition"
@@ -310,6 +310,12 @@ export default function ApplicationRoadmapPage() {
                                 {round.interview_type.replace('_', ' ')}
                             </span>
                         </div>
+                        <button 
+                            onClick={() => handleStartLive(round.id)}
+                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-3 py-1 rounded-lg flex items-center gap-2 shadow-md"
+                        >
+                            <FaHeadset /> Practice Live
+                        </button>
                         <div className="flex items-center gap-4 text-sm text-muted">
                             <div className="flex items-center gap-2">
                                 <FaCalendarAlt />

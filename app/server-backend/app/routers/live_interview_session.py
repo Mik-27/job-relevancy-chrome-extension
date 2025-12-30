@@ -4,6 +4,9 @@ from typing import List
 from .. import database, schemas
 from ..security import get_current_user_id
 from ..services.llm import report_service
+from ..logging_config import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/live-interview-sessions", tags=["Live Interview","Live Interview Sessions"])
 
@@ -40,22 +43,37 @@ def create_session(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(database.get_db)
 ):
-    # Optional: Fetch company name to make title better
-    title = data.title
-    if data.application_id:
-        app = db.query(database.Application).filter(database.Application.id == data.application_id).first()
-        if app:
-            title = f"Mock Interview: {app.company_name}"
+    try:
+        title = data.title
+        if data.application_id:
+            app = db.query(database.Application).filter(database.Application.id == data.application_id).first()
+            if data.round_id and app:
+                round_record = db.query(database.InterviewRound).filter(
+                    database.InterviewRound.id == data.round_id,
+                    database.InterviewRound.application_id == data.application_id
+                ).first()
+                if round_record:
+                    title = f"Mock {round_record.interview_type.replace('_', ' ')} Interview: {app.company_name} - Round {round_record.round_number}"
+            if app:
+                title = f"Mock Interview: {app.company_name}"
 
-    new_session = database.InterviewSession(
-        user_id=user_id,
-        application_id=data.application_id,
-        title=title
-    )
-    db.add(new_session)
-    db.commit()
-    db.refresh(new_session)
-    return new_session
+        new_session = database.InterviewSession(
+            user_id=user_id,
+            application_id=data.application_id,
+            round_id=data.round_id,
+            title=title,
+            status="created"
+        )
+        db.add(new_session)
+        db.commit()
+        db.refresh(new_session)
+        
+        logger.info(f"Created new interview session {new_session.id} for user {user_id}: {title}")
+        return new_session
+    
+    except Exception as e:
+        logger.error(f"Error creating interview session: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create interview session")
 
 # --- Get Single Session with Report ---
 @router.get("/{session_id}", response_model=schemas.InterviewSessionResponse)

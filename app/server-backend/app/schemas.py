@@ -305,7 +305,9 @@ class InterviewMessageBase(BaseModel):
 
 class InterviewSessionCreate(BaseModel):
     application_id: Optional[str] = None
+    round_id: Optional[str] = None
     title: str = "Mock Interview"
+    status: str = "created"
         
 # --- NEW: Shadow Report Schemas ---
 class ShadowReportSchema(BaseModel):

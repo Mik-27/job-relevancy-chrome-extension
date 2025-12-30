@@ -276,10 +276,10 @@ export const getLiveInterviewWebSocketUrl = async (sessionId: string): Promise<s
 };
 
 // Create Session
-export const createInterviewSession = async (appId?: string): Promise<{ id: string }> => {
+export const createInterviewSession = async (appId?: string, roundId?: string): Promise<{ id: string }> => {
   const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/`, {
     method: 'POST',
-    body: JSON.stringify({ application_id: appId }),
+    body: JSON.stringify({ application_id: appId, round_id: roundId }),
   });
   if (!response.ok) throw new Error("Failed to create session");
   return response.json();

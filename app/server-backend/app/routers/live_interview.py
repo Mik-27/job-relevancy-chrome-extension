@@ -16,7 +16,6 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["Live Interview"])
 
 # --- CONFIGURATION ---
-# MODEL_ID = "gemini-2.0-flash-exp"
 MODEL_ID = "gemini-live-2.5-flash-native-audio"
 
 client = genai.Client(
@@ -55,12 +54,12 @@ async def websocket_endpoint(
         await websocket.close(code=1008)
         return
 
-    # Use the application_id from the session to get the context
     app_id = interview_session.application_id
+    round_id = interview_session.round_id
     
     # TODO: Handle case where app_id is None - Generic interview
     # 3. Get Context
-    system_instruction = live_session_service.get_interview_context(db, app_id, user_id)
+    system_instruction = live_session_service.get_interview_context(db, app_id, round_id, user_id)
     
     config = types.LiveConnectConfig(
             response_modalities=[types.Modality.AUDIO],
@@ -85,12 +84,10 @@ async def websocket_endpoint(
                 try:
                     while True:
                         message = await websocket.receive_json()
-                        # print(message)
                         if "realtime_input" in message and "media_chunks" in message["realtime_input"]:
                             for chunk in message["realtime_input"]["media_chunks"]:
                                 b64_data = chunk["data"]
                                 mime_type = chunk["mime_type"]
-                                # print(f"Received chunk of type {mime_type} and size {len(b64_data)}")
                                 audio_bytes = base64.b64decode(b64_data)
                                 
                                 await session.send(
@@ -185,7 +182,6 @@ async def websocket_endpoint(
         logger.error(f"Session Runtime Error: {e}")
         traceback.print_exc()
     finally:
-        # Gracefully close the websocket if it's still open
         try:
             await websocket.close()
         except RuntimeError:

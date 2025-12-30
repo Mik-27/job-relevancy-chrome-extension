@@ -156,10 +156,11 @@ class InterviewSession(Base):
     __tablename__ = "live_interview_sessions"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String, nullable=False, index=True)
-    application_id = Column(String, nullable=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    application_id = Column(String, ForeignKey("applications_history.id"), nullable=True)
+    round_id = Column(String, ForeignKey("interview_rounds.id"), nullable=True)
     title = Column(String)
-    status = Column(String, default="active")
+    status = Column(String, default="created")
     report = Column(JSONB, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
 
