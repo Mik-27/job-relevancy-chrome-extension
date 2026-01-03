@@ -44,7 +44,7 @@ def create_session(
     db: Session = Depends(database.get_db)
 ):
     try:
-        title = data.title
+        title = None
         round_record = None
         if data.application_id:
             app = db.query(database.Application).filter(database.Application.id == data.application_id).first()
@@ -55,13 +55,15 @@ def create_session(
                 ).first()
                 if round_record:
                     title = f"Mock {round_record.interview_type.replace('_', ' ')} Interview: {app.company_name} - Round {round_record.round_number}"
-            if app:
+            elif app:
                 title = f"Mock Interview: {app.company_name}"
+        else:
+            title = "Mock Interview - Generic"
 
         new_session = database.InterviewSession(
             user_id=user_id,
-            application_id=data.application_id,
-            round_id=data.round_id,
+            application_id=data.application_id or None,
+            round_id=data.round_id or None,
             title=title,
             status="created"
         )
@@ -70,6 +72,7 @@ def create_session(
         db.refresh(new_session)
         
         logger.info(f"Created new interview session {new_session.id} for user {user_id}: {title}")
+        
         if round_record:
             return {**new_session.__dict__, "duration_minutes": round_record.duration_minutes}
         return new_session

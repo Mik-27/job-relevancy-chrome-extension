@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getInterviewSessions } from '@/lib/api';
-import { FaMicrophone, FaCalendarAlt, FaPlay } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
+import { createInterviewSession, getInterviewSessions } from '@/lib/api';
+import { FaMicrophone, FaCalendarAlt, FaPlay, FaPlus } from 'react-icons/fa';
 import Link from 'next/link';
+import { useToast } from '@/context/ToastContext';
 
 interface InterviewSession {
   id: string;
@@ -13,6 +15,8 @@ interface InterviewSession {
 }
 
 export default function InterviewSessionsPage() {
+  const toast = useToast();
+  const router = useRouter();
   const [sessions, setSessions] = useState<InterviewSession[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,10 +26,26 @@ export default function InterviewSessionsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleNewSession = async () => {
+    setLoading(true);
+    try {
+      const session = await createInterviewSession();
+      router.push(`/dashboard/interview/${session.id}`);
+    } catch (e) {
+      toast.error("Failed to start session");
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-foreground">Interview Sessions</h1>
+        <button
+          onClick={handleNewSession} 
+          className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition">
+            <FaPlus /> 
+            New Session
+        </button>
       </div>
 
       {loading ? (

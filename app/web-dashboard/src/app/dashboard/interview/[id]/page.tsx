@@ -114,7 +114,7 @@ export default function LiveInterviewPage() {
                 <p className="text-lg text-muted mb-7 leading-relaxed max-w-lg mx-auto">
                 I&apos;m <span className="text-white font-semibold">Alex</span>, and I&apos;ll be conducting your 
                 <span className="text-primary font-bold"> {sessionData?.title} </span> 
-                interview today. We&apos;ll focus on your experience and skills relevant to the job description.
+                today. We&apos;ll focus on your experience and skills relevant to the job description.
                 </p>
 
                 {/* --- Info Box --- */}
