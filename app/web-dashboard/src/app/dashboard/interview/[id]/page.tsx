@@ -6,7 +6,7 @@ import { getLiveInterviewWebSocketUrl, getUserProfile, endInterviewSession, getI
 import { useLiveInterview } from '@/hooks/useLiveInterview';
 import { InterviewSession, ShadowReport as ShadowReportType } from '@/types';
 import { ShadowReport } from '@/components/interview/ShadowReport';
-import { FaMicrophone, FaPhoneSlash, FaRobot, FaUser } from 'react-icons/fa';
+import { FaArrowRight, FaHeadphones, FaInfoCircle, FaMicrophone, FaPhoneSlash, FaRobot, FaUser } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import './page.css';
 
@@ -20,6 +20,7 @@ export default function LiveInterviewPage() {
   const [report, setReport] = useState<ShadowReportType | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasStarted, setHasStarted] = useState(false);
   
   // Auto-scroll ref
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -96,6 +97,71 @@ export default function LiveInterviewPage() {
               <ShadowReport report={report} />
           </div>
       )
+  }
+
+  // Home Screen before starting interview  
+  if (!hasStarted) {
+    return (
+      <div className="h-[calc(100vh-4.5rem)]">
+        <div className="flex flex-col items-center justify-center h-full p-4 animate-in fade-in zoom-in-95 duration-300">
+            <div className="bg-card border border-border rounded-2xl shadow-2xl max-w-2xl w-full px-8 py-4 md:p-12 text-center">
+                
+                {/* --- Header --- */}
+                <h1 className="text-4xl font-bold text-white mb-4">
+                Ready for your interview?
+                </h1>
+                
+                <p className="text-lg text-muted mb-7 leading-relaxed max-w-lg mx-auto">
+                I&apos;m <span className="text-white font-semibold">Alex</span>, and I&apos;ll be conducting your 
+                <span className="text-primary font-bold"> {sessionData?.title} </span> 
+                interview today. We&apos;ll focus on your experience and skills relevant to the job description.
+                </p>
+
+                {/* --- Info Box --- */}
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6 text-left mb-10">
+                <div className="flex items-center gap-3 mb-4 text-blue-400">
+                    <FaInfoCircle className="text-xl" />
+                    <h3 className="font-bold text-lg">Quick Tips for Voice Interviewing:</h3>
+                </div>
+                
+                <ul className="space-y-3 text-gray-300 text-sm md:text-base">
+                    <li className="flex items-start gap-3">
+                        <span className="mt-1 text-blue-500/50">•</span>
+                        Use a quiet environment with minimal background noise.
+                    </li>
+                    <li className="flex items-start gap-3">
+                        <span className="mt-1 text-blue-500/50">•</span>
+                        Speak clearly and naturally, just like a real video call.
+                    </li>
+                    <li className="flex items-start gap-3">
+                        <span className="mt-1 text-blue-500/50">•</span>
+                        Wait for Alex to finish speaking completely before responding.
+                    </li>
+                    <li className="flex items-start gap-3">
+                        <span className="mt-1 text-blue-500/50">•</span>
+                        The session will take about {sessionData?.duration_minutes ?? sessionData?.duration_minutes ?? '10-15'} minutes.
+                    </li>
+                </ul>
+                </div>
+
+                {/* --- Action Button --- */}
+                <button 
+                    onClick={() => setHasStarted(true)}
+                    className="w-full md:w-auto bg-primary hover:bg-blue-600 text-white text-lg font-bold py-4 px-10 rounded-full shadow-lg hover:shadow-blue-500/20 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-3 mx-auto"
+                >
+                    Start Interview Session <FaArrowRight />
+                </button>
+
+            </div>
+
+            {/* Footer Text */}
+            <p className="mt-6 text-xs text-muted flex items-center gap-2">
+                <FaHeadphones /> Headphones recommended for best audio quality
+            </p>
+
+            </div>
+      </div>
+    );
   }
 
   return (

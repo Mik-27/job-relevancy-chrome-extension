@@ -326,6 +326,7 @@ class InterviewSessionResponse(BaseModel):
     status: str
     created_at: datetime
     report: Optional[ShadowReportSchema] = None
+    duration_minutes: Optional[int] = None
     
     class Config:
         from_attributes = True

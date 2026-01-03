@@ -104,6 +104,7 @@ export interface InterviewRound {
   interview_type: InterviewType;
   interview_date: string | null;
   status: RoundStatus;
+  duration_minutes: number | null;
   user_feedback: string | null;
   prep_material: InterviewPrepMaterial | null; 
   created_at: string;
@@ -122,8 +123,10 @@ export interface ShadowReport {
 
 export interface InterviewSession {
   id: string;
+  application_id: string | null;
   title: string;
   status: 'active' | 'completed';
   created_at: string;
   report?: ShadowReport;
+  duration_minutes?: number;
 }

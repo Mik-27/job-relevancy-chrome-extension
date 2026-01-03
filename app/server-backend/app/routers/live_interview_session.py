@@ -45,6 +45,7 @@ def create_session(
 ):
     try:
         title = data.title
+        round_record = None
         if data.application_id:
             app = db.query(database.Application).filter(database.Application.id == data.application_id).first()
             if data.round_id and app:
@@ -69,6 +70,8 @@ def create_session(
         db.refresh(new_session)
         
         logger.info(f"Created new interview session {new_session.id} for user {user_id}: {title}")
+        if round_record:
+            return {**new_session.__dict__, "duration_minutes": round_record.duration_minutes}
         return new_session
     
     except Exception as e:
