@@ -231,7 +231,7 @@ function injectCoverLetterModal(text: string) {
     ${spinnerStyles}
 
     /* Fix font inheritance inside Shadow DOM */
-    div { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    div, p, h1, h2, h3, button, textarea { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   `;
   shadow.appendChild(styleTag);
 

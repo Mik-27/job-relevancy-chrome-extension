@@ -83,11 +83,11 @@ export function mountOverlay() {
       width: 100%;
       height: 100%;
       min-height: 600px;
-      max-height: 95vh;
+      max-height: 100vh;
       background-color: #1e1e1e; /* Dark background color */
       color: #ffffff;
       border-radius: 12px;
-      box-shadow: 0 10px 10px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+      box-shadow: 0 5px 5px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
       overflow: hidden; /* Clips corners */
       display: flex;
       flex-direction: column;

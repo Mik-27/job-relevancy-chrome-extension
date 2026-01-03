@@ -5,7 +5,12 @@ import { resolve } from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  define: {
+    'process.env.NODE_ENV': '"production"',
+  },
   build: {
+    minify: false,
+    emptyOutDir: true,
     rollupOptions: {
       input: {
         // Define the entry points for your extension
