@@ -198,10 +198,10 @@ export default function DashboardPage() {
                href="/dashboard/profile"
              />
              <ActionRow 
-               icon={<FaSearch />} 
-               title="Search History" 
-               desc="Review past cold emails."
-               href="/dashboard/outreach"
+               icon={<FaBriefcase />} 
+               title="View Job Tracker" 
+               desc="Review past applications."
+               href="/dashboard/tracker"
              />
           </div>
 
