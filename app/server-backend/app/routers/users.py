@@ -15,7 +15,7 @@ def get_current_user_profile(
     if not user_profile:
         raise HTTPException(status_code=404, detail="User profile not found.")
     
-    # --- NEW: Logic to Sign the URL ---
+    # --- Logic to Sign the URL ---
     # Convert the ORM object to a Pydantic model so we can modify the cv_url
     response = schemas.UserSchema.model_validate(user_profile)
     
@@ -24,6 +24,11 @@ def get_current_user_profile(
         signed_url = gcs_service.generate_signed_url(response.cv_url)
         if signed_url:
             response.cv_url = signed_url
+            
+    if response.personal_info_url:
+        signed_url = gcs_service.generate_signed_url(response.personal_info_url)
+        if signed_url:
+            response.personal_info_url = signed_url
     
     return response
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { UserProfile } from '@/types';
 import { getUserProfile, updateUserProfile, uploadUserCV, uploadUserPersonalInfo } from '@/lib/api';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
+import { useToast } from '@/context/ToastContext';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -12,7 +13,10 @@ export default function ProfilePage() {
   const [uploadingCV, setUploadingCV] = useState(false);
   const [uploadingPersonalInfo, setUploadingPersonalInfo] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showCvModal, setShowCvModal] = useState(false);
+  const [showPersonalInfoModal, setShowPersonalInfoModal] = useState(false);
+
+  const toast = useToast();
 
   useEffect(() => {
     getUserProfile()
@@ -36,9 +40,11 @@ export default function ProfilePage() {
         const updated = await uploadUserCV(e.target.files[0]);
         setProfile(updated);
         setMessage({ type: 'success', text: 'Master CV uploaded successfully!' });
+        toast.success('Master CV uploaded successfully!');
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Failed to upload CV.";
         setMessage({ type: 'error', text: errorMessage });
+        toast.error(errorMessage);
       } finally {
         setUploadingCV(false);
         e.target.value = ''; 
@@ -55,9 +61,11 @@ export default function ProfilePage() {
         const updated = await uploadUserPersonalInfo(e.target.files[0]);
         setProfile(updated);
         setMessage({ type: 'success', text: 'Personal Info uploaded successfully!' });
+        toast.success('Personal Info uploaded successfully!');
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Failed to upload Personal Info.";
         setMessage({ type: 'error', text: errorMessage });
+        toast.error(errorMessage);
       } finally {
         setUploadingPersonalInfo(false);
         e.target.value = ''; 
@@ -75,23 +83,12 @@ export default function ProfilePage() {
       const updated = await updateUserProfile(profile);
       setProfile(updated);
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      toast.success('Profile updated successfully!');
     } catch (err) {
       setMessage({ type: 'error', text: 'Failed to save changes.' });
-      console.error(err);
+      toast.error('Failed to save changes.');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const renderCvContent = (url: string) => {
-    const cleanUrl = url.split('?')[0].toLowerCase();
-    const isPdf = cleanUrl.endsWith('.pdf');
-
-    if (isPdf) {
-      return <iframe src={url} className="w-full h-full rounded-b-lg border-0" title="CV Preview" />;
-    } else {
-      const googleViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
-      return <iframe src={googleViewerUrl} className="w-full h-full rounded-b-lg border-0" title="CV Preview" />;
     }
   };
 
@@ -194,7 +191,7 @@ export default function ProfilePage() {
               {profile.cv_url ? (
                 <button 
                   type="button"
-                  onClick={() => setShowPreviewModal(true)}
+                  onClick={() => setShowCvModal(true)}
                   className="flex items-center justify-center w-full md:w-auto py-2.5 px-4 border border-border hover:border-gray-500 rounded-lg text-muted hover:text-white transition bg-secondary/50"
                 >
                   View Current CV
@@ -236,7 +233,7 @@ export default function ProfilePage() {
               {profile.personal_info_url ? (
                 <button 
                   type="button"
-                  onClick={() => setShowPreviewModal(true)}
+                  onClick={() => setShowPersonalInfoModal(true)}
                   className="flex items-center justify-center w-full md:w-auto py-2.5 px-4 border border-border hover:border-gray-500 rounded-lg text-muted hover:text-white transition bg-secondary/50"
                 >
                   View Current Personal Info
@@ -266,14 +263,13 @@ export default function ProfilePage() {
               {message.text}
             </div>
         )}
-
       </div>
 
       {/* --- CV PREVIEW MODAL --- */}
-      {showPreviewModal && profile.cv_url && (  
+      {showCvModal && profile.cv_url && (  
         <FilePreviewModal 
-          isOpen={showPreviewModal}
-          onClose={() => setShowPreviewModal(false)}
+          isOpen={showCvModal}
+          onClose={() => setShowCvModal(false)}
           fileUrl={profile?.cv_url || null}
           title="Master CV Preview"
           fileName={`Master_CV_${profile?.first_name || 'User'}.pdf`}
@@ -281,10 +277,10 @@ export default function ProfilePage() {
       )}
 
       {/* --- Personal Info PREVIEW MODAL --- */}
-      {showPreviewModal && profile.personal_info_url && (  
+      {showPersonalInfoModal && profile.personal_info_url && (  
         <FilePreviewModal 
-          isOpen={showPreviewModal}
-          onClose={() => setShowPreviewModal(false)}
+          isOpen={showPersonalInfoModal}
+          onClose={() => setShowPersonalInfoModal(false)}
           fileUrl={profile?.personal_info_url || null}
           title="Personal Info Preview"
           fileName={`Personal_Info_${profile?.first_name || 'User'}.pdf`}

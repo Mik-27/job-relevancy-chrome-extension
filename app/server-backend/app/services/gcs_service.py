@@ -31,7 +31,7 @@ def download_file_as_bytes(source_path: str) -> bytes:
     blob = bucket.blob(source_path)
     return blob.download_as_bytes()
 
-# --- NEW: Function to generate a temporary access link ---
+# --- Function to generate a temporary access link ---
 def generate_signed_url(source_path: str) -> str:
     """Generates a temporary signed URL for a private GCS blob."""
     try:
@@ -43,7 +43,7 @@ def generate_signed_url(source_path: str) -> str:
         
         url = blob.generate_signed_url(
             version="v4",
-            expiration=datetime.timedelta(minutes=5),
+            expiration=datetime.timedelta(minutes=15),
             method="GET",
         )
         return url
