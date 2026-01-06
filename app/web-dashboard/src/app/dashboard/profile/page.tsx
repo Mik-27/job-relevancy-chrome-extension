@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { UserProfile } from '@/types';
-import { getUserProfile, updateUserProfile, uploadUserCV } from '@/lib/api';
+import { getUserProfile, updateUserProfile, uploadUserCV, uploadUserPersonalInfo } from '@/lib/api';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
 
 export default function ProfilePage() {
@@ -10,8 +10,9 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingCV, setUploadingCV] = useState(false);
+  const [uploadingPersonalInfo, setUploadingPersonalInfo] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [showCvModal, setShowCvModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   useEffect(() => {
     getUserProfile()
@@ -40,6 +41,25 @@ export default function ProfilePage() {
         setMessage({ type: 'error', text: errorMessage });
       } finally {
         setUploadingCV(false);
+        e.target.value = ''; 
+      }
+    }
+  };
+
+  const handlePersonalInfoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setUploadingPersonalInfo(true);
+      setMessage({ type: '', text: '' });
+      
+      try {
+        const updated = await uploadUserPersonalInfo(e.target.files[0]);
+        setProfile(updated);
+        setMessage({ type: 'success', text: 'Personal Info uploaded successfully!' });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to upload Personal Info.";
+        setMessage({ type: 'error', text: errorMessage });
+      } finally {
+        setUploadingPersonalInfo(false);
         e.target.value = ''; 
       }
     }
@@ -174,7 +194,7 @@ export default function ProfilePage() {
               {profile.cv_url ? (
                 <button 
                   type="button"
-                  onClick={() => setShowCvModal(true)}
+                  onClick={() => setShowPreviewModal(true)}
                   className="flex items-center justify-center w-full md:w-auto py-2.5 px-4 border border-border hover:border-gray-500 rounded-lg text-muted hover:text-white transition bg-secondary/50"
                 >
                   View Current CV
@@ -183,6 +203,56 @@ export default function ProfilePage() {
                 <span className="text-muted text-sm italic">No CV uploaded yet</span>
               )}
             </div>
+          </div>
+        </div>
+        
+        {/* --- Personal Info --- */}
+        <div className="pt-8 border-t border-border">
+          <h2 className="text-xl font-semibold text-foreground mb-4">Personal Info</h2>
+          
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <div className="flex-1 w-full">
+              <label className={labelClass}>
+                Upload PDF or Word (Max 5MB)
+              </label>
+              {/* File Input Styling */}
+              <input 
+                type="file" 
+                accept=".pdf,.doc,.docx"
+                onChange={handlePersonalInfoUpload}
+                disabled={uploadingPersonalInfo}
+                className="block w-full text-sm text-muted
+                  file:mr-4 file:py-2.5 file:px-4
+                  file:rounded-lg file:border file:border-border
+                  file:text-sm file:font-semibold
+                  file:bg-input file:text-foreground
+                  hover:file:bg-secondary
+                  cursor-pointer file:cursor-pointer"
+              />
+              {uploadingCV && <p className="text-sm text-primary mt-2">Uploading...</p>}
+            </div>
+
+            <div className="w-full md:w-auto">
+              {profile.personal_info_url ? (
+                <button 
+                  type="button"
+                  onClick={() => setShowPreviewModal(true)}
+                  className="flex items-center justify-center w-full md:w-auto py-2.5 px-4 border border-border hover:border-gray-500 rounded-lg text-muted hover:text-white transition bg-secondary/50"
+                >
+                  View Current Personal Info
+                </button>
+              ) : (
+                <span className="text-muted text-sm italic">No Personal Information document uploaded</span>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row items-start items-top gap-3 mt-3">
+            <span className='opacity-65'>Note:</span>
+            <p className='text-foreground opacity-50'>
+                Upload a document with a set of Q/A regarding your experiences throughout your career or a complete textual overview of your career so far - What did you learn throughout your career? What motivates you? Strengths and weaknesses?
+                <br />
+                This will help us tailor your job search experience better.
+            </p>
           </div>
         </div>
 
@@ -200,13 +270,24 @@ export default function ProfilePage() {
       </div>
 
       {/* --- CV PREVIEW MODAL --- */}
-      {showCvModal && profile.cv_url && (  
+      {showPreviewModal && profile.cv_url && (  
         <FilePreviewModal 
-          isOpen={showCvModal}
-          onClose={() => setShowCvModal(false)}
+          isOpen={showPreviewModal}
+          onClose={() => setShowPreviewModal(false)}
           fileUrl={profile?.cv_url || null}
           title="Master CV Preview"
           fileName={`Master_CV_${profile?.first_name || 'User'}.pdf`}
+        />
+      )}
+
+      {/* --- Personal Info PREVIEW MODAL --- */}
+      {showPreviewModal && profile.personal_info_url && (  
+        <FilePreviewModal 
+          isOpen={showPreviewModal}
+          onClose={() => setShowPreviewModal(false)}
+          fileUrl={profile?.personal_info_url || null}
+          title="Personal Info Preview"
+          fileName={`Personal_Info_${profile?.first_name || 'User'}.pdf`}
         />
       )}
     </div>

@@ -3,7 +3,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Literal, Optional
 
-# NEW: Schema for updating profile (all fields optional)
+# Schema for updating profile
 class UserUpdateSchema(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -12,7 +12,7 @@ class UserUpdateSchema(BaseModel):
     phone_number: Optional[str] = None
     location: Optional[str] = None
 
-# UPDATE: Add cv_url to the existing response schema
+# UPDATE: Add cv_url and personal_info_url to the existing response schema
 class UserSchema(BaseModel):
     first_name: str
     last_name: str
@@ -21,12 +21,13 @@ class UserSchema(BaseModel):
     personal_website: Optional[str] = None
     phone_number: str
     location: str
-    cv_url: Optional[str] = None # NEW
+    cv_url: Optional[str] = None
+    personal_info_url: Optional[str] = None
 
     class Config:
         from_attributes = True
         
-# --- NEW: Lightweight User Status ---
+# --- Lightweight User Status ---
 class UserStatusSchema(BaseModel):
     first_name: str
     email: str
@@ -37,7 +38,7 @@ class AnalyzeRequest(BaseModel):
     resumeText: str
     jobDescriptionText: str
 
-# --- NEW: Structure for a single suggestion ---
+# --- Structure for a single suggestion ---
 class SuggestionItem(BaseModel):
     type: str = Field(description="Type of suggestion: 'rewrite', 'addition', 'removal', or 'formatting'.")
     location: str = Field(description="Where in the resume the change should be made (e.g., under which experience or project, or in which section).")

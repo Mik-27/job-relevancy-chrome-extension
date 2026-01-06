@@ -39,7 +39,7 @@ export const updateUserProfile = async (data: UserProfile) => {
   return response.json();
 };
 
-// --- NEW: Upload User CV Function ---
+// --- Upload User CV Function ---
 export const uploadUserCV = async (file: File): Promise<UserProfile> => {
   const formData = new FormData();
   formData.append("file", file);
@@ -47,6 +47,26 @@ export const uploadUserCV = async (file: File): Promise<UserProfile> => {
   // Note: authFetch automatically handles the Authorization header.
   // It detects FormData and correctly lets the browser set the Content-Type boundary.
   const response = await authFetch(`${API_BASE_URL}/users/me/cv`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: "Upload failed" }));
+    throw new Error(err.detail || "Failed to upload CV");
+  }
+  
+  return response.json();
+};
+
+// --- Upload User Personal Info Function ---
+export const uploadUserPersonalInfo = async (file: File): Promise<UserProfile> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  // Note: authFetch automatically handles the Authorization header.
+  // It detects FormData and correctly lets the browser set the Content-Type boundary.
+  const response = await authFetch(`${API_BASE_URL}/users/me/personal-info`, {
     method: 'POST',
     body: formData
   });

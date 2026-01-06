@@ -7,6 +7,7 @@ export interface UserProfile {
   phone_number: string;
   location: string;
   cv_url?: string;
+  personal_info_url?: string;
 }
 
 export interface OutreachRecord {

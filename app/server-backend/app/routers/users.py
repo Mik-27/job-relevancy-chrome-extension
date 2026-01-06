@@ -47,7 +47,8 @@ def update_user_profile(
     db.refresh(user)
     return user
 
-# --- NEW: Endpoint to upload Master CV ---
+
+# --- Endpoint to upload Master CV ---
 @router.post("/me/cv", response_model=schemas.UserSchema)
 async def upload_user_cv(
     file: UploadFile = File(...),
@@ -86,9 +87,50 @@ async def upload_user_cv(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to upload CV: {e}")
+
+
+# --- Endpoint to upload Personal Info ---
+@router.post("/me/personal-info", response_model=schemas.UserSchema)
+async def upload_user_personal_info(
+    file: UploadFile = File(...),
+    current_user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db)
+):
+    # Validate file type (PDF, DOC, DOCX)
+    allowed_types = [
+        "application/pdf", 
+        "application/msword", 
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload PDF or Word documents.")
+
+    user = db.query(database.User).filter(database.User.id == current_user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    try:
+        # Upload to GCS (overwrite if exists)
+        destination_path = f"public/{current_user_id}/Personal_Info/personal_info"
+        public_url = await gcs_service.upload_file_to_gcs(file, destination_path)
+
+        # Update DB with URL
+        user.personal_info_url = destination_path
+        db.commit()
+        db.refresh(user)
+        
+        # When returning the user immediately, we also need to sign the URL
+        # so the frontend can display it right away
+        response = schemas.UserSchema.model_validate(user)
+        response.personal_info_url = gcs_service.generate_signed_url(destination_path)
+        
+        return response
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload Personal Info: {e}")
     
 
-# --- NEW: Lightweight Endpoint for Extension ---
+# --- Endpoint to get user status ---
 @router.get("/status", response_model=schemas.UserStatusSchema)
 def get_user_status(
     current_user_id: str = Depends(get_current_user_id),
