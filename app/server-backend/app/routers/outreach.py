@@ -196,7 +196,7 @@ async def trigger_cold_outreach(
 
     return {"message": "Outreach started. Emails are being drafted in the background."}
 
-# --- UPDATED: GET Endpoint with Pagination & Search ---
+# --- GET Endpoint with Pagination & Search ---
 @router.get("/history", response_model=PaginatedOutreachHistory)
 def get_outreach_history(
     page: int = 1,

@@ -154,7 +154,7 @@ class CoverLetterSchema(BaseModel):
 class JobDescriptionRequest(BaseModel):
     job_description: str = Field(description="The full text of the job description extracted from the job posting.")
     
-# --- NEW: Outreach Schemas ---
+# --- Outreach Schemas ---
 class ContactSchema(BaseModel):
     name: str
     email: str
@@ -163,7 +163,7 @@ class ContactSchema(BaseModel):
 class OutreachRequestSchema(BaseModel):
     contacts: List[ContactSchema]
 
-# --- NEW: Outreach History Schema ---
+# --- Outreach History Schema ---
 class OutreachHistorySchema(BaseModel):
     id: UUID
     prospect_name: str

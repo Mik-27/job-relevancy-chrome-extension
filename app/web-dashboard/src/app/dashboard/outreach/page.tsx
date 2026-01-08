@@ -62,7 +62,7 @@ export default function OutreachPage() {
       case 'queued':
       case 'processing':
         return 'bg-warning/10 text-warning border-warning/20';
-      case 'failed':
+      case 'error':
         return 'bg-error/10 text-error border-error/20';
       default:
         return 'bg-secondary text-muted border-border';
