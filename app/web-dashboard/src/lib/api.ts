@@ -1,4 +1,4 @@
-import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application, InterviewRound, ShadowReport, InterviewSession } from '@/types';
+import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application, InterviewRound, ShadowReport, InterviewSession, OutreachContact } from '@/types';
 import { supabase } from './supabaseClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -102,7 +102,7 @@ export const getOutreachHistory = async (
   return response.json();
 };
 
-// NEW: Function to mark as sent
+// Function to mark as sent
 export const markOutreachAsSent = async (recordId: string): Promise<OutreachRecord> => {
   const response = await authFetch(`${API_BASE_URL}/outreach/${recordId}/sent`, {
     method: 'PATCH',
@@ -111,8 +111,35 @@ export const markOutreachAsSent = async (recordId: string): Promise<OutreachReco
   return response.json();
 };
 
-// --- NEW: Resume Management Functions ---
+// Trigger n8n workflow
+export const triggerColdOutreach = async (payload: { contacts?: OutreachContact[] }): Promise<void> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("User is not authenticated.");
 
+  const formData = new FormData();
+
+  // We stringify the array so the backend receives it as a JSON string in 'contacts_json'
+  if (payload.contacts && payload.contacts.length > 0) {
+    formData.append('contacts_json', JSON.stringify(payload.contacts));
+  }
+
+  // Backend expects 'token' in the form data for this endpoint
+  formData.append('token', session.access_token);
+
+  // Note: We use standard 'fetch' here to let the browser handle the multipart/form-data boundary
+  const response = await fetch(`${API_BASE_URL}/outreach/trigger`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    // Try to parse specific error message from backend
+    const errorData = await response.json().catch(() => ({ detail: "Request failed" }));
+    throw new Error(errorData.detail || "Failed to start outreach workflow.");
+  }
+};
+
+// --- Resume Management Functions ---
 export const listResumes = async (): Promise<ResumeItem[]> => {
   const response = await authFetch(`${API_BASE_URL}/resumes/`);
   if (!response.ok) throw new Error("Failed to fetch resumes");

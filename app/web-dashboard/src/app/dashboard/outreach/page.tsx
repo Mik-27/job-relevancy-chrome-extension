@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getOutreachHistory, markOutreachAsSent } from '@/lib/api';
+import { getOutreachHistory, markOutreachAsSent, triggerColdOutreach } from '@/lib/api';
 import { OutreachRecord } from '@/types';
-import { FaSearch, FaExternalLinkAlt, FaEnvelopeOpenText, FaCheck, FaChevronRight, FaChevronLeft } from 'react-icons/fa';
+import { FaSearch, FaExternalLinkAlt, FaEnvelopeOpenText, FaCheck, FaChevronRight, FaChevronLeft, FaRedo } from 'react-icons/fa';
 
 export default function OutreachPage() {
   const [records, setRecords] = useState<OutreachRecord[]>([]);
@@ -69,7 +69,7 @@ export default function OutreachPage() {
     }
   };
 
-  // --- NEW: Helper for Date/Time formatting ---
+  // --- Helper for Date/Time formatting ---
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString(undefined, {
       month: 'short', 
@@ -79,7 +79,7 @@ export default function OutreachPage() {
     });
   };
 
-  // --- NEW: Helper to generate Gmail URL ---
+  // --- Helper to generate Gmail URL ---
   const getGmailDraftUrl = (record: OutreachRecord): string | null => {
     if (!record.draft_metadata) return null;
 
@@ -104,9 +104,8 @@ export default function OutreachPage() {
     return null;
   };
 
-  // --- NEW: Handler for marking as sent ---
+  // --- Handler for marking as sent ---
   const handleMarkSent = async (id: string) => {
-    // Optimistic update or simple reload? Let's do a quick local state update
     try {
       await markOutreachAsSent(id);
       
@@ -117,6 +116,17 @@ export default function OutreachPage() {
     } catch (err) {
       console.error("Failed to mark as sent", err);
       alert("Failed to update status");
+    }
+  };
+
+  // --- Handler for retrying failed outreach ---
+  const handleOutreachWorkflowRetry = async (id: string, prospect_name: string, prospect_email: string, company_name: string | undefined, job_link: string | undefined) => {
+    try {
+      // Call your retry API here
+      await triggerColdOutreach({ contacts: [{ id, name: prospect_name, email: prospect_email, company: company_name, job_link }] });
+    } catch (err) {
+      console.error("Failed to retry outreach", err);
+      alert("Failed to retry outreach");
     }
   };
 
@@ -196,6 +206,17 @@ export default function OutreachPage() {
                           title="Mark as Sent"
                         >
                           <FaCheck />
+                        </button>
+                      )}
+
+                      {/* FIXME: Button disabled on click */}
+                      {record.status === 'error' && (
+                        <button
+                          onClick={() => handleOutreachWorkflowRetry(record.id, record.prospect_name, record.prospect_email, record?.company_name, record.job_link)}
+                          className='inline-flex items-center justify-center p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-400/20 rounded transition'
+                          title='Retry'
+                        >
+                          <FaRedo />
                         </button>
                       )}
                       

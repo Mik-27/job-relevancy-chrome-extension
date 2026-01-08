@@ -13,7 +13,7 @@ export interface UserProfile {
 export interface OutreachRecord {
   id: string;
   prospect_name: string;
-  prospect_email?: string;
+  prospect_email: string;
   company_name?: string;
   job_link?: string;
   status: string;
@@ -28,7 +28,15 @@ export interface OutreachRecord {
   sent_at?: string;
 }
 
-// NEW: Response interface matching backend schema
+export interface OutreachContact {
+  id?: string;
+  name: string;
+  email: string;
+  company?: string;
+  job_link?: string;
+}
+
+// Response interface matching backend schema
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;

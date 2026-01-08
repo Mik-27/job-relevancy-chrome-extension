@@ -98,20 +98,50 @@ async def process_outreach_background(
     
     try:
         for contact in final_contacts_list:
-            # Create a unique ID for this specific outreach attempt
-            record_id = str(uuid.uuid4())
+            if contact.get('id'):
+                # If an ID is provided (for retries), use it
+                record_id = contact['id']
+
+                db_record = db.query(OutreachHistory).filter(
+                    OutreachHistory.id == record_id,
+                    OutreachHistory.user_id == user_id
+                ).first()
+                
+                if db_record:
+                    # Update existing record
+                    # db_record.prospect_name = contact.get('name')
+                    # db_record.prospect_email = contact.get('email')
+                    # db_record.company_name = contact.get('company')
+                    # db_record.job_link = contact.get('job_link')
+                    db_record.updated_at = datetime.now(timezone.utc)
+                    db_record.status = "queued"
+                else:
+                    # ID provided but record doesn't exist - create new with that ID
+                    db_record = OutreachHistory(
+                        id=record_id,
+                        user_id=user_id,
+                        prospect_name=contact.get('name'),
+                        prospect_email=contact.get('email'),
+                        company_name=contact.get('company'),
+                        job_link=contact.get('job_link'),
+                        status="queued"
+                    )
+                    db.add(db_record)
+            else:
+                # Create a unique ID for this specific outreach attempt
+                record_id = str(uuid.uuid4())
             
-            # Log to DB
-            db_record = OutreachHistory(
-                id=record_id,
-                user_id=user_id,
-                prospect_name=contact.get('name'),
-                prospect_email=contact.get('email'),
-                company_name=contact.get('company'),
-                job_link=contact.get('job_link'),
-                status="queued"
-            )
-            db.add(db_record)
+                # Log to DB
+                db_record = OutreachHistory(
+                    id=record_id,
+                    user_id=user_id,
+                    prospect_name=contact.get('name'),
+                    prospect_email=contact.get('email'),
+                    company_name=contact.get('company'),
+                    job_link=contact.get('job_link'),
+                    status="queued"
+                )
+                db.add(db_record)
             
             # Add record_id to the contact object sent to n8n
             # This allows n8n to update the status of THIS specific row later
@@ -138,7 +168,7 @@ async def process_outreach_background(
         elif user_profile:
              user_context = f"Name: {user_profile.first_name} {user_profile.last_name}"
     except Exception as e:
-        print(f"Background Error: Context fetch failed - {e}")
+        logger.error(f"Background Error: Context fetch failed - {e}")
         user_context = "User profile unavailable."
 
     # 4. SEND TO N8N
@@ -155,9 +185,9 @@ async def process_outreach_background(
         try:
             # We send pure JSON now, simplified!
             await client.post(n8n_url, json=payload, headers=headers, timeout=60.0)
-            print("Background: Successfully sent payload to n8n.")
+            logger.info("Background: Successfully sent payload to n8n.")
         except Exception as e:
-            print(f"Background Error: Sending to n8n failed - {e}")
+            logger.error(f"Background Error: Sending to n8n failed - {e}")
 
 
 @router.post("/trigger")
