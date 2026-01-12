@@ -58,12 +58,11 @@ def get_round_context(
         
         duration = round.duration_minutes if round.duration_minutes else "15 minutes"
             
-        return specific_instructions, round.interview_type, duration 
+        return specific_instructions, round.interview_type, duration, round.notes
         
     except Exception as e:
         logger.error(f"Error fetching round context: {e}")
-        return "Error: Unable to fetch round context.", None, None
-    
+        return "Error: Unable to fetch round context.", None, None, None
 
 # Helper to fetch context from DB
 def get_interview_context(db: Session, application_id: str, round_id: str, user_id: str) -> str:
@@ -80,7 +79,7 @@ def get_interview_context(db: Session, application_id: str, round_id: str, user_
         if not application:
             return "Error: Application not found."
         
-        specific_instructions, interview_type, duration = get_round_context(db, application_id, round_id, user_id)
+        specific_instructions, interview_type, duration, notes = get_round_context(db, application_id, round_id, user_id)
         
         jd_text = application.job_description or "No Job Description provided."
         resume = db.query(database.Resume).filter(
@@ -92,6 +91,7 @@ def get_interview_context(db: Session, application_id: str, round_id: str, user_
         # Fallback: Fetch User Profile Resume
         user_profile = resume_service.get_user_profile_by_id(db, user_id)
         resume_text = "No resume found."
+        jd_text = "No Job Description provided."
         
         if user_profile and user_profile.cv_url:
             try:
@@ -106,6 +106,7 @@ def get_interview_context(db: Session, application_id: str, round_id: str, user_
         specific_instructions = "Generic interview without specific application context."
         interview_type = "Generic"
         duration = 15
+        notes = "None"
 
     # 3. Construct System Prompt
     system_instruction = f"""
@@ -136,7 +137,7 @@ def get_interview_context(db: Session, application_id: str, round_id: str, user_
     {specific_instructions}
     
     #### Extra notes/instructions for the interviewer (if any):
-    {round.notes if round_id and round.notes else "None"}
+    {notes if round_id and notes else "None"}
     
     """
     
