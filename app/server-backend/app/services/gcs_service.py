@@ -3,6 +3,9 @@ from google.cloud import storage
 from fastapi import UploadFile
 from app.config import settings
 from dotenv import load_dotenv
+from ..logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -19,17 +22,33 @@ async def upload_file_to_gcs(file: UploadFile, destination_path: str) -> str:
         contents = await file.read()
         blob.upload_from_string(contents, content_type=file.content_type)
         
-        print(f"File {file.filename} uploaded to {destination_path}.")
+        logger.info(f"File {file.filename} uploaded to {destination_path}.")
         # In a real app, you might not want to make files public by default
         return blob.public_url
     except Exception as e:
-        print(f"An error occurred while uploading to GCS: {e}")
+        logger.error(f"An error occurred while uploading to GCS: {e}")
         raise
 
 def download_file_as_bytes(source_path: str) -> bytes:
     """Downloads a file from GCS and returns its content as bytes."""
     blob = bucket.blob(source_path)
     return blob.download_as_bytes()
+
+def get_file_metadata(source_path: str) -> dict:
+    """Retrieves metadata of a file stored in GCS."""
+    try:
+        blob = bucket.blob(source_path)
+        blob.reload()  # Fetch latest metadata
+        
+        metadata = {
+            "size": blob.size,
+            "content_type": blob.content_type,
+            "updated": blob.updated,
+        }
+        return metadata
+    except Exception as e:
+        logger.error(f"Error retrieving metadata for {source_path}: {e}")
+        return {}
 
 # --- Function to generate a temporary access link ---
 def generate_signed_url(source_path: str) -> str:
@@ -49,7 +68,7 @@ def generate_signed_url(source_path: str) -> str:
         return url
     
     except Exception as e:
-        print(f"Error generating signed URL: {e}")
+        logger.error(f"Error generating signed URL: {e}")
         return ""
 
 def delete_file_from_gcs(source_path: str):
@@ -57,7 +76,7 @@ def delete_file_from_gcs(source_path: str):
     try:
         blob = bucket.blob(source_path)
         blob.delete()
-        print(f"Successfully deleted {source_path} from GCS.")
+        logger.info(f"Successfully deleted {source_path} from GCS.")
     except Exception as e:
-        print(f"Failed to delete {source_path} from GCS: {e}")
+        logger.error(f"Failed to delete {source_path} from GCS: {e}")
         # raise e
