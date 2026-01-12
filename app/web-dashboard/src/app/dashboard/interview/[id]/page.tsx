@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getLiveInterviewWebSocketUrl, getUserProfile, endInterviewSession, getInterviewSession } from '@/lib/api';
+import { getLiveInterviewWebSocketUrl, getUserProfile, endInterviewSession, getInterviewSession, updateInterviewSessionTime } from '@/lib/api';
 import { useLiveInterview } from '@/hooks/useLiveInterview';
 import { InterviewSession, ShadowReport as ShadowReportType } from '@/types';
 import { ShadowReport } from '@/components/interview/ShadowReport';
@@ -61,11 +61,26 @@ export default function LiveInterviewPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [transcript]);
 
+  useEffect(() => {
+    console.log(status);
+  }, [status]);
+
+  const handleStartSession = async () => {
+    try {
+      const startTime = new Date().toISOString();
+      await updateInterviewSessionTime(sessionId, startTime);
+      connect();
+    } catch (error) {
+      console.error("Failed to start session", error);
+    }
+  };
+
   const handleEndSession = async () => {
-    disconnect(); // Stop audio
+    disconnect();
     setGeneratingReport(true);
     try {
-        const data = await endInterviewSession(sessionId); // appId here is session_id
+        const endTime = new Date().toISOString();
+        const data = await endInterviewSession(sessionId, endTime);
         setReport(data);
     } catch (e) {
         console.error(e);
@@ -210,7 +225,7 @@ export default function LiveInterviewPage() {
         <div className="mt-auto w-full">
           {status === 'idle' || status === 'error' || status === 'connecting' ? (
             <button 
-              onClick={connect}
+              onClick={handleStartSession}
               disabled={!wsUrl}
               className="w-full bg-primary hover:bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 transition-all"
             >

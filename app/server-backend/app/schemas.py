@@ -255,7 +255,7 @@ class LogAnalysisRequest(BaseModel):
     resume_text: Optional[str] = None
     
     
-# NEW: Schema for Interview Prep Output
+# Schema for Interview Prep Output
 class InterviewPrepResponse(BaseModel):
     id: UUID
     application_id: UUID
@@ -309,8 +309,17 @@ class InterviewSessionCreate(BaseModel):
     round_id: Optional[str] = None
     title: str = "Mock Interview"
     status: str = "created"
+    
+class InterviewSessionStartRequest(BaseModel):
+    start_time: str
+
+class InterviewSessionEndRequest(BaseModel):
+    end_time: Optional[str] = None
+    
+class InterviewSessionBaseResponse(BaseModel):
+    session_id: str
         
-# --- NEW: Shadow Report Schemas ---
+# --- Shadow Report Schemas ---
 class ShadowReportSchema(BaseModel):
     verdict: Literal["Strong Hire", "Lean Hire", "Lean No Hire", "Strong No Hire"] = Field(description="The final hiring decision.")
     candidate_presence: str = Field(description="Assessment of confidence, clarity, and communication style.")

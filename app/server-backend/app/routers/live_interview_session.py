@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from .. import database, schemas
 from ..security import get_current_user_id
 from ..services.llm import report_service
@@ -99,11 +99,46 @@ def get_interview_session(
         
     return session
 
+# --- Start Interview Session ---
+@router.patch("/{session_id}/start", response_model=schemas.InterviewSessionBaseResponse)
+def start_interview_session(
+    session_id: str,
+    request: schemas.InterviewSessionStartRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db)
+):
+    """Mark interview session as started and record the start time."""
+    session = db.query(database.InterviewSession).filter(
+        database.InterviewSession.id == session_id,
+        database.InterviewSession.user_id == user_id
+    ).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    if session.status == "completed":
+        raise HTTPException(status_code=400, detail="Cannot start a completed session")
+    
+    # Update start time and status
+    from datetime import datetime, timezone
+    logger.debug("Request:", request)
+    session.start_time = datetime.fromisoformat(request.start_time).astimezone(timezone.utc)
+    session.status = "in_progress"
+    
+    db.commit()
+    db.refresh(session)
+    
+    logger.info(f"User {user_id}: Interview session {session_id} started at {session.start_time}")
+    
+    return {
+        "session_id": session_id,
+    }
 
 # --- End Session & Generate Report ---
 @router.post("/{session_id}/end", response_model=schemas.ShadowReportSchema)
 async def end_session_and_generate_report(
     session_id: str,
+    request: Optional[schemas.InterviewSessionEndRequest] = None,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(database.get_db)
 ):
@@ -113,6 +148,19 @@ async def end_session_and_generate_report(
         database.InterviewSession.user_id == user_id
     ).first()
     if not session: raise HTTPException(status_code=404, detail="Session not found")
+    if session.status == "completed":
+        raise HTTPException(status_code=400, detail="Session already completed")
+    
+    try:
+        from datetime import datetime, timezone
+        if request and request.end_time:
+            session.end_time = datetime.fromisoformat(request.end_time).astimezone(timezone.utc)
+        else:
+            session.end_time = datetime.now(timezone.utc)
+        db.commit()
+    except Exception as e:
+        logger.error(f"Error updating end time for session {session_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update session end time")
     
     application = db.query(database.Application).filter(
         database.Application.id == session.application_id,

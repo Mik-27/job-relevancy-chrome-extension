@@ -1,5 +1,6 @@
 import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application, InterviewRound, ShadowReport, InterviewSession, OutreachContact } from '@/types';
 import { supabase } from './supabaseClient';
+import { start } from 'repl';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -332,6 +333,16 @@ export const createInterviewSession = async (appId?: string, roundId?: string): 
   return response.json();
 };
 
+export const updateInterviewSessionTime = async (sessionId: string, startTime: string): Promise<{ session_id: string }> => {
+    const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/${sessionId}/start`, {
+        method: 'PATCH',
+        body: JSON.stringify({ start_time: startTime }),
+    });
+    console.log("Update Session Time Response:", response);
+    if (!response.ok) throw new Error("Failed to update session");
+    return response.json();
+}
+
 // Get Sessions List
 export const getInterviewSessions = async () => {
     const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/`);
@@ -340,9 +351,10 @@ export const getInterviewSessions = async () => {
 };
 
 // End session and get report
-export const endInterviewSession = async (sessionId: string): Promise<ShadowReport> => {
+export const endInterviewSession = async (sessionId: string, end_time?: string): Promise<ShadowReport> => {
   const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/${sessionId}/end`, {
     method: 'POST',
+    body: end_time ? JSON.stringify({ end_time }) : undefined,
   });
   if (!response.ok) throw new Error("Failed to generate report");
   return response.json();

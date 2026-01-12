@@ -164,6 +164,8 @@ class InterviewSession(Base):
     status = Column(String, default="created")
     report = Column(JSONB, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+    start_time = Column(DateTime, nullable=True)
+    end_time = Column(DateTime, nullable=True)
 
 class InterviewMessage(Base):
     __tablename__ = "live_interview_messages"

@@ -247,6 +247,7 @@ export const useLiveInterview = (wsUrl: string | null) => {
     ws.current = socket;
 
     socket.onopen = () => {
+      console.log("WebSocket connected");
       setStatus('connected');
       setTimeout(() => startRecording(), 100);
     };
