@@ -23,6 +23,5 @@ def extract_text_from_file_bytes(file_bytes: bytes, content_type: str) -> str:
         from docx import Document
         document = Document(io.BytesIO(file_bytes))
         text = "\n".join([para.text for para in document.paragraphs])
-        print(text[:100])
         return text
     raise ValueError(f"Unsupported content type for text extraction: {content_type}")

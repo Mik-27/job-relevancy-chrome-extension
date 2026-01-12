@@ -19,7 +19,6 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
 
-  // 1. Check for Master CV
   useEffect(() => {
     getUserStatus()
       .then(setUserStatus)
@@ -27,7 +26,6 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
       .finally(() => setLoadingProfile(false));
   }, []);
 
-  // 2. Handle Generation
   const handleGenerate = async () => {
     if (!userStatus || !jobDescription) return;
     
@@ -39,7 +37,6 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
       const response = await generateCoverLetterFromProfile(jobDescription);
 
       // B. Send message to Background (Relay)
-      // We do NOT use chrome.tabs here anymore.
       await new Promise<void>((resolve, reject) => {
         chrome.runtime.sendMessage({
           type: "showCoverLetterModal",
@@ -83,16 +80,13 @@ export const CoverLetterGenPage: React.FC<CoverLetterGenPageProps> = ({
         <p>
           We will use your <strong>Master CV</strong> and the current page's job description to write a tailored cover letter.
         </p>
+        <p>
+            Adding a <strong>Personal Information</strong> file is recommended to make the cover letter more personalized and unique.
+        </p>
       </div>
 
       {!jobDescription && (
         <p className="error-message">Warning: No Job Description found on this page.</p>
-      )}
-
-      {isGenerating && (
-        <p className="loading-message sub-text">
-          Analyzing CV and writing letter...
-        </p>
       )}
 
       {error && <p className="error-message" style={{ marginTop: '1rem' }}>{error}</p>}
