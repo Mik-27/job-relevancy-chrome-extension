@@ -5,6 +5,7 @@ import { getOutreachHistory, markOutreachAsSent, triggerColdOutreach } from '@/l
 import { OutreachRecord, OutreachContact } from '@/types';
 import { FaSearch, FaExternalLinkAlt, FaEnvelopeOpenText, FaCheck, FaChevronRight, FaChevronLeft, FaRedo, FaPlus, FaCloudUploadAlt, FaTimes, FaTrash, FaFileUpload, FaKeyboard } from 'react-icons/fa';
 import { useToast } from '@/context/ToastContext';
+import { Spinner } from '@/components/ui/Spinner/Spinner';
 
 type InputMode = 'manual' | 'upload';
 
@@ -203,7 +204,7 @@ export default function OutreachPage() {
     setModalError('');
   };
 
-  if (loading) return <div className="p-8 text-muted animate-pulse">Loading outreach history...</div>;
+  if (loading) return <div className="p-8 text-muted animate-pulse w-full h-full flex items-center justify-center"><Spinner></Spinner></div>;
   if (error) return <div className="p-8 text-error">{error}</div>;
 
   return (
