@@ -9,7 +9,7 @@ interface ShadowReportProps {
 export const ShadowReport: React.FC<ShadowReportProps> = ({ report }) => {
   
   const isHire = report.verdict.includes("Hire") && !report.verdict.includes("No");
-  const verdictColor = isHire ? "bg-red-100 text-red-700 border-red-200" : "bg-red-100 text-red-800 border-red-200";
+  // const verdictColor = isHire ? "bg-red-100 text-red-700 border-red-200" : "bg-red-100 text-red-800 border-red-200";
   // Let's make Hire green for better UX
   const badgeStyle = isHire 
     ? "bg-green-100 text-green-800 border-green-200" 
@@ -22,6 +22,7 @@ export const ShadowReport: React.FC<ShadowReportProps> = ({ report }) => {
       <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-[#1e293b]">
         <div>
           <h2 className="text-2xl font-bold text-white">Shadow Report</h2>
+          {/* FIXME: Add user name */}
           <p className="text-gray-400 text-sm">Evaluation for <span className="text-white font-medium">Candidate</span></p>
         </div>
         <div className={`px-4 py-2 rounded-full border flex items-center gap-2 font-bold ${badgeStyle}`}>

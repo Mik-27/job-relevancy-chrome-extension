@@ -113,28 +113,28 @@ export const markOutreachAsSent = async (recordId: string): Promise<OutreachReco
 };
 
 // Trigger n8n workflow
-export const triggerColdOutreach = async (payload: { contacts?: OutreachContact[] }): Promise<void> => {
+export const triggerColdOutreach = async (payload: { contacts?: OutreachContact[], file?: File }): Promise<void> => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("User is not authenticated.");
 
   const formData = new FormData();
 
-  // We stringify the array so the backend receives it as a JSON string in 'contacts_json'
   if (payload.contacts && payload.contacts.length > 0) {
     formData.append('contacts_json', JSON.stringify(payload.contacts));
   }
 
-  // Backend expects 'token' in the form data for this endpoint
+  if (payload.file) {
+    formData.append('file', payload.file);
+  }
+
   formData.append('token', session.access_token);
 
-  // Note: We use standard 'fetch' here to let the browser handle the multipart/form-data boundary
   const response = await fetch(`${API_BASE_URL}/outreach/trigger`, {
     method: 'POST',
     body: formData,
   });
 
   if (!response.ok) {
-    // Try to parse specific error message from backend
     const errorData = await response.json().catch(() => ({ detail: "Request failed" }));
     throw new Error(errorData.detail || "Failed to start outreach workflow.");
   }
