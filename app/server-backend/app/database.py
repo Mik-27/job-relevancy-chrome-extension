@@ -46,6 +46,7 @@ class User(Base):
     github_profile = Column(String, nullable=True)
     cv_url = Column(String, nullable=True)
     personal_info_url = Column(String, nullable=True)
+    gmail_refresh_token = Column(String, nullable=True)
     
 
 # ORM Model for the 'outreach_history' table

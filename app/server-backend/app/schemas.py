@@ -23,6 +23,7 @@ class UserSchema(BaseModel):
     location: str
     cv_url: Optional[str] = None
     personal_info_url: Optional[str] = None
+    gmail_refresh_token: Optional[str] = None
 
     class Config:
         from_attributes = True
