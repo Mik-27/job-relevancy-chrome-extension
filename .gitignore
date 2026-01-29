@@ -48,3 +48,5 @@ TODO.md
 # Temp Resume Files
 /app/server-backend/.temp_files
 /app/server-backend/temp_files
+
+app/worker/outreach-gcf-worker/gcp_command
