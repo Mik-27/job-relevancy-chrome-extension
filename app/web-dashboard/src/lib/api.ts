@@ -80,7 +80,7 @@ export const uploadUserPersonalInfo = async (file: File): Promise<UserProfile> =
   return response.json();
 };
 
-// UPDATED: Function accepts params
+// Function accepts params
 export const getOutreachHistory = async (
   page: number = 1, 
   limit: number = 15, 
@@ -365,4 +365,30 @@ export const getInterviewSession = async (sessionId: string): Promise<InterviewS
   const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/${sessionId}`);
   if (!response.ok) throw new Error("Failed to fetch session details");
   return response.json();
+};
+
+// --- NEW: Auth / Gmail Integration Functions ---
+
+export const getGoogleAuthUrl = async (): Promise<string> => {
+  // This endpoint returns { "url": "https://accounts.google.com/..." }
+  const response = await authFetch(`${API_BASE_URL}/auth/google/url`);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to get auth URL" }));
+    throw new Error(error.detail);
+  }
+  const data = await response.json();
+  return data.url;
+};
+
+export const connectGmail = async (code: string): Promise<void> => {
+  // We send the authorization code to the backend to exchange for tokens
+  const response = await authFetch(`${API_BASE_URL}/auth/google/callback`, {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to connect Gmail" }));
+    throw new Error(error.detail);
+  }
 };

@@ -5,3 +5,161 @@ google-auth-httplib2
 google-auth-oauthlib
 requests
 supabase
+
+
+import base64
+import json
+import os
+import requests
+import functions_framework
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from supabase import create_client
+import vertexai
+from vertexai.generative_models import GenerativeModel
+
+# --- CONFIG FROM ENV ---
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") # Must be Service Role to read user tokens
+GCP_PROJECT = os.environ.get("GCP_PROJECT_ID")
+GCP_LOCATION = os.environ.get("GCP_LOCATION", "us-central1")
+SEARCH_API_KEY = os.environ.get("GOOGLE_SEARCH_API_KEY")
+SEARCH_ENGINE_ID = os.environ.get("GOOGLE_SEARCH_ENGINE_ID")
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+
+# Initialize Supabase
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+@functions_framework.cloud_event
+def process_outreach(cloud_event):
+    # 1. Decode Pub/Sub Message
+    try:
+        pubsub_data = base64.b64decode(cloud_event.data["message"]["data"]).decode("utf-8")
+        data = json.loads(pubsub_data)
+        print(f"Processing outreach for: {data.get('name')} at {data.get('company')}")
+    except Exception as e:
+        print(f"Error decoding message: {e}")
+        return
+
+    # 2. Research (Google Search & Jina)
+    research_context = "No specific news found."
+    website_content = ""
+    
+    try:
+        # A. Google Search
+        search_url = "https://www.googleapis.com/customsearch/v1"
+        params = {
+            "key": SEARCH_API_KEY,
+            "cx": SEARCH_ENGINE_ID,
+            "q": f"{data['company']} recent news engineering challenges"
+        }
+        res = requests.get(search_url, params=params).json()
+        
+        snippets = [item['snippet'] for item in res.get('items', [])[:3]]
+        research_context = "\n".join(snippets)
+        
+        # B. Jina Scrape (Job Link or Company Site)
+        target_url = data.get('job_link')
+        if not target_url and res.get('items'):
+             target_url = res['items'][0]['link'] # Fallback to first search result
+             
+        if target_url:
+            print(f"Scraping URL: {target_url}")
+            jina_res = requests.get(f"https://r.jina.ai/{target_url}")
+            if jina_res.status_code == 200:
+                website_content = jina_res.text[:2000] # Limit tokens
+    except Exception as e:
+        print(f"Research warning: {e}")
+
+    # 3. LLM Draft (Vertex AI)
+    try:
+        vertexai.init(project=GCP_PROJECT, location=GCP_LOCATION)
+        model = GenerativeModel("gemini-1.5-pro")
+        
+        prompt = f"""
+        You are an expert BDR. Write a cold email to {data['name']} at {data['company']}.
+        
+        ### MY CONTEXT
+        {data['user_context']}
+        
+        ### RESEARCH
+        News: {research_context}
+        Website/Job Info: {website_content}
+        
+        ### INSTRUCTIONS
+        - Subject: Catchy, relevant to research.
+        - Body: < 150 words. Connect my context to their needs.
+        - Output JSON: {{ "subject": "...", "body": "..." }}
+        """
+        
+        response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+        email_draft = json.loads(response.text)
+        
+    except Exception as e:
+        print(f"LLM generation failed: {e}")
+        # Update DB with failure
+        supabase.table("outreach_history").update({"status": "failed"}).eq("id", data['record_id']).execute()
+        return
+
+    # 4. Create Gmail Draft
+    try:
+        # Fetch User's Refresh Token
+        user_record = supabase.table("users").select("gmail_refresh_token").eq("id", data['user_id']).execute()
+        if not user_record.data or not user_record.data[0].get('gmail_refresh_token'):
+            print(f"User {data['user_id']} has not connected Gmail.")
+            return
+
+        refresh_token = user_record.data[0]['gmail_refresh_token']
+
+        # Reconstruct Credentials
+        creds = Credentials(
+            None, # Access token (will be refreshed)
+            refresh_token=refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=GOOGLE_CLIENT_ID,
+            client_secret=GOOGLE_CLIENT_SECRET
+        )
+        
+        service = build('gmail', 'v1', credentials=creds)
+        
+        # Create MIME Message
+        from email.mime.text import MIMEText
+        import base64 as b64_std
+        
+        message = MIMEText(email_draft['body'], 'html')
+        message['to'] = data['email']
+        message['subject'] = email_draft['subject']
+        raw_message = b64_std.urlsafe_b64encode(message.as_bytes()).decode()
+        
+        draft = service.users().drafts().create(userId="me", body={'message': {'raw': raw_message}}).execute()
+
+        # 5. Update Database Success
+        supabase.table("outreach_history").update({
+            "status": "drafted",
+            "gmail_metadata": draft
+        }).eq("id", data['record_id']).execute()
+        
+        print(f"Draft created successfully: {draft['id']}")
+
+    except Exception as e:
+        print(f"Gmail Draft failed: {e}")
+
+
+gcloud functions deploy process-cold-outreach \
+--gen2 \
+--runtime=python311 \
+--region=us-central1 \
+--source=. \
+--entry-point=process_outreach \
+--trigger-topic=cold-outreach-topic \
+--memory=512MiB \
+--timeout=60s \
+--set-env-vars SUPABASE_URL="https://puttmbdpbymswpgkqbpn.supabase.co",\
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1dHRtYmRwYnltc3dwZ2txYnBuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTY5NjY1NSwiZXhwIjoyMDc3MjcyNjU1fQ.IHAfSTSYT9Sto5OemcaM9kC1a8bpPkKUUAqlUXKrK1A",\
+GCP_PROJECT_ID="project-3319c795-cda2-4e8e-b82",\
+GCP_LOCATION="us-central1",\
+GOOGLE_SEARCH_API_KEY="YOUR_SEARCH_API_KEY",\
+GOOGLE_SEARCH_ENGINE_ID="YOUR_SEARCH_CX_ID",\
+GOOGLE_CLIENT_ID="YOUR_OAUTH_CLIENT_ID",\
+GOOGLE_CLIENT_SECRET="YOUR_OAUTH_CLIENT_SECRET"

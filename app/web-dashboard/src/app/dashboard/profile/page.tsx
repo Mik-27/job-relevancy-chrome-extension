@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FaGoogle } from 'react-icons/fa';
 import { UserProfile } from '@/types';
-import { getUserProfile, updateUserProfile, uploadUserCV, uploadUserPersonalInfo } from '@/lib/api';
+import { getUserProfile, updateUserProfile, uploadUserCV, uploadUserPersonalInfo, getGoogleAuthUrl, connectGmail } from '@/lib/api';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
 import { useToast } from '@/context/ToastContext';
 
@@ -15,8 +17,11 @@ export default function ProfilePage() {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [showCvModal, setShowCvModal] = useState(false);
   const [showPersonalInfoModal, setShowPersonalInfoModal] = useState(false);
+  const [isConnectingGmail, setIsConnectingGmail] = useState(false);
 
   const toast = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     getUserProfile()
@@ -24,6 +29,39 @@ export default function ProfilePage() {
       .catch(() => setMessage({ type: 'error', text: 'Failed to load profile.' }))
       .finally(() => setLoading(false));
   }, []);
+
+  // --- Handle Google Callback ---
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (code) {
+      // If we see a code, it means we just came back from Google
+      const handleCallback = async () => {
+        setIsConnectingGmail(true);
+        try {
+          await connectGmail(code);
+          setMessage({ type: 'success', text: 'Gmail connected successfully!' });
+          // Clean the URL
+          router.replace('/dashboard/profile');
+        } catch (err) {
+          setMessage({ type: 'error', text: 'Failed to connect Gmail.' });
+        } finally {
+          setIsConnectingGmail(false);
+        }
+      };
+      handleCallback();
+    }
+  }, [searchParams, router]);
+
+  // --- NEW: Handle Connect Button Click ---
+  const handleGmailConnect = async () => {
+    try {
+      const url = await getGoogleAuthUrl();
+      // Redirect user to Google
+      window.location.href = url;
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Could not initiate connection.' });
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (profile) {
@@ -250,6 +288,31 @@ export default function ProfilePage() {
                 <br />
                 This will help us tailor your job search experience better.
             </p>
+          </div>
+        </div>
+
+        {/* Gmail Connect Button */}
+        <div className="pt-8 border-t border-border">
+          <h2 className="text-xl font-semibold text-foreground mb-4">Integrations</h2>
+          
+          <div className="flex items-center justify-between p-4 bg-secondary/10 border border-border rounded-lg">
+            <div className="flex items-center gap-4">
+               <div className="bg-white p-2 rounded-full text-black">
+                 <FaGoogle />
+               </div>
+               <div>
+                 <p className="font-medium text-foreground">Gmail Integration</p>
+                 <p className="text-sm text-muted">Required for AI Agent to draft cold emails.</p>
+               </div>
+            </div>
+            
+            <button 
+                onClick={handleGmailConnect}
+                disabled={isConnectingGmail}
+                className="bg-[#4285F4] hover:bg-[#3367d6] text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+            >
+               {isConnectingGmail ? 'Connecting...' : 'Connect Gmail'}
+            </button>
           </div>
         </div>
 

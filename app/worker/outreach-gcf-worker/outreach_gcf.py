@@ -9,28 +9,36 @@ from supabase import create_client
 import vertexai
 from vertexai.generative_models import GenerativeModel
 
-# --- CONFIG ---
-# Set these as Environment Variables in GCF
+# --- CONFIG FROM ENV ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") 
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") # Must be Service Role to read user tokens
 GCP_PROJECT = os.environ.get("GCP_PROJECT_ID")
-GCP_LOCATION = "us-central1"
+GCP_LOCATION = os.environ.get("GCP_LOCATION", "us-central1")
 SEARCH_API_KEY = os.environ.get("GOOGLE_SEARCH_API_KEY")
 SEARCH_ENGINE_ID = os.environ.get("GOOGLE_SEARCH_ENGINE_ID")
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 
+# Initialize Supabase
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @functions_framework.cloud_event
 def process_outreach(cloud_event):
     # 1. Decode Pub/Sub Message
-    pubsub_data = base64.b64decode(cloud_event.data["message"]["data"]).decode("utf-8")
-    data = json.loads(pubsub_data)
-    
-    print(f"Processing: {data['name']} at {data['company']}")
-
-    # 2. Research (Google Search)
-    research_context = ""
     try:
+        pubsub_data = base64.b64decode(cloud_event.data["message"]["data"]).decode("utf-8")
+        data = json.loads(pubsub_data)
+        print(f"Processing outreach for: {data.get('name')} at {data.get('company')}")
+    except Exception as e:
+        print(f"Error decoding message: {e}")
+        return
+
+    # 2. Research (Google Search & Jina)
+    research_context = "No specific news found."
+    website_content = ""
+    
+    try:
+        # A. Google Search
         search_url = "https://www.googleapis.com/customsearch/v1"
         params = {
             "key": SEARCH_API_KEY,
@@ -40,75 +48,91 @@ def process_outreach(cloud_event):
         res = requests.get(search_url, params=params).json()
         
         snippets = [item['snippet'] for item in res.get('items', [])[:3]]
+        research_context = "\n".join(snippets)
         
-        # 2b. Jina Scrape (If link found)
-        website_content = ""
-        if res.get('items') and len(res['items']) > 0:
-            link = res['items'][0]['link']
-            # Jina Scrape
-            jina_res = requests.get(f"https://r.jina.ai/{link}")
+        # B. Jina Scrape (Job Link or Company Site)
+        target_url = data.get('job_link')
+        if not target_url and res.get('items'):
+             target_url = res['items'][0]['link'] # Fallback to first search result
+             
+        if target_url:
+            print(f"Scraping URL: {target_url}")
+            jina_res = requests.get(f"https://r.jina.ai/{target_url}")
             if jina_res.status_code == 200:
-                website_content = jina_res.text[:2000] # Limit length
-
-        research_context = f"News:\n{chr(10).join(snippets)}\n\nWebsite:\n{website_content}"
+                website_content = jina_res.text[:2000] # Limit tokens
     except Exception as e:
-        print(f"Research failed: {e}")
+        print(f"Research warning: {e}")
 
     # 3. LLM Draft (Vertex AI)
-    vertexai.init(project=GCP_PROJECT, location=GCP_LOCATION)
-    model = GenerativeModel("gemini-1.5-pro")
-    
-    prompt = f"""
-    Write a cold email to {data['name']} at {data['company']}.
-    
-    My Resume Context: {data['user_context']}
-    
-    Company Research: {research_context}
-    
-    Instructions:
-    - Subject: Catchy, relevant.
-    - Body: < 150 words. Connect my skills to their news/site.
-    - Output JSON: {{ "subject": "...", "body": "..." }}
-    """
-    
-    response = model.generate_content(prompt)
-    email_draft = json.loads(response.text.replace("```json", "").replace("```", ""))
-
-    # 4. Create Gmail Draft
-    # Fetch Refresh Token for this user
-    user_record = supabase.table("users").select("gmail_refresh_token").eq("id", data['user_id']).execute()
-    refresh_token = user_record.data[0]['gmail_refresh_token']
-    
-    if not refresh_token:
-        print("User has not connected Gmail.")
+    try:
+        vertexai.init(project=GCP_PROJECT, location=GCP_LOCATION)
+        model = GenerativeModel("gemini-1.5-pro")
+        
+        prompt = f"""
+        You are an expert BDR. Write a cold email to {data['name']} at {data['company']}.
+        
+        ### MY CONTEXT
+        {data['user_context']}
+        
+        ### RESEARCH
+        News: {research_context}
+        Website/Job Info: {website_content}
+        
+        ### INSTRUCTIONS
+        - Subject: Catchy, relevant to research.
+        - Body: < 150 words. Connect my context to their needs.
+        - Output JSON: {{ "subject": "...", "body": "..." }}
+        """
+        
+        response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+        email_draft = json.loads(response.text)
+        
+    except Exception as e:
+        print(f"LLM generation failed: {e}")
+        # Update DB with failure
+        supabase.table("outreach_history").update({"status": "failed"}).eq("id", data['record_id']).execute()
         return
 
-    # Reconstruct Credentials
-    creds = Credentials(
-        None, # Access token (will be refreshed)
-        refresh_token=refresh_token,
-        token_uri="https://oauth2.googleapis.com/token",
-        client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-        client_secret=os.environ.get("GOOGLE_CLIENT_SECRET")
-    )
-    
-    service = build('gmail', 'v1', credentials=creds)
-    
-    # Create MIME Message
-    from email.mime.text import MIMEText
-    import base64
-    
-    message = MIMEText(email_draft['body'], 'html')
-    message['to'] = data['email']
-    message['subject'] = email_draft['subject']
-    raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-    
-    draft = service.users().drafts().create(userId="me", body={'message': {'raw': raw_message}}).execute()
+    # 4. Create Gmail Draft
+    try:
+        # Fetch User's Refresh Token
+        user_record = supabase.table("users").select("gmail_refresh_token").eq("id", data['user_id']).execute()
+        if not user_record.data or not user_record.data[0].get('gmail_refresh_token'):
+            print(f"User {data['user_id']} has not connected Gmail.")
+            return
 
-    # 5. Update Database
-    supabase.table("outreach_history").update({
-        "status": "drafted",
-        "gmail_metadata": draft
-    }).eq("id", data['record_id']).execute()
-    
-    print(f"Draft created: {draft['id']}")
+        refresh_token = user_record.data[0]['gmail_refresh_token']
+
+        # Reconstruct Credentials
+        creds = Credentials(
+            None, # Access token (will be refreshed)
+            refresh_token=refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=GOOGLE_CLIENT_ID,
+            client_secret=GOOGLE_CLIENT_SECRET
+        )
+        
+        service = build('gmail', 'v1', credentials=creds)
+        
+        # Create MIME Message
+        from email.mime.text import MIMEText
+        import base64 as b64_std
+        
+        message = MIMEText(email_draft['body'], 'html')
+        message['to'] = data['email']
+        message['subject'] = email_draft['subject']
+        raw_message = b64_std.urlsafe_b64encode(message.as_bytes()).decode()
+        
+        draft = service.users().drafts().create(userId="me", body={'message': {'raw': raw_message}}).execute()
+
+        # 5. Update Database Success
+        supabase.table("outreach_history").update({
+            "status": "drafted",
+            "gmail_metadata": draft
+        }).eq("id", data['record_id']).execute()
+        
+        print(f"Draft created successfully: {draft['id']}")
+
+    except Exception as e:
+        print(f"Gmail Draft failed: {e}")
+        supabase.table("outreach_history").update({"status": "failed"}).eq("id", data['record_id']).execute()

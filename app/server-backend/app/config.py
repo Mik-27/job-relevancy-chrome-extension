@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     N8N_WEBHOOK_SECRET: str = ""
     N8N_WEBHOOK_URL: str = ""
     N8N_WEBHOOK_TEST_URL: str = ""
+    
+    # OAuth Clients
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    GOOGLE_OAUTH_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:3000/dashboard/profile"
 
 # Create a single, importable instance of the settings
 settings = Settings()
