@@ -1,15 +1,16 @@
 from datetime import datetime, timezone
 import json
 import io
-import httpx
 import uuid
+from typing import List, Optional, Dict, Any
+
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, BackgroundTasks
 import pandas as pd
-from typing import List, Optional, Dict, Any
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from ..logging_config import get_logger
+from google.cloud import pubsub_v1
 
+from ..logging_config import get_logger
 from ..config import settings
 from ..security import get_current_user_id, validate_token_and_get_user_id
 from .. import database
@@ -21,6 +22,9 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/outreach", tags=["Outreach"])
 
+publisher = pubsub_v1.PublisherClient()
+topic_path = f"projects/{settings.GCP_PROJECT_ID}/topics/cold-outreach-topic"
+
 # TODO: N8N LinkedIn scraper optimizations
 # TODO: N8N Generic scraper optimizations
 
@@ -29,26 +33,20 @@ def normalize_dataframe(df: pd.DataFrame) -> List[Dict[str, Any]]:
     Helper to convert DataFrame to list of dicts and normalize keys.
     Expects columns: name, email, company.
     """
-    # 1. Fill NaN with empty strings
     df = df.fillna("")
-    
-    # 2. Lowercase headers to ensure matching (Name -> name)
     df.columns = [c.lower().strip() for c in df.columns]
-    
-    # 3. Convert to list of dicts
     records = df.to_dict(orient='records')
     
-    # 4. Validate/Filter keys
     normalized = []
     for r in records:
-        # --- NEW: Extract job link (Must be INSIDE the loop) ---
         job_link = r.get('job link') or r.get('job url') or r.get('url') or r.get('link')
         
-        # Only keep rows that have at least an email or name
-        if r.get('name') or r.get('email'):
+        name = r.get('name') or r.get('full name') or r.get('contact')
+        email = r.get('email') or r.get('email address')
+        if name or email:
             normalized.append({
-                "name": r.get('name', '').strip(),
-                "email": r.get('email', '').strip(),
+                "name": name.strip() if name else "",
+                "email": email.strip() if email else "",
                 "company": r.get('company', '').strip(),
                 "job_link": str(job_link).strip() if job_link else ""
             })
@@ -65,7 +63,6 @@ async def process_outreach_background(
 ):
     logger.info(f"Background: Processing outreach for {user_id}")
     
-    # 1. PARSE INPUTS
     final_contacts_list = []
     try:
         logger.info("Background: Parsing inputs...")
@@ -93,26 +90,37 @@ async def process_outreach_background(
         logger.error("Background Error: No contacts found.")
         return
 
-    # 2. LOG TO DATABASE & PREPARE N8N PAYLOAD
-    contacts_for_n8n = []
+    # FETCH USER CONTEXT (MASTER CV)
+    user_context = ""
+    try:
+        user_profile = resume_service.get_user_profile_by_id(db, user_id)
+        if user_profile and user_profile.cv_url:
+            clean_path = user_profile.cv_url.replace(f"https://storage.googleapis.com/{settings.BUCKET_NAME}/", "")
+            pdf_bytes = gcs_service.download_file_as_bytes(clean_path)
+            cv_text = pdf_service.extract_text_from_pdf_bytes(pdf_bytes)
+            user_context = cv_text if cv_text else f"Name: {user_profile.first_name} {user_profile.last_name}"
+        elif user_profile:
+             user_context = f"Name: {user_profile.first_name} {user_profile.last_name}"
+    except Exception as e:
+        logger.error(f"Background Error: Context fetch failed - {e}")
+        user_context = "User profile unavailable."
+
+
+    # LOG TO DATABASE & PREPARE MESSAGE PAYLOAD
+    messages_to_publish = []
     
     try:
         for contact in final_contacts_list:
-            if contact.get('id'):
-                # If an ID is provided (for retries), use it
-                record_id = contact['id']
-
+            record_id = contact.get('id')
+            db_record = None
+            
+            if record_id:
                 db_record = db.query(OutreachHistory).filter(
                     OutreachHistory.id == record_id,
                     OutreachHistory.user_id == user_id
                 ).first()
                 
                 if db_record:
-                    # Update existing record
-                    # db_record.prospect_name = contact.get('name')
-                    # db_record.prospect_email = contact.get('email')
-                    # db_record.company_name = contact.get('company')
-                    # db_record.job_link = contact.get('job_link')
                     db_record.updated_at = datetime.now(timezone.utc)
                     db_record.status = "queued"
                 else:
@@ -143,53 +151,36 @@ async def process_outreach_background(
                 )
                 db.add(db_record)
             
-            # Add record_id to the contact object sent to n8n
-            # This allows n8n to update the status of THIS specific row later
-            n8n_contact = contact.copy()
-            n8n_contact['record_id'] = record_id
-            contacts_for_n8n.append(n8n_contact)
+            message_payload = {
+                "record_id": record_id,
+                "user_id": user_id,
+                "name": contact.get('name'),
+                "email": contact.get('email'),
+                "company": contact.get('company'),
+                "job_link": contact.get('job_link'),
+                "user_context": user_context 
+            }
+            messages_to_publish.append(message_payload)
             
         db.commit()
         logger.info(f"Background: Logged {len(final_contacts_list)} contacts to DB.")
+        
+        # Publish to Pub/Sub
+        for msg in messages_to_publish:
+            data_str = json.dumps(msg)
+            data_bytes = data_str.encode("utf-8")
+            
+            # Publish returns a future, result() blocks until sent (fast)
+            future = publisher.publish(topic_path, data_bytes)
+            future.result() 
+            
+        logger.info(f"Background: Successfully published {len(messages_to_publish)} messages to Pub/Sub.")
         
     except Exception as e:
         logger.error(f"Background Error: DB Logging failed - {e}")
         return
 
-    # 3. FETCH USER CONTEXT (MASTER CV)
-    user_context = ""
-    try:
-        user_profile = resume_service.get_user_profile_by_id(db, user_id)
-        if user_profile and user_profile.cv_url:
-            clean_path = user_profile.cv_url.replace(f"https://storage.googleapis.com/{settings.BUCKET_NAME}/", "")
-            pdf_bytes = gcs_service.download_file_as_bytes(clean_path)
-            cv_text = pdf_service.extract_text_from_pdf_bytes(pdf_bytes)
-            user_context = cv_text if cv_text else f"Name: {user_profile.first_name} {user_profile.last_name}"
-        elif user_profile:
-             user_context = f"Name: {user_profile.first_name} {user_profile.last_name}"
-    except Exception as e:
-        logger.error(f"Background Error: Context fetch failed - {e}")
-        user_context = "User profile unavailable."
-
-    # 4. SEND TO N8N
-    n8n_url = settings.N8N_WEBHOOK_URL
-    headers = {"X-API-KEY": settings.N8N_WEBHOOK_SECRET}
     
-    payload = {
-        "user_id": user_id,
-        "user_context": user_context,
-        "contacts": contacts_for_n8n
-    }
-
-    async with httpx.AsyncClient() as client:
-        try:
-            # We send pure JSON now, simplified!
-            await client.post(n8n_url, json=payload, headers=headers, timeout=60.0)
-            logger.info("Background: Successfully sent payload to n8n.")
-        except Exception as e:
-            logger.error(f"Background Error: Sending to n8n failed - {e}")
-
-
 @router.post("/trigger")
 async def trigger_cold_outreach(
     background_tasks: BackgroundTasks,
@@ -238,10 +229,10 @@ def get_outreach_history(
     """
     Fetch paginated and filtered outreach history.
     """
-    # 1. Base Query
+    
     query = db.query(OutreachHistory).filter(OutreachHistory.user_id == user_id)
 
-    # 2. Apply Search Filter (if provided)
+    # Apply Search Filter (if provided)
     if search:
         search_term = f"%{search}%"
         # Search in Prospect Name OR Company Name
@@ -252,11 +243,7 @@ def get_outreach_history(
             )
         )
 
-    # 3. Get Total Count (for pagination UI)
     total_records = query.count()
-
-    # 4. Apply Sorting and Pagination
-    # Calculate offset
     offset = (page - 1) * limit
     
     records = query.order_by(OutreachHistory.created_at.desc())\
@@ -264,7 +251,6 @@ def get_outreach_history(
                    .limit(limit)\
                    .all()
 
-    # 5. Calculate Total Pages
     total_pages = (total_records + limit - 1) // limit
 
     return {
