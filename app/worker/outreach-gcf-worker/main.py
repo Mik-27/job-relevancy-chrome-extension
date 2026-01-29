@@ -11,7 +11,7 @@ from vertexai.generative_models import GenerativeModel
 
 # --- CONFIG FROM ENV ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") # Must be Service Role to read user tokens
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 GCP_PROJECT = os.environ.get("GCP_PROJECT_ID")
 GCP_LOCATION = os.environ.get("GCP_LOCATION", "us-central1")
 SEARCH_API_KEY = os.environ.get("GOOGLE_SEARCH_API_KEY")
@@ -20,7 +20,7 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 
 # Initialize Supabase
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 @functions_framework.cloud_event
 def process_outreach(cloud_event):
@@ -63,13 +63,17 @@ def process_outreach(cloud_event):
     except Exception as e:
         print(f"Research warning: {e}")
 
+    # TODO: get user context from DB
+
     # 3. LLM Draft (Vertex AI)
     try:
         vertexai.init(project=GCP_PROJECT, location=GCP_LOCATION)
-        model = GenerativeModel("gemini-1.5-pro")
+        model = GenerativeModel("gemini-2.5-pro")
         
         prompt = f"""
-        You are an expert BDR. Write a cold email to {data['name']} at {data['company']}.
+        You are an expert Cold Email Outreach representative with proficiency in drafting cold emails to recruiters and hiring managers asking for job opportunities. 
+        
+        Write a cold email to {data['name']} at {data['company']}.
         
         ### MY CONTEXT
         {data['user_context']}
@@ -128,7 +132,7 @@ def process_outreach(cloud_event):
         # 5. Update Database Success
         supabase.table("outreach_history").update({
             "status": "drafted",
-            "gmail_metadata": draft
+            "draft_metadata": draft
         }).eq("id", data['record_id']).execute()
         
         print(f"Draft created successfully: {draft['id']}")

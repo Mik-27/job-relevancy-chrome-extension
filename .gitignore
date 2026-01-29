@@ -50,3 +50,4 @@ TODO.md
 /app/server-backend/temp_files
 
 app/worker/outreach-gcf-worker/gcp_command
+app/worker/outreach-gcf-worker/env.yaml

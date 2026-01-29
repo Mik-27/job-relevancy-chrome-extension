@@ -150,31 +150,35 @@ async def process_outreach_background(
                     status="queued"
                 )
                 db.add(db_record)
-            
-            message_payload = {
-                "record_id": record_id,
-                "user_id": user_id,
-                "name": contact.get('name'),
-                "email": contact.get('email'),
-                "company": contact.get('company'),
-                "job_link": contact.get('job_link'),
-                "user_context": user_context 
-            }
-            messages_to_publish.append(message_payload)
+            try:
+                message_payload = {
+                    "record_id": record_id,
+                    "user_id": user_id,
+                    "name": contact.get('name'),
+                    "email": contact.get('email'),
+                    "company": contact.get('company'),
+                    "job_link": contact.get('job_link'),
+                    "user_context": user_context 
+                }
+                messages_to_publish.append(message_payload)
+            except Exception as e:
+                logger.error(f"Background Error: Message payload creation failed - {e}")
             
         db.commit()
         logger.info(f"Background: Logged {len(final_contacts_list)} contacts to DB.")
-        
-        # Publish to Pub/Sub
-        for msg in messages_to_publish:
-            data_str = json.dumps(msg)
-            data_bytes = data_str.encode("utf-8")
-            
-            # Publish returns a future, result() blocks until sent (fast)
-            future = publisher.publish(topic_path, data_bytes)
-            future.result() 
-            
-        logger.info(f"Background: Successfully published {len(messages_to_publish)} messages to Pub/Sub.")
+        try:
+            # Publish to Pub/Sub
+            for msg in messages_to_publish:
+                data_str = json.dumps(msg)
+                data_bytes = data_str.encode("utf-8")
+                
+                # Publish returns a future, result() blocks until sent (fast)
+                future = publisher.publish(topic_path, data_bytes)
+                future.result() 
+                
+            logger.info(f"Background: Successfully published {len(messages_to_publish)} messages to Pub/Sub.")
+        except Exception as e:
+            logger.error(f"Background Error: Pub/Sub publish failed - {e}")
         
     except Exception as e:
         logger.error(f"Background Error: DB Logging failed - {e}")
