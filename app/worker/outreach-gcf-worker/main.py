@@ -7,7 +7,10 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from supabase import create_client
 import vertexai
-from vertexai.generative_models import GenerativeModel
+# from vertexai.generative_models import GenerativeModel
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 # --- CONFIG FROM ENV ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -59,7 +62,7 @@ def process_outreach(cloud_event):
             print(f"Scraping URL: {target_url}")
             jina_res = requests.get(f"https://r.jina.ai/{target_url}")
             if jina_res.status_code == 200:
-                website_content = jina_res.text[:2000] # Limit tokens
+                website_content = jina_res.text[:2000]
     except Exception as e:
         print(f"Research warning: {e}")
 
@@ -68,28 +71,75 @@ def process_outreach(cloud_event):
     # 3. LLM Draft (Vertex AI)
     try:
         vertexai.init(project=GCP_PROJECT, location=GCP_LOCATION)
-        model = GenerativeModel("gemini-2.5-pro")
         
-        prompt = f"""
-        You are an expert Cold Email Outreach representative with proficiency in drafting cold emails to recruiters and hiring managers asking for job opportunities. 
+        # Define Pydantic model for structured output
+        from pydantic import BaseModel, Field
         
-        Write a cold email to {data['name']} at {data['company']}.
+        class EmailDraft(BaseModel):
+            subject: str = Field(description="Concise, catchy email subject relevant to research")
+            body: str = Field(description="Email body under 150 words connecting user context to company needs")
         
-        ### MY CONTEXT
-        {data['user_context']}
+        # Setup parser and LLM
+        parser = PydanticOutputParser(pydantic_object=EmailDraft)
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-2.5-pro",
+            temperature=0.7,
+            project=GCP_PROJECT,
+            location=GCP_LOCATION,
+        )
         
-        ### RESEARCH
-        News: {research_context}
-        Website/Job Info: {website_content}
+        prompt = PromptTemplate(
+            template="""
+            You are an expert Cold Email Outreach representative with proficiency in drafting cold emails to recruiters and hiring managers asking for job opportunities. 
+            
+            Write a cold email to {name} at {company}.
+            
+            ### MY CONTEXT
+            {user_context}
+            
+            ### RESEARCH
+            News: {research_context}
+            Website/Job Info: {website_content}
+            
+            ### GENERAL INSTRUCTIONS
+            - Do not let the email be robotic, make it sound human and personalized.
+            - Keep it concise and to the point.
+            - Use HTML tags for formatting the resume appropriately.
+            - Subject: Concise, Catchy, relevant to research.
+            - Body: < 200 words. Connect my context to their needs.
+            - Start the email with a greeting.
+            - Use HTML <br> tags for line breaks in the body.
+            - Be polite and professional (You are asking for help and not demanding it).
+            - {format_instructions}
+            
+            ### INSTRUCTIONS FOR WRITING BODY
+            - Start with a greeting addressing {name}.
+            - Seperate the body in 3 paragraphs: Introduction, Value Proposition, Call to Action.
+            - Introduce yourself briefly (1-2 sentences). Start with instrucing myself and my experience and then why I am reaching out.
+            - Reference specific points from the research to show genuine interest.
+            - Explain how my skills/experience can help {company} with their challenges.
+            - End with a polite request for a conversation or to connect with relevant hiring managers/recruiters.
+            - End the conversation with a professional sign-off. (e.g., "Best regards," <br> <user_name>)")
+            """,
+            input_variables=["name", "company", "user_context", "research_context", "website_content"],
+            partial_variables={"format_instructions": parser.get_format_instructions()}
+        )
         
-        ### INSTRUCTIONS
-        - Subject: Catchy, relevant to research.
-        - Body: < 150 words. Connect my context to their needs.
-        - Output JSON: {{ "subject": "...", "body": "..." }}
-        """
+        # Create chain
+        chain = prompt | llm | parser
         
-        response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
-        email_draft = json.loads(response.text)
+        # Execute
+        email_draft = chain.invoke({
+            "name": data['name'],
+            "company": data['company'],
+            "user_context": data['user_context'],
+            "research_context": research_context,
+            "website_content": website_content
+        })
+        
+        # Convert Pydantic model to dict
+        email_draft = {"subject": email_draft.subject, "body": email_draft.body}
+        
         
     except Exception as e:
         print(f"LLM generation failed: {e}")
@@ -122,10 +172,14 @@ def process_outreach(cloud_event):
         from email.mime.text import MIMEText
         import base64 as b64_std
         
+        print("DEBUG: Email Draft:", email_draft['body'])
+        
         message = MIMEText(email_draft['body'], 'html')
         message['to'] = data['email']
         message['subject'] = email_draft['subject']
         raw_message = b64_std.urlsafe_b64encode(message.as_bytes()).decode()
+        
+        print("Draft raw_message:", raw_message)
         
         draft = service.users().drafts().create(userId="me", body={'message': {'raw': raw_message}}).execute()
 
