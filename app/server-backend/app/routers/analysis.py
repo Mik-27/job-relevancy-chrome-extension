@@ -56,7 +56,10 @@ async def get_score_endpoint(
     """
     A fast endpoint that returns only the relevancy score.
     """
+    logger.debug(f"Score request - resumeText length: {len(request.resumeText) if request.resumeText else 0}, jobDescriptionText length: {len(request.jobDescriptionText) if request.jobDescriptionText else 0}")
+    
     if not request.resumeText or not request.jobDescriptionText:
+        logger.error(f"Empty data received - resumeText: {bool(request.resumeText)}, jobDescriptionText: {bool(request.jobDescriptionText)}")
         raise HTTPException(status_code=400, detail="Resume or Job Description cannot be empty.")
     
     current_hash = generate_input_hash(request.resumeText, request.jobDescriptionText)
@@ -96,8 +99,11 @@ async def get_suggestions_endpoint(
     """
     A slower endpoint that returns only the detailed improvement suggestions.
     """
+    logger.debug(f"Suggestions request - resumeText length: {len(request.resumeText) if request.resumeText else 0}, jobDescriptionText length: {len(request.jobDescriptionText) if request.jobDescriptionText else 0}")
     
     if not request.resumeText or not request.jobDescriptionText:
+        logger.error(f"Empty data received - resumeText: {bool(request.resumeText)}, jobDescriptionText: {bool(request.jobDescriptionText)}")
+
         raise HTTPException(status_code=400, detail="Resume or Job Description cannot be empty.")
     
     current_hash = generate_input_hash(request.resumeText, request.jobDescriptionText)

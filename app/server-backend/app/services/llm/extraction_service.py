@@ -7,7 +7,9 @@ from ...config import settings
 # A cheap, fast model is perfect for this extraction task
 llm = ChatVertexAI(
     model_name="gemini-2.5-flash", 
-    temperature=0, # Deterministic
+    temperature=0,
+    project=settings.GCP_PROJECT_ID,
+    location=settings.GCP_CLIENT_LOCATION,
 )
 
 # Define what we want to extract

@@ -2,12 +2,15 @@ import json
 from langchain_core.prompts import PromptTemplate
 from langchain_google_vertexai import ChatVertexAI
 from ...logging_config import get_logger
+from ...config import settings
 
 logger = get_logger(__name__)
 
 llm = ChatVertexAI(
     model_name="gemini-2.5-pro",
     temperature=0.4, 
+    project=settings.GCP_PROJECT_ID,
+    location=settings.GCP_CLIENT_LOCATION,
 )
 
 # ------------------------ DEPRECATED: Use generate_round_prep ------------------------

@@ -2,14 +2,15 @@ from ...schemas import RelevancyScoreSchema, SuggestionsSchema
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_google_vertexai import ChatVertexAI
-# from app.config import settings
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
+from ...config import settings
 
 # Initialize the model using the key from our settings config
-llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0.1)
+llm = ChatVertexAI(
+    model="gemini-2.5-pro",
+    temperature=0.1,
+    project=settings.GCP_PROJECT_ID,
+    location=settings.GCP_CLIENT_LOCATION,
+)
 
 # --- Chain 1: Fast Relevancy Score ---
 

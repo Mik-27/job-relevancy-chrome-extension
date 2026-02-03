@@ -4,10 +4,13 @@ from ...schemas import ShadowReportSchema
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_google_vertexai import ChatVertexAI
+from ...config import settings
 
 llm = ChatVertexAI(
     model_name="gemini-2.5-pro",
     temperature=0.3,
+    project=settings.GCP_PROJECT_ID,
+    location=settings.GCP_CLIENT_LOCATION,
 )
 
 parser = PydanticOutputParser(pydantic_object=ShadowReportSchema)

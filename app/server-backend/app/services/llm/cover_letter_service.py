@@ -8,6 +8,8 @@ from ...config import settings
 llm = ChatVertexAI(
     model_name="gemini-2.5-pro",
     temperature=0.5,
+    project=settings.GCP_PROJECT_ID,
+    location=settings.GCP_CLIENT_LOCATION,
 )
 
 # --- Logic for the Cover Letter Feature ---

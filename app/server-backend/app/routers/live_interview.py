@@ -21,7 +21,7 @@ MODEL_ID = "gemini-live-2.5-flash-native-audio"
 client = genai.Client(
     vertexai=True,
     project=settings.GCP_PROJECT_ID,
-    location="us-central1",
+    location=settings.GCP_CLIENT_LOCATION,
     http_options={"api_version": "v1beta1"}
 )
 
