@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 // Fix TS global scope for older browsers
 declare global {
@@ -14,6 +14,8 @@ export interface ChatMessage {
 }
 
 export const useLiveInterview = (wsUrl: string | null) => {
+  console.log('[LiveInterview] hook initialized', { wsUrl });
+
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState<ChatMessage[]>([]);
@@ -35,6 +37,9 @@ export const useLiveInterview = (wsUrl: string | null) => {
   // Volume Animation
   const volumeRef = useRef(0); // Stores the latest raw volume instantly
   const animFrameRef = useRef<number | null>(null);
+  const sentChunkCountRef = useRef(0);
+  const sentAudioBytesRef = useRef(0);
+  const lastSendDebugAtRef = useRef(0);
 
   // --- Helpers ---
   const float32ToInt16 = (float32: Float32Array): Int16Array => {
@@ -175,6 +180,7 @@ export const useLiveInterview = (wsUrl: string | null) => {
 
       processor.onaudioprocess = (e) => {
         const inputData = e.inputBuffer.getChannelData(0);
+        const now = Date.now();
         
         // 1. Calculate Volume (Update Ref, NOT State)
         let sum = 0;
@@ -182,6 +188,7 @@ export const useLiveInterview = (wsUrl: string | null) => {
           sum += inputData[i] * inputData[i];
         }
         const rms = Math.sqrt(sum / inputData.length);
+
         // Update the ref. The animation loop will pick this up.
         volumeRef.current = Math.min(100, Math.floor(rms * 1000)); // Increased sensitivity
 
@@ -189,11 +196,28 @@ export const useLiveInterview = (wsUrl: string | null) => {
         if (ws.current?.readyState === WebSocket.OPEN) {
             const pcmInt16 = float32ToInt16(inputData);
             const base64Audio = arrayBufferToBase64(pcmInt16.buffer as ArrayBuffer);
+            sentChunkCountRef.current += 1;
+            sentAudioBytesRef.current += pcmInt16.byteLength;
+
+            const shouldLogSend =
+              sentChunkCountRef.current === 1 ||
+              sentChunkCountRef.current % 25 === 0 ||
+              now - lastSendDebugAtRef.current > 3000;
+
+            if (shouldLogSend) {
+              lastSendDebugAtRef.current = now;
+              console.log('[LiveInterview] Sending audio chunk to backend', {
+                chunkCount: sentChunkCountRef.current,
+                chunkBytes: pcmInt16.byteLength,
+                totalBytes: sentAudioBytesRef.current,
+                rms: Number(rms.toFixed(4)),
+              });
+            }
             
             ws.current.send(JSON.stringify({
               realtime_input: {
                 media_chunks: [{
-                  mime_type: "audio/pcm", 
+                  mime_type: "audio/pcm;rate=16000", 
                   data: base64Audio
                 }]
               }
@@ -221,6 +245,13 @@ export const useLiveInterview = (wsUrl: string | null) => {
 
   const stopRecording = () => {
     stopVolumeLoop();
+    console.log('[LiveInterview] stopRecording', {
+      sentChunks: sentChunkCountRef.current,
+      sentAudioBytes: sentAudioBytesRef.current,
+    });
+    sentChunkCountRef.current = 0;
+    sentAudioBytesRef.current = 0;
+    lastSendDebugAtRef.current = 0;
     if (processorRef.current) {
         processorRef.current.disconnect();
         processorRef.current = null;
@@ -236,18 +267,19 @@ export const useLiveInterview = (wsUrl: string | null) => {
   };
 
   // --- 3. Connection Management ---
-  const connect = useCallback(() => {
-    if (!wsUrl) return;
+  const connect = (overrideWsUrl?: string) => {
+    const effectiveWsUrl = overrideWsUrl || wsUrl;
+    if (!effectiveWsUrl) return;
     if (ws.current) ws.current.close();
 
     setStatus('connecting');
     setErrorMsg('');
     
-    const socket = new WebSocket(wsUrl);
+    const socket = new WebSocket(effectiveWsUrl);
     ws.current = socket;
 
     socket.onopen = () => {
-      console.log("WebSocket connected");
+      console.log("[LiveInterview] WebSocket connected", { wsUrl: effectiveWsUrl });
       setStatus('connected');
       setTimeout(() => startRecording(), 100);
     };
@@ -267,18 +299,23 @@ export const useLiveInterview = (wsUrl: string | null) => {
     };
 
     socket.onerror = (e) => {
-      console.error("WS Error", e);
+      console.error("[LiveInterview] WS Error", e);
       setStatus('error');
       setErrorMsg("Connection failed.");
     };
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
+      console.log('[LiveInterview] WebSocket closed', {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean,
+      });
       setStatus('idle');
       stopRecording();
     };
-  }, [wsUrl]);
+  };
 
-  const disconnect = useCallback(() => {
+  const disconnect = () => {
     if (ws.current) ws.current.close();
     stopRecording();
     if (audioContextOutRef.current) {
@@ -286,11 +323,35 @@ export const useLiveInterview = (wsUrl: string | null) => {
         audioContextOutRef.current = null;
     }
     setStatus('idle');
-  }, []);
+  };
 
   useEffect(() => {
-    return () => disconnect();
-  }, [disconnect]);
+    return () => {
+      if (ws.current) ws.current.close();
+
+      stopVolumeLoop();
+
+      if (processorRef.current) {
+        processorRef.current.disconnect();
+        processorRef.current = null;
+      }
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+
+      if (audioContextInRef.current) {
+        audioContextInRef.current.close();
+        audioContextInRef.current = null;
+      }
+
+      if (audioContextOutRef.current) {
+        audioContextOutRef.current.close();
+        audioContextOutRef.current = null;
+      }
+    };
+  }, []);
 
   return { status, isSpeaking, connect, disconnect, errorMsg, volume, transcript };
 };

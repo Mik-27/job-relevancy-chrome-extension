@@ -69,7 +69,9 @@ export default function LiveInterviewPage() {
     try {
       const startTime = new Date().toISOString();
       await updateInterviewSessionTime(sessionId, startTime);
-      connect();
+      const freshWsUrl = await getLiveInterviewWebSocketUrl(sessionId);
+      setWsUrl(freshWsUrl);
+      connect(freshWsUrl);
     } catch (error) {
       console.error("Failed to start session", error);
     }
@@ -108,7 +110,7 @@ export default function LiveInterviewPage() {
   if (report) {
       return (
           <div className="max-w-5xl mx-auto p-8">
-              <button onClick={() => router.back()} className="mb-6 text-muted hover:text-white">&larr; Back to Roadmap</button>
+              <button onClick={() => router.back()} className="mb-6 text-muted hover:text-white">&larr; Back to Sessions</button>
               <ShadowReport report={report} />
           </div>
       )
