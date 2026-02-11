@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getLiveInterviewWebSocketUrl, getUserProfile, endInterviewSession, getInterviewSession, updateInterviewSessionTime } from '@/lib/api';
+import { getLiveInterviewWebSocketUrl, getUserProfile, endInterviewSession, getInterviewSession, updateInterviewSessionTime, getInterviewResumeContext } from '@/lib/api';
 import { useLiveInterview } from '@/hooks/useLiveInterview';
 import { InterviewSession, ShadowReport as ShadowReportType } from '@/types';
 import { ShadowReport } from '@/components/interview/ShadowReport';
@@ -25,7 +25,7 @@ export default function LiveInterviewPage() {
   // Auto-scroll ref
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const { status, isSpeaking, connect, disconnect, errorMsg, volume, transcript } = useLiveInterview(wsUrl);
+  const { status, isSpeaking, connect, disconnect, errorMsg, volume, transcript, seedTranscript } = useLiveInterview(wsUrl);
 
   // 1. Initial Fetch: Check Session Status
   useEffect(() => {
@@ -46,6 +46,23 @@ export default function LiveInterviewPage() {
           // If active, prepare WebSocket
           const url = await getLiveInterviewWebSocketUrl(sessionId);
           setWsUrl(url);
+
+          if (session.status === 'in_progress') {
+            const resumeContext = await getInterviewResumeContext(sessionId, 50);
+            const history = resumeContext.messages
+              .filter((msg) => (msg.role === 'user' || msg.role === 'ai') && !!msg.content?.trim())
+              .map((msg) => ({
+                role: msg.role,
+                text: msg.content,
+              }));
+
+            if (history.length > 0) {
+              seedTranscript(history);
+            }
+
+            setHasStarted(true);
+          }
+
           setLoading(false);
         }
       } catch (err) {
@@ -54,7 +71,7 @@ export default function LiveInterviewPage() {
       }
     };
     init();
-  }, [sessionId]);
+  }, [sessionId, seedTranscript]);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
@@ -67,11 +84,16 @@ export default function LiveInterviewPage() {
 
   const handleStartSession = async () => {
     try {
-      const startTime = new Date().toISOString();
-      await updateInterviewSessionTime(sessionId, startTime);
+      if (sessionData?.status !== 'in_progress') {
+        const startTime = new Date().toISOString();
+        await updateInterviewSessionTime(sessionId, startTime);
+      }
+
       const freshWsUrl = await getLiveInterviewWebSocketUrl(sessionId);
       setWsUrl(freshWsUrl);
       connect(freshWsUrl);
+
+      setSessionData((prev) => prev ? { ...prev, status: 'in_progress' } : prev);
     } catch (error) {
       console.error("Failed to start session", error);
     }
@@ -166,7 +188,7 @@ export default function LiveInterviewPage() {
                     onClick={() => setHasStarted(true)}
                     className="w-full md:w-auto bg-primary hover:bg-blue-600 text-white text-lg font-bold py-4 px-10 rounded-full shadow-lg hover:shadow-blue-500/20 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-3 mx-auto"
                 >
-                    Start Interview Session <FaArrowRight />
+                  {sessionData?.status === 'in_progress' ? 'Resume Interview Session' : 'Start Interview Session'} <FaArrowRight />
                 </button>
 
             </div>

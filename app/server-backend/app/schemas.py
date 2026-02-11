@@ -319,6 +319,24 @@ class InterviewSessionEndRequest(BaseModel):
     
 class InterviewSessionBaseResponse(BaseModel):
     session_id: str
+
+
+class InterviewResumeContextMessage(BaseModel):
+    role: str
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class InterviewResumeContextResponse(BaseModel):
+    session_id: UUID
+    status: str
+    has_prior_context: bool
+    message_count: int
+    messages: List[InterviewResumeContextMessage]
+    prompt_context: Optional[str] = None
         
 # --- Shadow Report Schemas ---
 class ShadowReportSchema(BaseModel):

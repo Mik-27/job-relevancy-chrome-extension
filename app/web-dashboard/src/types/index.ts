@@ -134,8 +134,23 @@ export interface InterviewSession {
   id: string;
   application_id: string | null;
   title: string;
-  status: 'active' | 'completed';
+  status: 'created' | 'in_progress' | 'completed';
   created_at: string;
   report?: ShadowReport;
   duration_minutes?: number;
+}
+
+export interface InterviewMessage {
+  role: 'user' | 'ai';
+  content: string;
+  created_at: string;
+}
+
+export interface InterviewResumeContext {
+  session_id: string;
+  status: string;
+  has_prior_context: boolean;
+  message_count: number;
+  messages: InterviewMessage[];
+  prompt_context?: string | null;
 }

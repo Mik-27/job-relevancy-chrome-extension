@@ -1,6 +1,5 @@
-import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application, InterviewRound, ShadowReport, InterviewSession, OutreachContact } from '@/types';
+import { OutreachRecord, PaginatedResponse, UploadResumeResponse, UserProfile, ResumeItem, Application, InterviewRound, ShadowReport, InterviewSession, OutreachContact, InterviewResumeContext } from '@/types';
 import { supabase } from './supabaseClient';
-import { start } from 'repl';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -310,7 +309,19 @@ export const generateRoundPrep = async (roundId: string): Promise<InterviewRound
 // Live Interview Functions
 
 export const getLiveInterviewWebSocketUrl = async (sessionId: string): Promise<string> => {
-  const { data: { session } } = await supabase.auth.getSession();
+  let { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    const refreshResult = await supabase.auth.refreshSession();
+    session = refreshResult.data.session;
+  } else {
+    const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+    const refreshWindowMs = 5 * 60 * 1000;
+    if (!expiresAt || expiresAt - Date.now() < refreshWindowMs) {
+      const refreshResult = await supabase.auth.refreshSession();
+      session = refreshResult.data.session;
+    }
+  }
+
   if (!session) throw new Error("User is not authenticated");
   
   // Correctly convert HTTP(S) to WS(S)
@@ -364,6 +375,12 @@ export const endInterviewSession = async (sessionId: string, end_time?: string):
 export const getInterviewSession = async (sessionId: string): Promise<InterviewSession> => {
   const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/${sessionId}`);
   if (!response.ok) throw new Error("Failed to fetch session details");
+  return response.json();
+};
+
+export const getInterviewResumeContext = async (sessionId: string, limit: number = 30): Promise<InterviewResumeContext> => {
+  const response = await authFetch(`${API_BASE_URL}/live-interview-sessions/${sessionId}/resume-context?limit=${limit}`);
+  if (!response.ok) throw new Error("Failed to fetch resume context");
   return response.json();
 };
 

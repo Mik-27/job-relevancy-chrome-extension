@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from .. import database, schemas
@@ -36,6 +36,46 @@ def get_session_messages(
     return db.query(database.InterviewMessage).filter(
         database.InterviewMessage.session_id == session_id
     ).order_by(database.InterviewMessage.created_at.asc()).all()
+
+
+@router.get("/{session_id}/resume-context", response_model=schemas.InterviewResumeContextResponse)
+def get_session_resume_context(
+    session_id: str,
+    limit: int = Query(default=30, ge=1, le=100),
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(database.get_db),
+):
+    session = db.query(database.InterviewSession).filter(
+        database.InterviewSession.id == session_id,
+        database.InterviewSession.user_id == user_id
+    ).first()
+
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    messages = db.query(database.InterviewMessage).filter(
+        database.InterviewMessage.session_id == session_id
+    ).order_by(database.InterviewMessage.created_at.asc()).all()
+
+    capped_messages = messages[-limit:]
+    prompt_context = None
+    if session.status == "in_progress" and capped_messages:
+        formatted = [
+            f"{msg.role.upper()}: {msg.content.strip()}"
+            for msg in capped_messages
+            if msg.content and msg.content.strip()
+        ]
+        if formatted:
+            prompt_context = "\n".join(formatted)
+
+    return {
+        "session_id": session.id,
+        "status": session.status,
+        "has_prior_context": len(capped_messages) > 0,
+        "message_count": len(capped_messages),
+        "messages": capped_messages,
+        "prompt_context": prompt_context,
+    }
 
 @router.post("/", response_model=schemas.InterviewSessionResponse)
 def create_session(

@@ -88,6 +88,21 @@ async def websocket_endpoint(
     # TODO: Handle case where app_id is None - Generic interview
     # 3. Get Context
     system_instruction = live_session_service.get_interview_context(db, app_id, round_id, user_id)
+
+    if interview_session.status == "in_progress":
+        prior_messages = db.query(InterviewMessage).filter(
+            InterviewMessage.session_id == session_id
+        ).order_by(InterviewMessage.created_at.asc()).all()
+
+        resume_context = live_session_service.build_resume_context_instruction(prior_messages)
+        if resume_context:
+            system_instruction = f"{system_instruction}\n\n{resume_context}"
+            logger.info(
+                "[LiveInterview] Resume context appended | user=%s session=%s messages=%s",
+                user_id,
+                session_id,
+                len(prior_messages),
+            )
     
     config = types.LiveConnectConfig(
             response_modalities=[types.Modality.AUDIO],

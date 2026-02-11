@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 // Fix TS global scope for older browsers
 declare global {
@@ -10,7 +10,6 @@ declare global {
 export interface ChatMessage {
   role: 'user' | 'ai';
   text: string;
-//   timestamp: Date;
 }
 
 export const useLiveInterview = (wsUrl: string | null) => {
@@ -325,6 +324,10 @@ export const useLiveInterview = (wsUrl: string | null) => {
     setStatus('idle');
   };
 
+  const seedTranscript = useCallback((messages: ChatMessage[]) => {
+    setTranscript(messages);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (ws.current) ws.current.close();
@@ -353,5 +356,5 @@ export const useLiveInterview = (wsUrl: string | null) => {
     };
   }, []);
 
-  return { status, isSpeaking, connect, disconnect, errorMsg, volume, transcript };
+  return { status, isSpeaking, connect, disconnect, errorMsg, volume, transcript, seedTranscript };
 };

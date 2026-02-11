@@ -6,6 +6,41 @@ from ..logging_config import get_logger
 
 logger = get_logger(__name__)
 
+
+def build_resume_context_instruction(messages: list[database.InterviewMessage], max_chars: int = 4000) -> str:
+    """Build a compact transcript context snippet for interview resume scenarios."""
+    if not messages:
+        return ""
+
+    lines: list[str] = []
+    current_chars = 0
+
+    for msg in reversed(messages):
+        content = (msg.content or "").strip()
+        if not content:
+            continue
+
+        line = f"{msg.role.upper()}: {content}"
+        projected = current_chars + len(line) + 1
+        if projected > max_chars:
+            break
+
+        lines.append(line)
+        current_chars = projected
+
+    if not lines:
+        return ""
+
+    transcript_block = "\n".join(reversed(lines))
+    return f"""
+        ### RESUME CONTEXT
+        This interview is being resumed after an interruption.
+        Keep continuity with the ongoing conversation and avoid restarting from introductions.
+
+        RECENT TRANSCRIPT:
+        {transcript_block}
+    """
+
 def get_round_context(
     db: Session, 
     application_id: str,
