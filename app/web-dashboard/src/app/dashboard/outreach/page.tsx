@@ -5,7 +5,7 @@ import { getOutreachHistory, markOutreachAsSent, triggerColdOutreach } from '@/l
 import { OutreachRecord, OutreachContact } from '@/types';
 import { FaSearch, FaExternalLinkAlt, FaEnvelopeOpenText, FaCheck, FaChevronRight, FaChevronLeft, FaRedo, FaPlus, FaCloudUploadAlt, FaTimes, FaTrash, FaFileUpload, FaKeyboard } from 'react-icons/fa';
 import { useToast } from '@/context/ToastContext';
-import { Spinner } from '@/components/ui/Spinner/Spinner';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 type InputMode = 'manual' | 'upload';
 
@@ -204,7 +204,6 @@ export default function OutreachPage() {
     setModalError('');
   };
 
-  if (loading) return <div className="p-8 text-muted animate-pulse w-full h-full flex items-center justify-center"><Spinner></Spinner></div>;
   if (error) return <div className="p-8 text-error">{error}</div>;
 
   return (
@@ -213,7 +212,11 @@ export default function OutreachPage() {
         <div className="flex flex-col w-1/4">
           <h1 className="text-3xl font-bold text-foreground">Cold Outreach</h1>
           <p className="text-muted mt-1">
-            Showing {records.length} of {totalItems} records
+            {loading ? (
+              <Skeleton variant="line" className="h-4 w-52 mt-1" />
+            ) : (
+              <>Showing {records.length} of {totalItems} records</>
+            )}
           </p>
         </div>
         
@@ -231,6 +234,11 @@ export default function OutreachPage() {
       </div>
 
       {/* Search Bar */}
+      {loading ? (
+        <div className="w-full mb-4 px-2">
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+      ) : (
         <div className="relative w-full mb-4 px-2">
           <input 
             name="search" 
@@ -242,6 +250,7 @@ export default function OutreachPage() {
           />
           <FaSearch className="absolute left-3 top-3 text-muted text-xs ml-2" />
         </div>
+      )}
 
       <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg">
         <div className="flex-1 overflow-y-auto">
@@ -258,7 +267,7 @@ export default function OutreachPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                 <tr><td colSpan={6} className="p-8 text-center text-muted">Loading...</td></tr>
+                <OutreachTableSkeletonRows rowCount={8} />
               ) : records.length === 0 ? (
                 <tr><td colSpan={6} className="p-8 text-center text-muted italic">No records found.</td></tr>
               ) : (
@@ -349,7 +358,11 @@ export default function OutreachPage() {
             </button>
 
             <span className="text-sm text-muted">
-                Page <strong className="text-foreground">{currentPage}</strong> of <strong className="text-foreground">{totalPages}</strong>
+                {loading ? (
+                  <Skeleton variant="line" className="h-4 w-32" />
+                ) : (
+                  <>Page <strong className="text-foreground">{currentPage}</strong> of <strong className="text-foreground">{totalPages}</strong></>
+                )}
             </span>
 
             <button
@@ -504,3 +517,35 @@ export default function OutreachPage() {
     </div>
   );
 }
+
+const OutreachTableSkeletonRows = ({ rowCount = 8 }: { rowCount?: number }) => (
+  <>
+    {Array.from({ length: rowCount }).map((_, index) => (
+      <tr key={index} className="animate-pulse">
+        <td className="p-4">
+          <Skeleton variant="line" className="h-4 w-32 mb-2" />
+          <Skeleton variant="line" className="h-3 w-44" />
+        </td>
+        <td className="p-4">
+          <Skeleton variant="line" className="h-4 w-28" />
+        </td>
+        <td className="p-4">
+          <Skeleton variant="pill" className="h-6 w-20" />
+        </td>
+        <td className="p-4">
+          <Skeleton variant="line" className="h-4 w-24" />
+        </td>
+        <td className="p-4">
+          <Skeleton variant="line" className="h-4 w-24" />
+        </td>
+        <td className="p-4">
+          <div className="flex justify-end gap-2">
+            <Skeleton variant="circle" className="h-8 w-8" />
+            <Skeleton variant="circle" className="h-8 w-8" />
+            <Skeleton variant="circle" className="h-8 w-8" />
+          </div>
+        </td>
+      </tr>
+    ))}
+  </>
+);

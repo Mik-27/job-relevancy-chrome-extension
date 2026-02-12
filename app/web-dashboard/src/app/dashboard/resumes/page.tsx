@@ -7,6 +7,7 @@ import { FaFilePdf, FaTrash, FaPlus} from 'react-icons/fa';
 import { ResumeItem } from '@/types';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
 import { UploadResumeModal } from '@/components/modals/UploadResumeModal';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 
 export default function MyResumesPage() {
@@ -88,7 +89,7 @@ export default function MyResumesPage() {
       </div>
 
       {loading ? (
-        <div className="text-muted animate-pulse">Loading resumes...</div>
+        <ResumesGridSkeleton />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
           
@@ -199,3 +200,46 @@ export default function MyResumesPage() {
     </div>
   );
 }
+
+const ResumeCardSkeleton = () => (
+  <div className="bg-card border border-border rounded-xl p-5 flex flex-col h-72 shadow-sm">
+    <div className="flex items-start justify-between mb-2">
+      <Skeleton className="h-12 w-12 rounded-lg" />
+      <Skeleton variant="circle" className="h-8 w-8" />
+    </div>
+
+    <div className="flex-1 min-h-0 flex flex-col">
+      <Skeleton variant="line" className="h-6 w-2/3 mt-1" />
+      <Skeleton variant="line" className="h-3 w-4/5 mt-3 mb-4" />
+
+      <div className="flex flex-wrap gap-1.5 content-start">
+        <Skeleton variant="pill" className="h-5 w-14" />
+        <Skeleton variant="pill" className="h-5 w-16" />
+        <Skeleton variant="pill" className="h-5 w-12" />
+        <Skeleton variant="pill" className="h-5 w-20" />
+      </div>
+    </div>
+
+    <div className="pt-4 border-t border-border mt-3 flex items-center justify-between">
+      <Skeleton variant="line" className="h-3 w-24" />
+      <div className="flex items-center gap-2">
+        <Skeleton variant="line" className="h-3 w-14" />
+        <Skeleton variant="pill" className="h-5 w-9" />
+      </div>
+    </div>
+  </div>
+);
+
+const ResumesGridSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="border-2 border-dashed border-border bg-card/50 rounded-xl p-6 flex flex-col items-center justify-center h-72">
+      <Skeleton variant="circle" className="h-16 w-16 mb-4" />
+      <Skeleton variant="line" className="h-5 w-24" />
+      <Skeleton variant="line" className="h-3 w-28 mt-2" />
+    </div>
+
+    {Array.from({ length: 7 }).map((_, index) => (
+      <ResumeCardSkeleton key={index} />
+    ))}
+  </div>
+);

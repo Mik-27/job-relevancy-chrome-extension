@@ -6,6 +6,7 @@ import { createInterviewSession, getInterviewSessions } from '@/lib/api';
 import { FaMicrophone, FaCalendarAlt, FaPlay, FaPlus } from 'react-icons/fa';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface InterviewSession {
   id: string;
@@ -31,7 +32,7 @@ export default function InterviewSessionsPage() {
     try {
       const session = await createInterviewSession();
       router.push(`/dashboard/interview/${session.id}`);
-    } catch (e) {
+    } catch {
       toast.error("Failed to start session");
     }
   };
@@ -49,7 +50,7 @@ export default function InterviewSessionsPage() {
       </div>
 
       {loading ? (
-        <div className="text-muted">Loading history...</div>
+        <InterviewSessionsSkeletonList />
       ) : sessions.length === 0 ? (
         <div className="text-center p-10 bg-card border border-border rounded-xl text-muted">
             No interviews yet. Go to the Application Tracker to start one!
@@ -88,3 +89,28 @@ export default function InterviewSessionsPage() {
     </div>
   );
 }
+
+const InterviewSessionSkeletonCard = () => (
+  <div className="bg-card border border-border rounded-xl p-6 flex justify-between items-center">
+    <div className="flex items-center gap-4">
+      <Skeleton variant="circle" className="h-12 w-12" />
+      <div>
+        <Skeleton variant="line" className="h-6 w-44" />
+        <Skeleton variant="line" className="h-4 w-56 mt-2" />
+      </div>
+    </div>
+
+    <div className="flex items-center gap-4">
+      <Skeleton variant="pill" className="h-6 w-24" />
+      <Skeleton variant="circle" className="h-5 w-5" />
+    </div>
+  </div>
+);
+
+const InterviewSessionsSkeletonList = () => (
+  <div className="grid gap-4">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <InterviewSessionSkeletonCard key={index} />
+    ))}
+  </div>
+);

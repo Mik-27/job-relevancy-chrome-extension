@@ -7,6 +7,7 @@ import { UserProfile } from '@/types';
 import { getUserProfile, updateUserProfile, uploadUserCV, uploadUserPersonalInfo, getGoogleAuthUrl, connectGmail } from '@/lib/api';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
 import { useToast } from '@/context/ToastContext';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -42,7 +43,7 @@ export default function ProfilePage() {
           setMessage({ type: 'success', text: 'Gmail connected successfully!' });
           // Clean the URL
           router.replace('/dashboard/profile');
-        } catch (err) {
+        } catch {
           setMessage({ type: 'error', text: 'Failed to connect Gmail.' });
         } finally {
           setIsConnectingGmail(false);
@@ -58,7 +59,7 @@ export default function ProfilePage() {
       const url = await getGoogleAuthUrl();
       // Redirect user to Google
       window.location.href = url;
-    } catch (err) {
+    } catch {
       setMessage({ type: 'error', text: 'Could not initiate connection.' });
     }
   };
@@ -122,7 +123,7 @@ export default function ProfilePage() {
       setProfile(updated);
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       toast.success('Profile updated successfully!');
-    } catch (err) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to save changes.' });
       toast.error('Failed to save changes.');
     } finally {
@@ -130,7 +131,14 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) return <div className="text-muted p-8 animate-pulse">Loading profile...</div>;
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8 text-foreground">My Profile</h1>
+        <ProfilePageSkeleton />
+      </div>
+    );
+  }
   if (!profile) return <div className="text-error p-8">Error loading profile.</div>;
 
   // --- Shared Styles ---
@@ -352,3 +360,76 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+const ProfilePageSkeleton = () => (
+  <div className="bg-card border border-border rounded-xl p-6 shadow-lg space-y-8">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ProfileInputSkeleton />
+        <ProfileInputSkeleton />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ProfileInputSkeleton />
+        <ProfileInputSkeleton />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ProfileInputSkeleton />
+        <ProfileInputSkeleton />
+      </div>
+
+      <ProfileInputSkeleton />
+
+      <div className="flex justify-end">
+        <Skeleton className="h-10 w-44 rounded-lg" />
+      </div>
+    </div>
+
+    <div className="pt-8 border-t border-border space-y-4">
+      <Skeleton variant="line" className="h-7 w-52" />
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+        <div className="flex-1 w-full">
+          <Skeleton variant="line" className="h-4 w-48 mb-3" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+        </div>
+        <Skeleton className="h-10 w-40 rounded-lg" />
+      </div>
+    </div>
+
+    <div className="pt-8 border-t border-border space-y-4">
+      <Skeleton variant="line" className="h-7 w-36" />
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+        <div className="flex-1 w-full">
+          <Skeleton variant="line" className="h-4 w-48 mb-3" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+        </div>
+        <Skeleton className="h-10 w-56 rounded-lg" />
+      </div>
+      <Skeleton variant="line" className="h-4 w-28" />
+      <Skeleton variant="line" className="h-4 w-full" />
+      <Skeleton variant="line" className="h-4 w-5/6" />
+    </div>
+
+    <div className="pt-8 border-t border-border space-y-4">
+      <Skeleton variant="line" className="h-7 w-32" />
+      <div className="flex items-center justify-between p-4 bg-secondary/10 border border-border rounded-lg">
+        <div className="flex items-center gap-4">
+          <Skeleton variant="circle" className="h-10 w-10" />
+          <div>
+            <Skeleton variant="line" className="h-4 w-36" />
+            <Skeleton variant="line" className="h-3 w-64 mt-2" />
+          </div>
+        </div>
+        <Skeleton className="h-10 w-36 rounded-lg" />
+      </div>
+    </div>
+  </div>
+);
+
+const ProfileInputSkeleton = () => (
+  <div>
+    <Skeleton variant="line" className="h-4 w-24 mb-2" />
+    <Skeleton className="h-12 w-full rounded-lg" />
+  </div>
+);

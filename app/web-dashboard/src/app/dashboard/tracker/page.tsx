@@ -9,6 +9,7 @@ import { FaPlus, FaTrash, FaExternalLinkAlt, FaList, FaTh, FaThumbtack, FaSearch
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { JobDetailModal } from '@/components/modals/JobDetailModal';
 import { UploadResumeModal } from '@/components/modals/UploadResumeModal';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 // Define columns/statuses
 const STATUSES = {
@@ -58,7 +59,7 @@ export default function TrackerPage() {
             ]);
             setApplications(appsData);
             setAvailableResumes(resumesData);
-        } catch(e) {
+        } catch {
             toast.error("Failed to load data");
         } finally {
             setLoading(false);
@@ -191,55 +192,255 @@ export default function TrackerPage() {
     }
   };
 
-  if (loading) return <div className="p-8 text-muted">Loading...</div>;
+  const TrackerHeader = () => (
+    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Application Tracker</h1>
+        <p className="text-muted text-sm mt-1">Manage your job pipeline</p>
+      </div>
+
+      <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* --- NEW: SEARCH BAR --- */}
+          <div className="relative flex-1 md:w-64">
+              <input 
+                  type="text" 
+                  placeholder="Search company, role, ID..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-input border border-border rounded-lg pl-10 pr-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <FaSearch className="absolute left-3 top-3 text-muted text-xs" />
+          </div>
+          
+          {/* --- NEW: View Toggle --- */}
+          <div className="flex bg-card border border-border rounded-lg p-1">
+              <button 
+                  onClick={() => setViewMode('board')}
+                  className={`p-2 rounded-md transition-colors ${viewMode === 'board' ? 'bg-primary text-white' : 'text-muted hover:text-white'}`}
+                  title="Board View"
+              >
+                  <FaTh />
+              </button>
+              <button 
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-primary text-white' : 'text-muted hover:text-white'}`}
+                  title="List View"
+              >
+                  <FaList />
+              </button>
+          </div>
+
+          <button 
+            onClick={() => setIsAdding(!isAdding)}
+            className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
+          >
+            {!isAdding ? <><FaPlus /> Add Job</> : <><FaBan /> Cancel</>}
+          </button>
+      </div>
+    </div>
+  );
+
+  const renderTrackerSkeleton = () => {
+    if (viewMode === 'board') {
+      return <TrackerBoardSkeleton />;
+    }
+
+    return <TrackerListSkeleton />;
+  };
+
+  const renderTrackerBody = () => {
+    if (viewMode === 'board') {
+      return (
+        /* KANBAN BOARD VIEW */
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="flex gap-4 overflow-x-auto pb-4 h-full">
+          {Object.entries(STATUSES).map(([columnId, column]) => (
+            <div key={columnId} className="flex-shrink-0 w-72 flex flex-col bg-[#1e1e1e] rounded-xl border border-border/50">
+            <div className={`p-4 border-b border-border/50 font-semibold text-foreground flex justify-between items-center ${column.color}`}>
+              {column.title}
+              <span className="text-xs bg-secondary px-2 py-1 rounded-full text-muted">
+              {getBoardAppsByStatus(columnId).length}
+              </span>
+            </div>
+
+            <Droppable droppableId={columnId}>
+              {(provided, snapshot) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className={`flex-1 p-3 overflow-y-auto min-h-[550px] transition-colors ${
+                snapshot.isDraggingOver ? 'bg-secondary/20' : ''
+                }`}
+              >
+                {getBoardAppsByStatus(columnId).map((app, index) => (
+                <Draggable key={app.id} draggableId={app.id} index={index}>
+                  {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    className={`
+                    bg-card border border-border rounded-lg p-3 mb-3 shadow-sm group
+                    hover:border-primary/50 transition-all
+                    ${snapshot.isDragging ? 'shadow-xl rotate-1 scale-105 border-primary z-50' : ''}
+                    `}
+                    style={provided.draggableProps.style}
+                    // onClick={() => handleInterviewPrepRoute(app)}
+                  >
+                    <h4 className="font-bold text-foreground text-sm">{app.company_name}</h4>
+                    <p className="text-xs text-muted mt-1">{app.job_title}</p>
+                    
+                    {app.status === 'interviewing' && (
+                      <button className='bg-primary hover:bg-blue-600 text-white px-2 py-1 rounded text-xs mt-2' onClick={() => handleInterviewPrepRoute(app)}>
+                        Interview Prep
+                      </button>
+                    )}
+                    
+                    <div className="flex justify-between items-center mt-3 border-t border-border/30 pt-2">
+                      <span className="text-[10px] text-gray-500">
+                        {new Date(app.updated_at).toLocaleDateString()}
+                      </span>
+                      <div className="flex gap-2">
+                        {app.job_url && (
+                          <a href={app.job_url} target="_blank" className="text-muted hover:text-primary transition">
+                            <FaExternalLinkAlt size={10} />
+                          </a>
+                        )}
+                        {/* --- NEW: Quick Unpin Button on Card --- */}
+                        <button 
+                          onClick={(e) => handleToggleBoard(app.id, true, e)}
+                          className="text-primary hover:text-muted transition"
+                          title="Remove from Board (Keep in List)"
+                        >
+                          <FaThumbtack size={10} />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteClick(app.id); }} className="text-muted hover:text-error transition">
+                          <FaTrash size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  )}
+                </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+              )}
+            </Droppable>
+            </div>
+          ))}
+          </div>
+        </DragDropContext>
+      );
+    }
+
+    return (
+      /* LIST VIEW */
+      <div className="bg-card border border-border rounded-xl shadow-lg flex flex-col flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-secondary/50 border-b border-border sticky top-0 z-10 backdrop-blur-md">
+              <tr>
+                <th className="p-4 font-semibold text-muted">Company</th>
+                <th className="p-4 font-semibold text-muted">Role</th>
+                <th className="p-4 font-semibold text-muted">Job ID</th>
+                <th className="p-4 font-semibold text-muted">Resume</th>
+                <th className="p-4 font-semibold text-muted">Referred By</th>
+                <th className="p-4 font-semibold text-muted">Status</th>
+                <th className="p-4 font-semibold text-muted">Last Updated</th>
+                <th className="p-4 font-semibold text-muted text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filteredApplications.length === 0 ? (
+                <tr><td colSpan={7} className="p-8 text-center text-muted italic">No applications found. Add one above!</td></tr>
+              ) : (
+                filteredApplications.map((app) => (
+                  <tr key={app.id} className="hover:bg-secondary/30 transition-colors">
+                    <td className="p-4 font-medium text-foreground">{app.company_name}</td>
+                    <td className="p-4 text-muted">{app.job_title}</td>
+                    <td className="p-4 text-xs text-muted font-mono">{app.job_id || '-'}</td>
+                    <td className="p-4 text-xs text-muted">
+                      <div className="font-medium text-foreground">
+                        {app.resume_id 
+                          ? (() => {
+                            const resume = availableResumes.find(r => r.id === app.resume_id);
+                            console.log('Found resume for app:', app, resume);
+                            return resume ? `${resume.company}` : '-';
+                          })()
+                          : ''
+                        }
+                      </div>
+                      <div>
+                        {app.resume_id 
+                          ? (() => {
+                            const resume = availableResumes.find(r => r.id === app.resume_id);
+                            console.log('Found resume for app:', app, resume);
+                            return resume ? `${resume.filename}` : '-';
+                          })()
+                          : '-'
+                        }
+                      </div>
+                    </td>
+                    <td className="p-4 text-xs text-muted">{app.referred_by || '-'}</td>
+                    
+                    {/* Editable Status Column */}
+                    <td className="p-4">
+                      <select 
+                        value={app.status}
+                        onChange={(e) => handleStatusChange(app.id, e.target.value)}
+                        className="bg-input border border-border rounded-md text-xs py-1 px-2 text-foreground focus:outline-none focus:border-primary cursor-pointer"
+                      >
+                        {Object.entries(STATUSES).map(([key, val]) => (
+                          <option key={key} value={key}>{val.title}</option>
+                        ))}
+                      </select>
+                    </td>
+                    
+                    <td className="p-4 text-muted text-xs">
+                      {new Date(app.updated_at).toLocaleDateString()}
+                    </td>
+                    
+                    <td className="p-4 text-right flex justify-end gap-3">
+                      {app.job_url && (
+                        <a href={app.job_url} target="_blank" className="text-blue-400 hover:text-blue-300 transition" title="View Job">
+                          <FaExternalLinkAlt />
+                        </a>
+                      )}
+                      {/* --- NEW: Pin/Unpin Button --- */}
+                      <button 
+                        onClick={(e) => handleToggleBoard(app.id, app.on_board, e)} 
+                        className={`transition p-2 rounded ${app.on_board ? 'text-primary hover:bg-primary/10' : 'text-muted hover:text-foreground hover:bg-secondary'}`} 
+                        title={app.on_board ? "Remove from Board" : "Add to Board"}
+                      >
+                        <FaThumbtack />
+                      </button>
+                      <button onClick={() => handleDeleteClick(app.id)} className="text-muted hover:text-error transition" title="Delete">
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="h-full flex flex-col">
+        <TrackerHeader />
+        {renderTrackerSkeleton()}
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Application Tracker</h1>
-          <p className="text-muted text-sm mt-1">Manage your job pipeline</p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto">
-            {/* --- NEW: SEARCH BAR --- */}
-            <div className="relative flex-1 md:w-64">
-                <input 
-                    type="text" 
-                    placeholder="Search company, role, ID..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-input border border-border rounded-lg pl-10 pr-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <FaSearch className="absolute left-3 top-3 text-muted text-xs" />
-            </div>
-            
-            {/* --- NEW: View Toggle --- */}
-            <div className="flex bg-card border border-border rounded-lg p-1">
-                <button 
-                    onClick={() => setViewMode('board')}
-                    className={`p-2 rounded-md transition-colors ${viewMode === 'board' ? 'bg-primary text-white' : 'text-muted hover:text-white'}`}
-                    title="Board View"
-                >
-                    <FaTh />
-                </button>
-                <button 
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-primary text-white' : 'text-muted hover:text-white'}`}
-                    title="List View"
-                >
-                    <FaList />
-                </button>
-            </div>
-
-            <button 
-              onClick={() => setIsAdding(!isAdding)}
-              className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
-            >
-              {!isAdding ? <><FaPlus /> Add Job</> : <><FaBan /> Cancel</>}
-            </button>
-        </div>
-      </div>
+      <TrackerHeader />
 
       {/* Add Job Form (Shared) */}
       {isAdding && (
@@ -284,7 +485,6 @@ export default function TrackerPage() {
               >
                 <option value="">Select a Resume...</option>
                 {availableResumes.map(r => (
-                  // FIXME: Truncate long names properly
                   <option 
                     key={r.id} 
                     value={r.id} 
@@ -324,182 +524,8 @@ export default function TrackerPage() {
         </form>
       )}
 
-      {/* --- CONDITIONAL RENDERING --- */}
+      {renderTrackerBody()}
 
-      {viewMode === 'board' ? (
-        /* KANBAN BOARD VIEW */
-        <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex gap-4 overflow-x-auto pb-4 h-full">
-            {Object.entries(STATUSES).map(([columnId, column]) => (
-                <div key={columnId} className="flex-shrink-0 w-72 flex flex-col bg-[#1e1e1e] rounded-xl border border-border/50">
-                <div className={`p-4 border-b border-border/50 font-semibold text-foreground flex justify-between items-center ${column.color}`}>
-                    {column.title}
-                    <span className="text-xs bg-secondary px-2 py-1 rounded-full text-muted">
-                    {getBoardAppsByStatus(columnId).length}
-                    </span>
-                </div>
-
-                <Droppable droppableId={columnId}>
-                    {(provided, snapshot) => (
-                    <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className={`flex-1 p-3 overflow-y-auto min-h-[550px] transition-colors ${
-                        snapshot.isDraggingOver ? 'bg-secondary/20' : ''
-                        }`}
-                    >
-                        {getBoardAppsByStatus(columnId).map((app, index) => (
-                        <Draggable key={app.id} draggableId={app.id} index={index}>
-                            {(provided, snapshot) => (
-                            <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`
-                                bg-card border border-border rounded-lg p-3 mb-3 shadow-sm group
-                                hover:border-primary/50 transition-all
-                                ${snapshot.isDragging ? 'shadow-xl rotate-1 scale-105 border-primary z-50' : ''}
-                                `}
-                                style={provided.draggableProps.style}
-                                // onClick={() => handleInterviewPrepRoute(app)}
-                            >
-                                <h4 className="font-bold text-foreground text-sm">{app.company_name}</h4>
-                                <p className="text-xs text-muted mt-1">{app.job_title}</p>
-                                
-                                {app.status === 'interviewing' && (
-                                    <button className='bg-primary hover:bg-blue-600 text-white px-2 py-1 rounded text-xs mt-2' onClick={() => handleInterviewPrepRoute(app)}>
-                                        Interview Prep
-                                    </button>
-                                )}
-                                
-                                <div className="flex justify-between items-center mt-3 border-t border-border/30 pt-2">
-                                    <span className="text-[10px] text-gray-500">
-                                        {new Date(app.updated_at).toLocaleDateString()}
-                                    </span>
-                                    <div className="flex gap-2">
-                                        {app.job_url && (
-                                            <a href={app.job_url} target="_blank" className="text-muted hover:text-primary transition">
-                                                <FaExternalLinkAlt size={10} />
-                                            </a>
-                                        )}
-                                        {/* --- NEW: Quick Unpin Button on Card --- */}
-                                        <button 
-                                            onClick={(e) => handleToggleBoard(app.id, true, e)}
-                                            className="text-primary hover:text-muted transition"
-                                            title="Remove from Board (Keep in List)"
-                                        >
-                                            <FaThumbtack size={10} />
-                                        </button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteClick(app.id); }} className="text-muted hover:text-error transition">
-                                            <FaTrash size={10} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            )}
-                        </Draggable>
-                        ))}
-                        {provided.placeholder}
-                    </div>
-                    )}
-                </Droppable>
-                </div>
-            ))}
-            </div>
-        </DragDropContext>
-      ) : (
-        /* LIST VIEW */
-        <div className="bg-card border border-border rounded-xl shadow-lg flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-secondary/50 border-b border-border sticky top-0 z-10 backdrop-blur-md">
-                        <tr>
-                            <th className="p-4 font-semibold text-muted">Company</th>
-                            <th className="p-4 font-semibold text-muted">Role</th>
-                            <th className="p-4 font-semibold text-muted">Job ID</th>
-                            <th className="p-4 font-semibold text-muted">Resume</th>
-                            <th className="p-4 font-semibold text-muted">Referred By</th>
-                            <th className="p-4 font-semibold text-muted">Status</th>
-                            <th className="p-4 font-semibold text-muted">Last Updated</th>
-                            <th className="p-4 font-semibold text-muted text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                        {filteredApplications.length === 0 ? (
-                            <tr><td colSpan={7} className="p-8 text-center text-muted italic">No applications found. Add one above!</td></tr>
-                        ) : (
-                            filteredApplications.map((app) => (
-                                <tr key={app.id} className="hover:bg-secondary/30 transition-colors">
-                                    <td className="p-4 font-medium text-foreground">{app.company_name}</td>
-                                    <td className="p-4 text-muted">{app.job_title}</td>
-                                    <td className="p-4 text-xs text-muted font-mono">{app.job_id || '-'}</td>
-                                    <td className="p-4 text-xs text-muted">
-                                      <div className="font-medium text-foreground">
-                                        {app.resume_id 
-                                          ? (() => {
-                                            const resume = availableResumes.find(r => r.id === app.resume_id);
-                                            console.log('Found resume for app:', app, resume);
-                                            return resume ? `${resume.company}` : '-';
-                                          })()
-                                          : ''
-                                        }
-                                      </div>
-                                      <div>
-                                        {app.resume_id 
-                                          ? (() => {
-                                            const resume = availableResumes.find(r => r.id === app.resume_id);
-                                            console.log('Found resume for app:', app, resume);
-                                            return resume ? `${resume.filename}` : '-';
-                                          })()
-                                          : '-'
-                                        }
-                                      </div>
-                                    </td>
-                                    <td className="p-4 text-xs text-muted">{app.referred_by || '-'}</td>
-                                    
-                                    {/* Editable Status Column */}
-                                    <td className="p-4">
-                                        <select 
-                                            value={app.status}
-                                            onChange={(e) => handleStatusChange(app.id, e.target.value)}
-                                            className="bg-input border border-border rounded-md text-xs py-1 px-2 text-foreground focus:outline-none focus:border-primary cursor-pointer"
-                                        >
-                                            {Object.entries(STATUSES).map(([key, val]) => (
-                                                <option key={key} value={key}>{val.title}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    
-                                    <td className="p-4 text-muted text-xs">
-                                        {new Date(app.updated_at).toLocaleDateString()}
-                                    </td>
-                                    
-                                    <td className="p-4 text-right flex justify-end gap-3">
-                                        {app.job_url && (
-                                            <a href={app.job_url} target="_blank" className="text-blue-400 hover:text-blue-300 transition" title="View Job">
-                                                <FaExternalLinkAlt />
-                                            </a>
-                                        )}
-                                        {/* --- NEW: Pin/Unpin Button --- */}
-                                        <button 
-                                          onClick={(e) => handleToggleBoard(app.id, app.on_board, e)} 
-                                          className={`transition p-2 rounded ${app.on_board ? 'text-primary hover:bg-primary/10' : 'text-muted hover:text-foreground hover:bg-secondary'}`} 
-                                          title={app.on_board ? "Remove from Board" : "Add to Board"}
-                                        >
-                                            <FaThumbtack />
-                                        </button>
-                                        <button onClick={() => handleDeleteClick(app.id)} className="text-muted hover:text-error transition" title="Delete">
-                                            <FaTrash />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-      )}
 
       {/* --- 4. RENDER THE MODAL --- */}
       {selectedApp && !selectedApp.job_description && (
@@ -535,3 +561,80 @@ export default function TrackerPage() {
     </div>
   );
 }
+
+const TrackerBoardSkeleton = () => (
+  <div className="h-full flex flex-col">
+    <div className="flex gap-4 overflow-x-auto pb-4 h-full">
+      {Object.keys(STATUSES).map((columnId) => (
+        <div key={columnId} className="flex-shrink-0 w-72 flex flex-col bg-[#1e1e1e] rounded-xl border border-border/50">
+          <div className="p-4 border-b border-border/50 flex justify-between items-center">
+            <Skeleton variant="line" className="h-4 w-24" />
+            <Skeleton variant="pill" className="h-5 w-10" />
+          </div>
+          <div className="flex-1 p-3 min-h-[550px] space-y-3">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="bg-card border border-border rounded-lg p-3 shadow-sm space-y-3">
+                <Skeleton variant="line" className="h-4 w-3/4" />
+                <Skeleton variant="line" className="h-3 w-1/2" />
+                <div className="flex justify-between items-center pt-2 border-t border-border/30">
+                  <Skeleton variant="line" className="h-3 w-16" />
+                  <div className="flex gap-2">
+                    <Skeleton variant="circle" className="h-4 w-4" />
+                    <Skeleton variant="circle" className="h-4 w-4" />
+                    <Skeleton variant="circle" className="h-4 w-4" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const TrackerListSkeleton = () => (
+  <div className="h-full flex flex-col">
+    <div className="bg-card border border-border rounded-xl shadow-lg flex flex-col flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-secondary/50 border-b border-border sticky top-0 z-10 backdrop-blur-md">
+            <tr>
+              <th className="p-4 font-semibold text-muted">Company</th>
+              <th className="p-4 font-semibold text-muted">Role</th>
+              <th className="p-4 font-semibold text-muted">Job ID</th>
+              <th className="p-4 font-semibold text-muted">Resume</th>
+              <th className="p-4 font-semibold text-muted">Referred By</th>
+              <th className="p-4 font-semibold text-muted">Status</th>
+              <th className="p-4 font-semibold text-muted">Last Updated</th>
+              <th className="p-4 font-semibold text-muted text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <tr key={index} className="animate-pulse">
+                <td className="p-4"><Skeleton variant="line" className="h-4 w-32" /></td>
+                <td className="p-4"><Skeleton variant="line" className="h-4 w-40" /></td>
+                <td className="p-4"><Skeleton variant="line" className="h-4 w-20" /></td>
+                <td className="p-4">
+                  <Skeleton variant="line" className="h-4 w-28 mb-2" />
+                  <Skeleton variant="line" className="h-3 w-20" />
+                </td>
+                <td className="p-4"><Skeleton variant="line" className="h-4 w-24" /></td>
+                <td className="p-4"><Skeleton variant="pill" className="h-7 w-24" /></td>
+                <td className="p-4"><Skeleton variant="line" className="h-4 w-24" /></td>
+                <td className="p-4 text-right">
+                  <div className="flex justify-end gap-3">
+                    <Skeleton variant="circle" className="h-4 w-4" />
+                    <Skeleton variant="circle" className="h-4 w-4" />
+                    <Skeleton variant="circle" className="h-4 w-4" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+);
