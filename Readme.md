@@ -13,6 +13,7 @@ This repository is organized into three main app areas under `app/`:
 - `app/extension-frontend` - The Chrome extension UI. It handles the popup experience, background script, and content script used for analysis, autofill, and Gmail drafting.
 - `app/server-backend` - The FastAPI backend. It performs resume analysis, interview/session orchestration, document generation, storage access, and AI integrations.
 - `app/web-dashboard` - The authenticated dashboard used to manage resumes, applications, outreach history, interview sessions, and profile data.
+- `app/worker/outreach-gcf-worker` - The GCP cold-email worker. It listens for incoming outreach jobs, researches the target company, drafts the message, and creates the Gmail draft.
 
 Outside of `app/`, the repo also contains supporting scripts and project-level docs such as `git-backdate.sh`, `run_server.ps1`, and this README.
 
@@ -28,7 +29,9 @@ The application includes a live interview flow that helps users practice job int
 
 ### Cold Email Generation Directly in Gmail
 
-The extension can generate cold outreach emails and place them directly into Gmail workflows. The system uses the backend and Google Cloud / Gmail-related integrations to draft messages, so the user can move from lead or job discovery to outreach with less manual copying and editing.
+The extension can generate cold outreach emails and place them directly into Gmail workflows. When a cold-email request is created, the backend publishes the request to Google Cloud Pub/Sub. A GCP worker subscribed to that topic receives the payload, researches the target company and job context, drafts the email with Vertex AI, and then uses the Gmail API to create a ready-to-edit draft inside the user’s Gmail account.
+
+That flow keeps the heavy drafting work off the main backend request path and lets outreach generation run asynchronously. It also makes the process more reliable because the worker can independently fetch research context, build the email, and persist the result back to the outreach history table.
 
 ### Application Autofill
 
@@ -64,10 +67,16 @@ The extension helps users autofill application fields using stored profile and r
 - Python for orchestration, business logic, and integrations.
 - LangChain-driven LLM workflows for analysis and generation tasks.
 - Supabase and Google Cloud services for persistence and cloud-backed integrations.
+- Pub/Sub for async cold-email job delivery into the outreach worker.
 
 ### How GCP Is Used for Cold Email Generation
 
-Google Cloud is part of the cold-email workflow infrastructure. The backend uses GCP credentials and project configuration to access Google-backed services during email generation and related AI operations. In practice, this supports secure service-account-based access and the runtime configuration needed for drafting outreach content that can be delivered into Gmail-centric workflows.
+Google Cloud is part of the cold-email workflow infrastructure in two places:
+
+- The backend publishes new outreach requests to Pub/Sub so they can be processed asynchronously.
+- The `outreach-gcf-worker` consumes the Pub/Sub message, uses Google Search and website scraping to gather context, calls Vertex AI to draft the message, and uses Gmail credentials to create the Gmail draft.
+
+In practice, this gives the outreach flow a clean separation between request creation and email generation. The main app records the outreach request, Pub/Sub queues the work, and the GCP worker handles the research and drafting steps before writing the result back into outreach history.
 
 ---
 
